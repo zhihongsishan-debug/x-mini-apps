@@ -1,0 +1,452 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<meta name="theme-color" content="#0a0a14" />
+<title>今日の運ゲー診断</title>
+<style>
+  :root{
+    --bg-0:#05060d;
+    --bg-1:#0e0a1f;
+    --bg-2:#1a0a2e;
+    --ink:#f4f4ff;
+    --sub:#a7a3c4;
+    --line:rgba(255,255,255,.08);
+    --card:rgba(255,255,255,.04);
+    --gold:#ffd166;
+    --neon:#7cf6ff;
+    --pink:#ff5cad;
+    --violet:#a371ff;
+  }
+
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Sans","Noto Sans JP","Yu Gothic UI",sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(1200px 700px at 80% -10%, rgba(163,113,255,.35), transparent 60%),
+      radial-gradient(900px 600px at -10% 110%, rgba(124,246,255,.22), transparent 60%),
+      radial-gradient(700px 500px at 50% 40%, rgba(255,92,173,.18), transparent 60%),
+      linear-gradient(180deg, var(--bg-0), var(--bg-1) 40%, var(--bg-2));
+    background-attachment:fixed;
+    overflow-x:hidden;
+    letter-spacing:.01em;
+  }
+  body::before{
+    content:"";
+    position:fixed;inset:0;
+    background-image:
+      linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);
+    background-size:38px 38px;
+    mask-image:radial-gradient(circle at 50% 40%, #000 40%, transparent 75%);
+    pointer-events:none;
+    z-index:0;
+  }
+  body::after{
+    content:"";
+    position:fixed;inset:0;
+    background-image:radial-gradient(rgba(255,255,255,.6) 1px,transparent 1.2px);
+    background-size:3px 3px;
+    opacity:.04;
+    pointer-events:none;
+    z-index:0;
+    mix-blend-mode:overlay;
+  }
+
+  .wrap{
+    position:relative;z-index:1;
+    min-height:100dvh;
+    display:flex;flex-direction:column;align-items:center;
+    padding:max(20px,env(safe-area-inset-top)) 18px max(28px,env(safe-area-inset-bottom));
+  }
+
+  header{
+    width:100%;max-width:440px;text-align:center;margin:6px 0 14px;
+  }
+  .brand{
+    font-size:12px;letter-spacing:.4em;color:var(--sub);text-transform:uppercase;
+  }
+  h1{
+    font-size:26px;margin:6px 0 0;font-weight:800;
+    background:linear-gradient(90deg,var(--neon),var(--violet) 40%,var(--pink));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    text-shadow:0 0 20px rgba(163,113,255,.25);
+  }
+  .date{margin-top:6px;font-size:12px;color:var(--sub);}
+
+  .card{
+    width:100%;max-width:440px;
+    border-radius:24px;
+    padding:22px 20px 18px;
+    background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02));
+    border:1px solid var(--line);
+    box-shadow:
+      0 30px 80px rgba(0,0,0,.55),
+      inset 0 1px 0 rgba(255,255,255,.08);
+    backdrop-filter:blur(14px);
+    -webkit-backdrop-filter:blur(14px);
+    position:relative;overflow:hidden;
+  }
+  .card::before{
+    content:"";position:absolute;inset:-1px;border-radius:inherit;padding:1px;
+    background:conic-gradient(from 200deg,var(--neon),var(--violet),var(--pink),var(--neon));
+    -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor;mask-composite:exclude;
+    opacity:.55;pointer-events:none;
+  }
+
+  .rank-stage{
+    position:relative;
+    height:200px;display:grid;place-items:center;
+    margin:6px 0 4px;
+  }
+  .halo{
+    position:absolute;inset:0;
+    background:radial-gradient(closest-side,var(--ringColor,#ffd166) 0%,transparent 70%);
+    filter:blur(18px);opacity:.55;
+    transition:background .4s ease;
+  }
+  .rank{
+    font-family:"Times New Roman",serif;
+    font-size:148px;line-height:1;font-weight:900;font-style:italic;
+    background:linear-gradient(180deg,#fff 0%,var(--rankColor,#ffd166) 60%,rgba(255,255,255,.55));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    text-shadow:0 0 30px rgba(255,255,255,.25);
+    transform:translateY(2px);
+    transition:transform .35s cubic-bezier(.2,1.6,.4,1);
+  }
+  .rank.shake{animation:pop .55s cubic-bezier(.2,1.6,.4,1);}
+  @keyframes pop{
+    0%{transform:scale(.6) rotate(-6deg);opacity:0;}
+    60%{transform:scale(1.12) rotate(2deg);opacity:1;}
+    100%{transform:scale(1) rotate(0);}
+  }
+  .rank-label{
+    position:absolute;bottom:6px;left:0;right:0;text-align:center;
+    font-size:11px;letter-spacing:.5em;color:var(--sub);text-transform:uppercase;
+  }
+
+  .grid{
+    display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:6px;
+  }
+  .stat{
+    border:1px solid var(--line);
+    border-radius:16px;padding:12px 12px 14px;
+    background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,0));
+  }
+  .stat .name{font-size:11px;letter-spacing:.25em;color:var(--sub);text-transform:uppercase;}
+  .stat .val{font-size:26px;font-weight:800;margin-top:4px;font-feature-settings:"tnum";}
+  .stat .val small{font-size:13px;font-weight:700;color:var(--sub);margin-left:2px;}
+  .bar{
+    height:6px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:8px;
+  }
+  .bar > i{
+    display:block;height:100%;width:0%;
+    background:linear-gradient(90deg,var(--neon),var(--violet),var(--pink));
+    box-shadow:0 0 14px rgba(163,113,255,.55);
+    transition:width 1s cubic-bezier(.2,.7,.2,1);
+  }
+  .stat.gold .bar > i{background:linear-gradient(90deg,#ffe27a,#ffb13b,#ff7a59);}
+  .stat.win  .bar > i{background:linear-gradient(90deg,#7cf6ff,#a371ff,#ff5cad);}
+
+  .msg{
+    margin-top:14px;
+    border:1px solid var(--line);
+    border-radius:16px;padding:14px 14px;
+    background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.02));
+    font-size:15px;line-height:1.55;
+    min-height:64px;
+    display:flex;align-items:center;
+  }
+  .msg::before{
+    content:"\201C";font-family:Georgia,serif;font-size:42px;line-height:0;
+    color:var(--violet);margin:14px 8px 0 -2px;opacity:.85;
+  }
+
+  .meta{
+    margin-top:12px;display:flex;justify-content:space-between;
+    font-size:11px;color:var(--sub);letter-spacing:.18em;text-transform:uppercase;
+  }
+
+  .actions{
+    width:100%;max-width:440px;margin-top:16px;display:grid;grid-template-columns:1fr auto;gap:10px;
+  }
+  .btn{
+    appearance:none;border:0;cursor:pointer;
+    font-weight:800;font-size:16px;letter-spacing:.08em;
+    color:#0a0a14;
+    padding:16px 20px;border-radius:16px;
+    background:linear-gradient(135deg,#fff,#cfd8ff 50%,#e9c6ff);
+    box-shadow:
+      0 10px 24px rgba(163,113,255,.35),
+      inset 0 1px 0 rgba(255,255,255,.9);
+    transition:transform .15s ease, box-shadow .2s ease, filter .2s ease;
+  }
+  .btn:active{transform:translateY(1px) scale(.99);}
+  .btn:hover{filter:brightness(1.05);}
+  .btn.ghost{
+    color:var(--ink);background:rgba(255,255,255,.06);
+    border:1px solid var(--line);
+    box-shadow:none;font-size:14px;padding:0 14px;
+  }
+
+  .tip{
+    margin-top:12px;font-size:11px;color:var(--sub);text-align:center;
+    letter-spacing:.18em;text-transform:uppercase;opacity:.8;
+  }
+
+  /* confetti */
+  .confetti{position:fixed;inset:0;pointer-events:none;z-index:5;overflow:hidden;}
+  .confetti i{
+    position:absolute;top:-10vh;width:8px;height:14px;
+    background:var(--c,#fff);opacity:.95;border-radius:2px;
+    animation:fall var(--d,2.4s) linear forwards;
+    transform:rotate(var(--r,0deg));
+  }
+  @keyframes fall{
+    to{transform:translateY(120vh) rotate(720deg);opacity:.85;}
+  }
+
+  @media (max-width:380px){
+    h1{font-size:22px;}
+    .rank{font-size:128px;}
+    .stat .val{font-size:22px;}
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">DAILY ・ LUCK ・ ORACLE</div>
+      <h1>今日の運ゲー診断</h1>
+      <div class="date" id="dateLabel"></div>
+    </header>
+
+    <section class="card" aria-live="polite">
+      <div class="rank-stage">
+        <div class="halo" id="halo"></div>
+        <div class="rank" id="rank">?</div>
+        <div class="rank-label">TODAY'S RANK</div>
+      </div>
+
+      <div class="grid">
+        <div class="stat gold">
+          <div class="name">金運</div>
+          <div class="val"><span id="goldVal">--</span><small>%</small></div>
+          <div class="bar"><i id="goldBar"></i></div>
+        </div>
+        <div class="stat win">
+          <div class="name">勝率</div>
+          <div class="val"><span id="winVal">--</span><small>%</small></div>
+          <div class="bar"><i id="winBar"></i></div>
+        </div>
+      </div>
+
+      <div class="msg" id="msg">ボタンを押して、今日の運命を引き当てろ。</div>
+
+      <div class="meta">
+        <span id="seedLabel">SEED ・ ----</span>
+        <span>#今日の運ゲー診断</span>
+      </div>
+    </section>
+
+    <div class="actions">
+      <button class="btn" id="rollBtn">運命を引く</button>
+      <button class="btn ghost" id="shareBtn" title="結果をコピー">SHARE</button>
+    </div>
+
+    <div class="tip">スクショして晒すべし</div>
+  </div>
+
+  <div class="confetti" id="confetti" aria-hidden="true"></div>
+
+<script>
+(() => {
+  const RANKS = [
+    {r:"S", w:5,  color:"#ffd166", ring:"rgba(255,209,102,.55)"},
+    {r:"A", w:15, color:"#7cf6ff", ring:"rgba(124,246,255,.45)"},
+    {r:"B", w:25, color:"#a371ff", ring:"rgba(163,113,255,.45)"},
+    {r:"C", w:30, color:"#ff5cad", ring:"rgba(255,92,173,.45)"},
+    {r:"D", w:18, color:"#9aa0b4", ring:"rgba(154,160,180,.4)"},
+    {r:"E", w:7,  color:"#5a5d72", ring:"rgba(90,93,114,.4)"},
+  ];
+
+  const MSG = {
+    S:[
+      "全ての歯車が噛み合う日。財布の紐は緩めていけ。",
+      "今日のお前は無敵。宝くじ売場の前で深呼吸しろ。",
+      "勝ち確の波が来てる。乗らない手はない。",
+      "神様も今日はお前のターン。遠慮するな。",
+      "S級の引き、S級の覚悟で動け。"
+    ],
+    A:[
+      "強い。攻めて損しない一日。",
+      "9割勝ち、1割学び。挑戦に最適。",
+      "自信を持って一歩前へ。流れはこちらだ。",
+      "今日のお前、いつもより輝いてる。"
+    ],
+    B:[
+      "悪くない。普通に勝てる日。",
+      "派手さはないが、堅実に積める。",
+      "挑むなら短期勝負。長居は禁物。",
+      "ちょい押しで結果が変わる、そんな日。"
+    ],
+    C:[
+      "可もなく不可もなく。守備の日。",
+      "ギャンブルは見送り、地力を磨け。",
+      "決断は明日でいい。今日は様子見。",
+      "焦らず、慌てず、欲張らず。"
+    ],
+    D:[
+      "風向きは悪い。深追い厳禁。",
+      "勝負ごとは避けろ。今日は耐える日。",
+      "小さなミスが効いてくる。落ち着け。",
+      "課金は寝てから考えろ。"
+    ],
+    E:[
+      "全力で逃げろ。今日はそういう日。",
+      "勝負は明日。今日は寝るのが最強ムーブ。",
+      "厄日。コンビニのくじすら引くな。",
+      "静かに過ごせ。それがお前の勝ち筋だ。"
+    ]
+  };
+
+  const $ = (id) => document.getElementById(id);
+  const dateLabel = $("dateLabel");
+  const rankEl    = $("rank");
+  const halo      = $("halo");
+  const goldVal   = $("goldVal");
+  const winVal    = $("winVal");
+  const goldBar   = $("goldBar");
+  const winBar    = $("winBar");
+  const msgEl     = $("msg");
+  const seedLabel = $("seedLabel");
+  const rollBtn   = $("rollBtn");
+  const shareBtn  = $("shareBtn");
+  const confettiBox = $("confetti");
+
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm   = String(today.getMonth()+1).padStart(2,"0");
+  const dd   = String(today.getDate()).padStart(2,"0");
+  const wd   = ["日","月","火","水","木","金","土"][today.getDay()];
+  dateLabel.textContent = `${yyyy}.${mm}.${dd} (${wd})`;
+
+  function pickRank(){
+    const total = RANKS.reduce((s,x)=>s+x.w,0);
+    let n = Math.random()*total;
+    for(const r of RANKS){ n -= r.w; if(n<=0) return r; }
+    return RANKS[RANKS.length-1];
+  }
+  function rangeForRank(r){
+    switch(r){
+      case "S": return [85,100];
+      case "A": return [70,92];
+      case "B": return [55,80];
+      case "C": return [35,65];
+      case "D": return [15,45];
+      case "E": return [0,25];
+    }
+  }
+  function rand(a,b){ return Math.floor(a + Math.random()*(b-a+1)); }
+  function pickMsg(r){ const arr = MSG[r]; return arr[Math.floor(Math.random()*arr.length)]; }
+  function makeSeed(){
+    const s = Math.random().toString(36).slice(2,8).toUpperCase();
+    return `${yyyy}${mm}${dd}-${s}`;
+  }
+
+  let last = null;
+
+  function tweenNumber(el, from, to, dur=900){
+    const t0 = performance.now();
+    function step(t){
+      const k = Math.min(1,(t-t0)/dur);
+      const e = 1 - Math.pow(1-k,3);
+      el.textContent = Math.round(from + (to-from)*e);
+      if(k<1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
+  function fireConfetti(strong){
+    const n = strong ? 80 : 30;
+    const colors = ["#ffd166","#7cf6ff","#a371ff","#ff5cad","#ffffff"];
+    const frag = document.createDocumentFragment();
+    for(let i=0;i<n;i++){
+      const e = document.createElement("i");
+      e.style.setProperty("--c", colors[i%colors.length]);
+      e.style.setProperty("--d", (1.6+Math.random()*1.8).toFixed(2)+"s");
+      e.style.setProperty("--r", (Math.random()*360|0)+"deg");
+      e.style.left = (Math.random()*100).toFixed(1)+"vw";
+      e.style.animationDelay = (Math.random()*0.4).toFixed(2)+"s";
+      frag.appendChild(e);
+    }
+    confettiBox.innerHTML = "";
+    confettiBox.appendChild(frag);
+    setTimeout(()=>{ confettiBox.innerHTML = ""; }, 3600);
+  }
+
+  function roll(){
+    const r = pickRank();
+    const [gMin,gMax] = rangeForRank(r.r);
+    const [wMin,wMax] = rangeForRank(r.r);
+    const gold = rand(gMin,gMax);
+    const win  = rand(Math.max(0,wMin-5), Math.min(100,wMax+5));
+    const seed = makeSeed();
+    const msg  = pickMsg(r.r);
+
+    rankEl.textContent = r.r;
+    rankEl.style.setProperty("--rankColor", r.color);
+    halo.style.setProperty("--ringColor", r.ring);
+    rankEl.classList.remove("shake"); void rankEl.offsetWidth; rankEl.classList.add("shake");
+
+    const gFrom = parseInt(goldVal.textContent,10) || 0;
+    const wFrom = parseInt(winVal.textContent,10) || 0;
+    tweenNumber(goldVal, gFrom, gold);
+    tweenNumber(winVal,  wFrom, win);
+    requestAnimationFrame(()=>{
+      goldBar.style.width = gold + "%";
+      winBar.style.width  = win  + "%";
+    });
+
+    msgEl.textContent = msg;
+    seedLabel.textContent = "SEED ・ " + seed;
+
+    if(r.r==="S") fireConfetti(true);
+    else if(r.r==="A") fireConfetti(false);
+
+    last = { rank:r.r, gold, win, msg, seed };
+  }
+
+  rollBtn.addEventListener("click", roll);
+
+  shareBtn.addEventListener("click", async () => {
+    if(!last){ roll(); return; }
+    const text =
+`【今日の運ゲー診断】
+ランク：${last.rank}
+金運：${last.gold}%
+勝率：${last.win}%
+"${last.msg}"
+#今日の運ゲー診断`;
+    try{
+      if(navigator.share){
+        await navigator.share({text});
+      }else{
+        await navigator.clipboard.writeText(text);
+        const orig = shareBtn.textContent;
+        shareBtn.textContent = "COPIED!";
+        setTimeout(()=>shareBtn.textContent = orig, 1200);
+      }
+    }catch(_){}
+  });
+
+  // 初回は控えめにオートロール
+  setTimeout(roll, 250);
+})();
+</script>
+</body>
+</html>
