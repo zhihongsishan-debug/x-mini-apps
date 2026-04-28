@@ -1,0 +1,517 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
+<meta name="theme-color" content="#ffd6e2" />
+<title>LOVE SHOT — 怒りを、愛に変えるだけ。</title>
+<style>
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Sans","Noto Sans JP","Yu Gothic UI",system-ui,sans-serif;
+    color:#3b2638;
+    background:
+      radial-gradient(60% 50% at 30% 0%, rgba(255,194,222,.55), transparent 70%),
+      radial-gradient(60% 50% at 90% 90%, rgba(186,220,255,.6), transparent 70%),
+      linear-gradient(180deg,#fff8fb 0%,#ffe7f0 35%,#dbe9ff 90%);
+    background-attachment:fixed;
+    min-height:100dvh;
+    overflow-x:hidden;
+  }
+  .wrap{
+    max-width:440px;margin:0 auto;
+    padding:max(14px,env(safe-area-inset-top)) 16px max(20px,env(safe-area-inset-bottom));
+    display:flex;flex-direction:column;gap:10px;
+  }
+  header{text-align:center;}
+  h1{
+    margin:0;font-size:34px;font-weight:900;letter-spacing:.04em;
+    background:linear-gradient(90deg,#ff7aa3,#ffb47b 50%,#7cc6ff);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    text-shadow:0 1px 0 rgba(255,255,255,.6);
+  }
+  .sub{margin:4px 0 6px;font-size:12px;color:#7a5a72;letter-spacing:.22em;}
+  .hud{
+    display:grid;grid-template-columns:1fr 1fr 1.4fr;gap:8px;
+    background:rgba(255,255,255,.75);
+    border:1px solid rgba(255,255,255,.95);
+    border-radius:14px;padding:10px 8px;
+    box-shadow:0 8px 22px rgba(255,140,180,.18);
+    backdrop-filter:blur(6px);
+  }
+  .hud > div{font-size:10px;letter-spacing:.18em;color:#9a7d92;text-align:center;line-height:1.2;}
+  .hud > div span{display:block;font-size:18px;font-weight:800;color:#3b2638;margin-top:3px;font-feature-settings:"tnum";}
+  .stage{
+    position:relative;width:100%;
+    aspect-ratio:3/4;
+    border-radius:22px;overflow:hidden;
+    background:
+      radial-gradient(70% 40% at 50% 0%, rgba(255,255,255,.7), transparent 70%),
+      linear-gradient(180deg,#ffeef5 0%,#ffd9e7 35%,#cfe2ff 100%);
+    box-shadow:
+      0 18px 50px rgba(255,140,180,.25),
+      inset 0 0 0 1px rgba(255,255,255,.7);
+    touch-action:none;
+  }
+  canvas{display:block;width:100%;height:100%;}
+  .flash{
+    position:absolute;inset:0;background:radial-gradient(closest-side,rgba(255,255,255,.85),transparent 70%);
+    opacity:0;pointer-events:none;transition:opacity .25s ease;
+  }
+  .flash.on{opacity:1;transition:opacity .05s ease;}
+  .combo-pop{
+    position:absolute;left:0;right:0;top:8%;text-align:center;pointer-events:none;
+    font-weight:900;font-size:18px;letter-spacing:.12em;
+    color:#ff5a8e;text-shadow:0 1px 0 rgba(255,255,255,.8),0 6px 16px rgba(255,90,140,.35);
+    opacity:0;transform:scale(.85);transition:opacity .25s ease,transform .25s ease;
+  }
+  .combo-pop.on{opacity:1;transform:scale(1);}
+  .overlay{
+    position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;padding:18px;gap:10px;
+    background:linear-gradient(180deg,rgba(255,255,255,.55),rgba(255,255,255,.9));
+    backdrop-filter:blur(10px);
+    transition:opacity .25s ease,transform .25s ease;
+  }
+  .overlay.hide{opacity:0;transform:translateY(8px);pointer-events:none;}
+  .overlay h2{
+    margin:0;font-size:30px;font-weight:900;letter-spacing:.04em;
+    background:linear-gradient(90deg,#ff7aa3,#7cc6ff);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .overlay p{margin:0;color:#5a4055;font-size:14px;line-height:1.65;max-width:320px;}
+  .overlay .small{font-size:11px;letter-spacing:.18em;color:#9a7d92;}
+  .overlay .score-big{font-size:42px;font-weight:900;color:#3b2638;letter-spacing:.04em;font-feature-settings:"tnum";}
+  .overlay button{
+    margin-top:6px;
+    appearance:none;border:0;
+    padding:14px 28px;border-radius:999px;
+    font-size:15px;font-weight:800;letter-spacing:.18em;color:#fff;
+    background:linear-gradient(135deg,#ff8fb1,#ffb27a 50%,#9bd0ff);
+    box-shadow:0 10px 22px rgba(255,140,180,.4);
+    cursor:pointer;
+  }
+  .overlay button:active{transform:translateY(1px);}
+  .controls{
+    display:grid;grid-template-columns:1fr 1.4fr 1fr;gap:10px;margin-top:4px;
+  }
+  .ctrl{
+    appearance:none;border:0;
+    padding:18px 0;border-radius:18px;
+    font-size:18px;font-weight:800;color:#5a3b54;
+    background:rgba(255,255,255,.85);
+    border:1px solid rgba(255,255,255,.95);
+    box-shadow:0 10px 22px rgba(255,140,180,.18);
+    cursor:pointer;letter-spacing:.06em;
+    touch-action:manipulation;
+  }
+  .ctrl:active{transform:translateY(1px);background:#fff;}
+  .ctrl.shoot{
+    color:#fff;
+    background:linear-gradient(135deg,#ff8fb1,#ff6fa3);
+    box-shadow:0 12px 28px rgba(255,90,140,.45);
+    font-size:16px;letter-spacing:.18em;
+  }
+  .tip{margin:4px 0 0;font-size:11px;color:#9a7d92;letter-spacing:.18em;text-align:center;}
+  @media (max-width:380px){
+    h1{font-size:28px;}
+    .hud > div span{font-size:16px;}
+  }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header>
+    <h1>LOVE SHOT</h1>
+    <p class="sub">怒りを、愛に変えるだけ。</p>
+    <div class="hud">
+      <div>SCORE<span id="score">0</span></div>
+      <div>TIME<span id="time">30</span></div>
+      <div>LOVE COMBO<span id="combo">×0</span></div>
+    </div>
+  </header>
+
+  <div class="stage" id="stage">
+    <canvas id="game" width="360" height="480"></canvas>
+    <div class="flash" id="flash"></div>
+    <div class="combo-pop" id="comboPop"></div>
+    <div class="overlay" id="overlay">
+      <h2 id="resultTitle">READY</h2>
+      <p id="resultMsg">怒りやモヤモヤを、ハートで愛に変えていこう。<br><span class="small">30秒、深呼吸して。</span></p>
+      <div class="score-big" id="resultScore" style="display:none;"></div>
+      <button id="startBtn">START</button>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="ctrl" id="leftBtn" aria-label="左へ">◀</button>
+    <button class="ctrl shoot" id="shootBtn" aria-label="LOVE発射">LOVE</button>
+    <button class="ctrl" id="rightBtn" aria-label="右へ">▶</button>
+  </div>
+
+  <p class="tip">#LOVESHOT で晒すべし</p>
+</main>
+
+<script>
+(() => {
+  const cv = document.getElementById('game');
+  const ctx = cv.getContext('2d');
+  const flash = document.getElementById('flash');
+  const comboPop = document.getElementById('comboPop');
+  const overlay = document.getElementById('overlay');
+  const resultTitle = document.getElementById('resultTitle');
+  const resultMsg = document.getElementById('resultMsg');
+  const resultScore = document.getElementById('resultScore');
+  const startBtn = document.getElementById('startBtn');
+  const scoreEl = document.getElementById('score');
+  const timeEl = document.getElementById('time');
+  const comboEl = document.getElementById('combo');
+
+  const W = 360, H = 480;
+  function resize(){
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const r = cv.getBoundingClientRect();
+    cv.width  = Math.max(1, Math.round(r.width * dpr));
+    cv.height = Math.max(1, Math.round(r.height * dpr));
+    const sx = cv.width / W, sy = cv.height / H;
+    ctx.setTransform(sx, 0, 0, sy, 0, 0);
+  }
+  window.addEventListener('resize', resize);
+  window.addEventListener('orientationchange', resize);
+
+  const state = {
+    mode: 'ready',
+    player: { x: W/2, y: H - 50 },
+    bullets: [],
+    enemies: [],
+    particles: [],
+    score: 0,
+    combo: 0,
+    maxCombo: 0,
+    timeLeft: 30,
+    elapsed: 0,
+    spawnTimer: 0,
+    spawnInterval: 0.85,
+    cooldown: 0,
+    lastT: 0,
+    moveLeft: false,
+    moveRight: false,
+  };
+
+  const NEG_EMOJI = ['💢','⚡','😠','🌀','🧱'];
+  const HIT_EMOJI = ['🌸','✨','💖','🌷','💫'];
+
+  function resetGame(){
+    state.mode = 'playing';
+    state.bullets.length = 0;
+    state.enemies.length = 0;
+    state.particles.length = 0;
+    state.score = 0;
+    state.combo = 0;
+    state.maxCombo = 0;
+    state.timeLeft = 30;
+    state.elapsed = 0;
+    state.spawnTimer = 0;
+    state.spawnInterval = 0.85;
+    state.cooldown = 0;
+    state.player.x = W/2;
+    overlay.classList.add('hide');
+    resultScore.style.display = 'none';
+    updateHUD();
+  }
+
+  function updateHUD(){
+    scoreEl.textContent = state.score;
+    timeEl.textContent = Math.max(0, Math.ceil(state.timeLeft));
+    comboEl.textContent = '×' + state.combo;
+  }
+
+  function showComboPop(n){
+    comboPop.textContent = 'LOVE COMBO ×' + n;
+    comboPop.classList.remove('on');
+    void comboPop.offsetWidth;
+    comboPop.classList.add('on');
+    clearTimeout(comboPop._t);
+    comboPop._t = setTimeout(()=>comboPop.classList.remove('on'), 700);
+  }
+
+  function spawnEnemy(){
+    const x = 30 + Math.random() * (W - 60);
+    const e = NEG_EMOJI[(Math.random() * NEG_EMOJI.length) | 0];
+    const speed = 55 + Math.random() * 35 + state.elapsed * 1.3;
+    state.enemies.push({
+      x, y: -20, vy: speed,
+      type: e,
+      alive: true,
+      transform: 0,
+    });
+  }
+
+  function shoot(){
+    if (state.mode !== 'playing') return;
+    if (state.cooldown > 0) return;
+    state.cooldown = 0.16;
+    state.bullets.push({ x: state.player.x, y: state.player.y - 22, vy: -340 });
+    for (let i = 0; i < 3; i++){
+      state.particles.push({
+        x: state.player.x + (Math.random()-.5)*10,
+        y: state.player.y - 8,
+        vx: (Math.random()-.5)*30,
+        vy: 30 + Math.random()*30,
+        life: 0.4, age: 0,
+        type: 'dot', size: 6 + Math.random()*4,
+      });
+    }
+  }
+
+  function spawnHitParticles(x, y){
+    const N = 14;
+    for (let i = 0; i < N; i++){
+      const ang = Math.random() * Math.PI * 2;
+      const sp = 60 + Math.random() * 130;
+      state.particles.push({
+        x, y,
+        vx: Math.cos(ang)*sp,
+        vy: Math.sin(ang)*sp - 30,
+        life: 0.7 + Math.random()*0.4, age: 0,
+        type: 'emoji',
+        emoji: HIT_EMOJI[(Math.random()*HIT_EMOJI.length)|0],
+        size: 16 + Math.random()*10,
+      });
+    }
+    flash.classList.add('on');
+    clearTimeout(flash._t);
+    flash._t = setTimeout(()=>flash.classList.remove('on'), 110);
+  }
+
+  function endGame(){
+    state.mode = 'over';
+    let title, msg;
+    if (state.score >= 300){
+      title = '愛、無双';
+      msg = 'もう武器はいらない。届けば変わる。';
+    } else if (state.score >= 150){
+      title = 'LOVE WINS';
+      msg = '愛は、ちゃんと届く。';
+    } else if (state.score >= 50){
+      title = 'NICE LOVE';
+      msg = '争うより、変えた方が早い。';
+    } else {
+      title = 'GOOD START';
+      msg = '少しずつでいい。近づけた分だけ、世界は変わる。';
+    }
+    resultTitle.textContent = title;
+    resultMsg.innerHTML = msg + '<br><span class="small">MAX COMBO ×' + state.maxCombo + '</span>';
+    resultScore.style.display = 'block';
+    resultScore.textContent = state.score + ' pts';
+    startBtn.textContent = 'もう一度';
+    overlay.classList.remove('hide');
+  }
+
+  function update(dt){
+    if (state.mode !== 'playing') return;
+    state.elapsed += dt;
+    state.timeLeft -= dt;
+    if (state.timeLeft <= 0){
+      state.timeLeft = 0; updateHUD(); endGame(); return;
+    }
+    state.cooldown = Math.max(0, state.cooldown - dt);
+
+    const speed = 230;
+    let vx = 0;
+    if (state.moveLeft) vx -= speed;
+    if (state.moveRight) vx += speed;
+    state.player.x += vx * dt;
+    state.player.x = Math.max(22, Math.min(W-22, state.player.x));
+
+    for (const b of state.bullets) b.y += b.vy * dt;
+    state.bullets = state.bullets.filter(b => b.y > -20 && !b.dead);
+
+    state.spawnTimer += dt;
+    if (state.spawnTimer >= state.spawnInterval){
+      state.spawnTimer = 0;
+      state.spawnInterval = Math.max(0.34, 0.85 - state.elapsed * 0.018);
+      spawnEnemy();
+      if (state.elapsed > 12 && Math.random() < 0.32) spawnEnemy();
+    }
+
+    for (const e of state.enemies){
+      if (e.transform > 0){
+        e.transform = Math.min(1, e.transform + dt*3);
+      } else {
+        e.y += e.vy * dt;
+      }
+    }
+    let missed = 0;
+    state.enemies = state.enemies.filter(e => {
+      if (e.transform >= 1) return false;
+      if (e.y > H + 30){ if (e.alive && e.transform === 0) missed++; return false; }
+      return true;
+    });
+    if (missed > 0){
+      state.combo = 0;
+    }
+
+    for (const b of state.bullets){
+      for (const e of state.enemies){
+        if (!e.alive) continue;
+        if (Math.abs(b.x - e.x) < 22 && Math.abs(b.y - e.y) < 22){
+          e.alive = false;
+          e.transform = 0.001;
+          b.dead = true;
+          state.combo += 1;
+          state.score += 10 + (state.combo - 1) * 2;
+          state.maxCombo = Math.max(state.maxCombo, state.combo);
+          spawnHitParticles(e.x, e.y);
+          if (state.combo >= 3) showComboPop(state.combo);
+        }
+      }
+    }
+    state.bullets = state.bullets.filter(b => !b.dead);
+
+    for (const p of state.particles){
+      p.age += dt;
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.vy += 80 * dt;
+    }
+    state.particles = state.particles.filter(p => p.age < p.life);
+
+    updateHUD();
+  }
+
+  function drawCloud(x, y, r){
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI*2);
+    ctx.arc(x + r*0.8, y + 2, r*0.85, 0, Math.PI*2);
+    ctx.arc(x - r*0.8, y + 2, r*0.85, 0, Math.PI*2);
+    ctx.fill();
+  }
+
+  const EMOJI_FONT = '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji","Segoe UI Symbol",sans-serif';
+
+  function render(){
+    ctx.clearRect(0,0,W,H);
+
+    ctx.fillStyle = 'rgba(255,255,255,.55)';
+    drawCloud(60, 60, 16);
+    drawCloud(280, 90, 14);
+    drawCloud(200, 30, 10);
+    drawCloud(100, 200, 12);
+    drawCloud(320, 240, 10);
+    drawCloud(160, 360, 14);
+
+    ctx.fillStyle = 'rgba(255,255,255,.65)';
+    for (let i = 0; i < 24; i++){
+      const x = (i * 47) % W;
+      const y = (i * 73) % H;
+      ctx.fillRect(x, y, 1.5, 1.5);
+    }
+
+    ctx.font = '28px ' + EMOJI_FONT;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    for (const e of state.enemies){
+      if (e.transform > 0){
+        const k = e.transform;
+        ctx.globalAlpha = 1 - k;
+        ctx.fillText(e.type, e.x, e.y);
+        ctx.globalAlpha = k;
+        ctx.fillText('💖', e.x, e.y - k*4);
+        ctx.globalAlpha = 1;
+      } else {
+        ctx.fillText(e.type, e.x, e.y);
+      }
+    }
+
+    ctx.font = '22px ' + EMOJI_FONT;
+    for (const b of state.bullets){
+      ctx.fillText('💖', b.x, b.y);
+    }
+
+    for (const p of state.particles){
+      const k = 1 - p.age / p.life;
+      ctx.globalAlpha = Math.max(0, k);
+      if (p.type === 'emoji'){
+        ctx.font = p.size + 'px ' + EMOJI_FONT;
+        ctx.fillText(p.emoji, p.x, p.y);
+      } else {
+        ctx.fillStyle = '#ffd1e1';
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, Math.max(0.5, p.size * 0.3 * k), 0, Math.PI*2);
+        ctx.fill();
+      }
+    }
+    ctx.globalAlpha = 1;
+
+    const px = state.player.x, py = state.player.y;
+    const pulse = 1 + Math.sin(state.elapsed * 6) * 0.05;
+    ctx.fillStyle = 'rgba(255,140,180,.22)';
+    ctx.beginPath();
+    ctx.arc(px, py, 26 * pulse, 0, Math.PI*2);
+    ctx.fill();
+    ctx.font = '36px ' + EMOJI_FONT;
+    ctx.fillText('💗', px, py);
+  }
+
+  function loop(t){
+    if (!state.lastT) state.lastT = t;
+    const dt = Math.min(0.05, (t - state.lastT) / 1000);
+    state.lastT = t;
+    update(dt);
+    render();
+    requestAnimationFrame(loop);
+  }
+
+  // initial paint
+  resize();
+  requestAnimationFrame(loop);
+
+  // input — keyboard
+  startBtn.addEventListener('click', resetGame);
+  document.addEventListener('keydown', e => {
+    if ((state.mode === 'ready' || state.mode === 'over') && (e.code === 'Space' || e.code === 'Enter')){
+      resetGame(); e.preventDefault(); return;
+    }
+    if (e.code === 'ArrowLeft')  state.moveLeft  = true;
+    if (e.code === 'ArrowRight') state.moveRight = true;
+    if (e.code === 'Space'){ shoot(); e.preventDefault(); }
+  });
+  document.addEventListener('keyup', e => {
+    if (e.code === 'ArrowLeft')  state.moveLeft  = false;
+    if (e.code === 'ArrowRight') state.moveRight = false;
+  });
+
+  // input — touch / mouse for mobile buttons
+  function bindHold(btn, set){
+    const down = (ev) => { ev.preventDefault(); set(true); };
+    const up   = (ev) => { ev.preventDefault(); set(false); };
+    btn.addEventListener('touchstart', down, {passive:false});
+    btn.addEventListener('touchend',   up,   {passive:false});
+    btn.addEventListener('touchcancel',up,   {passive:false});
+    btn.addEventListener('mousedown',  down);
+    btn.addEventListener('mouseup',    up);
+    btn.addEventListener('mouseleave', up);
+  }
+  bindHold(document.getElementById('leftBtn'),  v => state.moveLeft  = v);
+  bindHold(document.getElementById('rightBtn'), v => state.moveRight = v);
+
+  const shootBtn = document.getElementById('shootBtn');
+  shootBtn.addEventListener('touchstart', e => { e.preventDefault(); shoot(); }, {passive:false});
+  shootBtn.addEventListener('mousedown',  e => { e.preventDefault(); shoot(); });
+
+  // expose a tiny test surface (used only for self-tests; harmless)
+  window.__loveshot = {
+    state,
+    resetGame,
+    shoot,
+    spawnEnemyAt(x, y){
+      state.enemies.push({x,y,vy:0,type:'💢',alive:true,transform:0});
+    },
+    setMove(left,right){ state.moveLeft=!!left; state.moveRight=!!right; },
+  };
+})();
+</script>
+</body>
+</html>
