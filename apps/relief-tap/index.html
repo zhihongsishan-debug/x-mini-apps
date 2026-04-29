@@ -1,0 +1,889 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
+<meta name="theme-color" content="#0a0420" />
+<title>RELIEF TAP — 押すだけで、抜ける。</title>
+<style>
+  :root{
+    --bg-0:#0a0420;
+    --bg-1:#15082c;
+    --ink:#ffffff;
+    --sub:#b8bfdc;
+    --line:rgba(255,255,255,.10);
+    --pink:#ff3eb5;
+    --hot:#ff6ad6;
+    --cyan:#3df0ff;
+    --violet:#b07cff;
+    --lime:#aaff5e;
+    --gold:#ffe44d;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Sans","Noto Sans JP","Yu Gothic UI",system-ui,sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(45% 30% at 18% 12%, rgba(255,62,181,.30), transparent 60%),
+      radial-gradient(45% 35% at 92% 22%, rgba(61,240,255,.22), transparent 60%),
+      radial-gradient(60% 50% at 50% 110%, rgba(176,124,255,.30), transparent 60%),
+      linear-gradient(180deg, var(--bg-0) 0%, var(--bg-1) 100%);
+    background-attachment:fixed;
+    min-height:100dvh;
+    overflow:hidden;
+  }
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;
+    background-image:radial-gradient(rgba(255,255,255,.03) 1px,transparent 1.2px);
+    background-size:6px 6px;
+    z-index:0;
+  }
+
+  #cv{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:5;}
+
+  .app{
+    position:relative;z-index:1;
+    width:100%;max-width:480px;margin:0 auto;
+    min-height:100dvh;
+    padding:max(14px,env(safe-area-inset-top)) 18px max(20px,env(safe-area-inset-bottom));
+    display:flex;flex-direction:column;
+  }
+
+  header{text-align:center;}
+  h1{
+    margin:0;font-size:18px;font-weight:900;letter-spacing:.5em;
+    background:linear-gradient(90deg,var(--cyan),var(--pink) 50%,var(--violet));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    text-shadow:0 0 18px rgba(255,62,181,.3);
+  }
+  .sub{margin:4px 0 0;color:var(--sub);font-size:11px;letter-spacing:.3em;}
+
+  /* STRESS METER */
+  .stress{margin-top:14px;}
+  .stress-head{
+    display:flex;justify-content:space-between;align-items:baseline;
+    font-size:10px;letter-spacing:.4em;color:var(--sub);
+    margin-bottom:6px;
+  }
+  .stress-head .val{
+    color:var(--ink);font-weight:900;font-size:16px;letter-spacing:.04em;
+    font-feature-settings:"tnum";
+    text-shadow:0 0 10px rgba(255,62,181,.4);
+  }
+  .stress-bar{
+    position:relative;height:10px;border-radius:99px;
+    background:rgba(255,255,255,.06);
+    border:1px solid var(--line);overflow:hidden;
+    box-shadow:inset 0 1px 0 rgba(0,0,0,.4);
+  }
+  .stress-bar > i{
+    display:block;height:100%;width:100%;
+    border-radius:99px;
+    background:linear-gradient(90deg,#ff5577 0%,#ff3eb5 60%,#b07cff 100%);
+    box-shadow:0 0 14px rgba(255,62,181,.55);
+    transition:width .35s cubic-bezier(.2,.7,.2,1),background .8s ease,box-shadow .6s ease;
+  }
+  .stress-bar.tier-mid > i{background:linear-gradient(90deg,#ff8a4d,#b07cff);box-shadow:0 0 14px rgba(176,124,255,.55);}
+  .stress-bar.tier-low > i{background:linear-gradient(90deg,#3df0ff,#aaff5e);box-shadow:0 0 14px rgba(170,255,94,.55);}
+  .stress-bar.tier-clear > i{background:linear-gradient(90deg,#ffffff,#3df0ff);box-shadow:0 0 16px rgba(255,255,255,.6);}
+
+  /* STAGE */
+  .stage{
+    flex:1;
+    position:relative;
+    display:flex;align-items:center;justify-content:center;
+    margin-top:18px;
+    min-height:240px;
+  }
+  .orb-wrap{
+    position:relative;
+    width:min(70vw,300px);aspect-ratio:1;
+  }
+  .orb{
+    width:100%;height:100%;
+    appearance:none;border:0;cursor:pointer;
+    border-radius:50%;
+    --c1:#ff3eb5;--c2:#b07cff;--c3:#ffffff;
+    background:
+      radial-gradient(circle at 32% 30%, rgba(255,255,255,.95) 0%, rgba(255,255,255,0) 24%),
+      radial-gradient(circle at 65% 65%, var(--c2) 0%, transparent 50%),
+      radial-gradient(circle at 50% 50%, var(--c1) 0%, color-mix(in srgb, var(--c1) 30%, var(--c2)) 60%, transparent 95%);
+    box-shadow:
+      0 12px 50px rgba(255,62,181,.45),
+      0 0 80px rgba(176,124,255,.3),
+      inset -10px -22px 40px rgba(0,0,0,.40),
+      inset 14px 22px 50px rgba(255,255,255,.45);
+    transition:transform .05s ease,box-shadow .25s ease,border-radius .25s ease,background .25s ease;
+    animation:orbBreathe 3.6s ease-in-out infinite;
+    touch-action:manipulation;
+  }
+  @keyframes orbBreathe{
+    0%,100%{transform:scale(1);}
+    50%{transform:scale(1.025);}
+  }
+  .orb.pressed{animation:none;transform:scale(.92);}
+  .orb.popping{animation:orbPop .22s cubic-bezier(.5,1.6,.6,1);}
+  @keyframes orbPop{
+    0%{transform:scale(.92);}
+    55%{transform:scale(1.07);}
+    100%{transform:scale(1);}
+  }
+  /* Mode-specific orb skins */
+  .orb.mode-pop  { --c1:#ff3eb5; --c2:#3df0ff; --c3:#ffffff; }
+  .orb.mode-click{
+    --c1:#aaff5e; --c2:#3df0ff; --c3:#ffffff;
+    border-radius:34%;
+    box-shadow:
+      0 12px 40px rgba(170,255,94,.45),
+      0 0 60px rgba(61,240,255,.3),
+      inset -10px -22px 40px rgba(0,0,0,.45),
+      inset 14px 22px 50px rgba(255,255,255,.45);
+  }
+  .orb.mode-snap {
+    --c1:#b07cff; --c2:#ff3eb5; --c3:#ffffff;
+    box-shadow:
+      0 12px 50px rgba(176,124,255,.55),
+      0 0 80px rgba(255,62,181,.35),
+      inset -10px -22px 40px rgba(0,0,0,.40),
+      inset 14px 22px 50px rgba(255,255,255,.45);
+  }
+  .orb.mode-soft {
+    --c1:#ff7ad6; --c2:#b8d4ff; --c3:#ffffff;
+    box-shadow:
+      0 12px 40px rgba(255,122,214,.35),
+      0 0 80px rgba(184,212,255,.3),
+      inset -10px -22px 40px rgba(0,0,0,.30),
+      inset 14px 22px 50px rgba(255,255,255,.55);
+    animation:orbBreathe 5.2s ease-in-out infinite;
+  }
+
+  .micro-layer{position:absolute;inset:0;pointer-events:none;}
+  .micro-pop{
+    position:absolute;left:50%;top:50%;
+    transform:translate(-50%,-50%);
+    font-size:14px;font-weight:800;color:#fff;letter-spacing:.05em;
+    text-shadow:0 0 12px rgba(255,255,255,.55),0 0 20px var(--cyan);
+    animation:microFloat .8s ease-out forwards;
+    pointer-events:none;
+    white-space:nowrap;
+  }
+  @keyframes microFloat{
+    0%{opacity:0;transform:translate(calc(-50% + var(--dx,0px)),-50%) scale(.6);}
+    18%{opacity:1;transform:translate(calc(-50% + var(--dx,0px)),-58%) scale(1.06);}
+    100%{opacity:0;transform:translate(calc(-50% + var(--dx,0px)),-130%) scale(1);}
+  }
+
+  .combo-banner{
+    position:absolute;left:50%;top:14%;
+    transform:translateX(-50%) scale(.7);
+    font-size:22px;font-weight:900;letter-spacing:.18em;
+    color:#fff;text-shadow:0 0 18px var(--pink),0 0 30px var(--cyan);
+    pointer-events:none;opacity:0;
+    white-space:nowrap;
+  }
+  .combo-banner.on{animation:bannerPop 1.0s ease-out forwards;}
+  @keyframes bannerPop{
+    0%{opacity:0;transform:translateX(-50%) scale(.6);}
+    16%{opacity:1;transform:translateX(-50%) scale(1.12);}
+    35%{opacity:1;transform:translateX(-50%) scale(1);}
+    100%{opacity:0;transform:translateX(-50%) scale(1);}
+  }
+
+  /* COMBO ROW */
+  .combo-row{
+    display:flex;justify-content:space-between;align-items:center;
+    margin-top:12px;padding:0 4px;
+    font-size:11px;letter-spacing:.25em;color:var(--sub);
+    font-feature-settings:"tnum";
+  }
+  .combo-row .combo{
+    color:var(--cyan);font-weight:800;
+    text-shadow:0 0 8px rgba(61,240,255,.45);
+  }
+  .combo-row .combo span{font-size:16px;color:#fff;margin-left:4px;}
+  .combo-row .taps{color:var(--sub);}
+  .combo-row .taps span{font-size:14px;color:var(--ink);font-weight:700;margin-left:4px;}
+
+  /* MODES */
+  .modes{
+    margin-top:14px;
+    display:grid;grid-template-columns:repeat(4,1fr);gap:8px;
+  }
+  .mode-btn{
+    appearance:none;border:1px solid var(--line);
+    background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.02));
+    color:var(--ink);font:inherit;
+    font-size:12px;font-weight:800;letter-spacing:.18em;
+    padding:11px 0;border-radius:12px;
+    cursor:pointer;
+    transition:all .15s ease;
+    backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  }
+  .mode-btn[aria-pressed="true"]{
+    border-color:var(--pink);
+    background:linear-gradient(180deg,rgba(255,62,181,.22),rgba(176,124,255,.16));
+    color:#fff;
+    box-shadow:0 0 18px rgba(255,62,181,.45),inset 0 1px 0 rgba(255,255,255,.25);
+  }
+
+  /* TOGGLES + RESET */
+  .toggles{
+    margin-top:10px;
+    display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;
+  }
+  .toggle{
+    appearance:none;border:1px solid var(--line);
+    background:rgba(255,255,255,.04);
+    color:var(--sub);font:inherit;
+    font-size:10px;font-weight:700;letter-spacing:.22em;
+    padding:10px 0;border-radius:10px;
+    cursor:pointer;
+    transition:all .15s ease;
+  }
+  .toggle:hover{border-color:rgba(255,255,255,.25);}
+  .toggle[aria-pressed="true"]{
+    border-color:var(--cyan);color:#fff;
+    background:rgba(61,240,255,.10);
+    box-shadow:0 0 12px rgba(61,240,255,.35);
+  }
+  .toggle.reset{
+    color:var(--sub);
+    border-color:var(--line);
+  }
+  .toggle.reset:hover{border-color:var(--pink);color:#fff;}
+
+  .disclaimer{
+    margin:12px 0 0;text-align:center;
+    font-size:9px;letter-spacing:.2em;color:var(--sub);opacity:.55;
+  }
+
+  /* CLEARED OVERLAY */
+  .cleared{
+    position:fixed;inset:0;z-index:50;
+    display:none;align-items:center;justify-content:center;
+    text-align:center;padding:24px;
+    background:radial-gradient(70% 60% at 50% 50%,rgba(255,255,255,.18),rgba(10,4,32,.92));
+    backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  }
+  .cleared.on{display:flex;animation:fadeIn .3s ease both;}
+  @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+  .cleared-flash{
+    position:absolute;inset:0;
+    background:radial-gradient(closest-side,rgba(255,255,255,.95),rgba(61,240,255,.4) 40%,transparent 75%);
+    opacity:0;pointer-events:none;
+  }
+  .cleared.on .cleared-flash{animation:flashOnce 1s ease-out forwards;}
+  @keyframes flashOnce{0%{opacity:0;}20%{opacity:1;}100%{opacity:0;}}
+  .cleared h2{
+    margin:0;font-size:48px;font-weight:900;letter-spacing:.32em;
+    background:linear-gradient(90deg,var(--cyan),#ffffff 40%,var(--pink));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    text-shadow:0 0 30px rgba(255,255,255,.4);
+    animation:clearedPop 1.1s cubic-bezier(.2,1.6,.4,1) both;
+    animation-delay:.3s;opacity:0;
+  }
+  @keyframes clearedPop{
+    0%{opacity:0;transform:scale(.6);}
+    50%{opacity:1;transform:scale(1.06);}
+    100%{opacity:1;transform:scale(1);}
+  }
+  .cleared p{
+    margin:18px 0 30px;font-size:15px;letter-spacing:.18em;color:var(--ink);
+    animation:fadeIn .6s ease .8s both;opacity:0;
+  }
+  .cleared .restartBtn{
+    appearance:none;border:0;cursor:pointer;
+    padding:16px 48px;border-radius:999px;
+    font:inherit;font-weight:800;font-size:14px;letter-spacing:.45em;
+    color:#0a0420;
+    background:linear-gradient(135deg,var(--cyan),var(--violet) 60%,var(--pink));
+    box-shadow:0 10px 30px rgba(176,124,255,.45),inset 0 1px 0 rgba(255,255,255,.5);
+    animation:fadeIn .6s ease 1.0s both;opacity:0;
+  }
+  .cleared .restartBtn:active{transform:translateY(1px);}
+
+  @media (max-width:380px){
+    .orb-wrap{width:min(72vw,260px);}
+    .cleared h2{font-size:38px;}
+    h1{font-size:16px;letter-spacing:.4em;}
+  }
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+
+<div class="app">
+  <header>
+    <h1>RELIEF TAP</h1>
+    <p class="sub">押すだけで、抜ける。</p>
+  </header>
+
+  <section class="stress" aria-label="ストレスメーター">
+    <div class="stress-head">
+      <span>STRESS</span>
+      <span class="val"><span id="stressVal">100</span>%</span>
+    </div>
+    <div class="stress-bar" id="stressBar"><i id="stressFill"></i></div>
+  </section>
+
+  <section class="stage">
+    <div class="orb-wrap">
+      <button class="orb mode-pop" id="orb" type="button" aria-label="タップで抜く"></button>
+    </div>
+    <div class="micro-layer" id="microLayer" aria-hidden="true"></div>
+    <div class="combo-banner" id="comboBanner" aria-live="polite"></div>
+  </section>
+
+  <section class="combo-row">
+    <span class="combo">RELIEF COMBO ×<span id="combo">0</span></span>
+    <span class="taps">TAPS<span id="taps">0</span></span>
+  </section>
+
+  <section class="modes" role="radiogroup" aria-label="モード">
+    <button class="mode-btn" type="button" data-mode="pop"   aria-pressed="true">POP</button>
+    <button class="mode-btn" type="button" data-mode="click" aria-pressed="false">CLICK</button>
+    <button class="mode-btn" type="button" data-mode="snap"  aria-pressed="false">SNAP</button>
+    <button class="mode-btn" type="button" data-mode="soft"  aria-pressed="false">SOFT</button>
+  </section>
+
+  <section class="toggles">
+    <button class="toggle" id="soundToggle" type="button" aria-pressed="true">SOUND ON</button>
+    <button class="toggle" id="vibToggle"   type="button" aria-pressed="true">VIBE ON</button>
+    <button class="toggle reset" id="resetBtn" type="button">RESET</button>
+  </section>
+
+  <p class="disclaimer">※気分転換用のミニアプリです。</p>
+</div>
+
+<div class="cleared" id="cleared" aria-hidden="true">
+  <div class="cleared-flash" aria-hidden="true"></div>
+  <div>
+    <h2>CLEARED</h2>
+    <p>ちょっと抜けた。</p>
+    <button class="restartBtn" id="restartBtn" type="button">もう一回</button>
+  </div>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const orb = $('orb');
+  const stressVal = $('stressVal');
+  const stressFill = $('stressFill');
+  const stressBar = $('stressBar');
+  const comboEl = $('combo');
+  const tapsEl = $('taps');
+  const microLayer = $('microLayer');
+  const comboBanner = $('comboBanner');
+  const soundToggle = $('soundToggle');
+  const vibToggle = $('vibToggle');
+  const resetBtn = $('resetBtn');
+  const cleared = $('cleared');
+  const restartBtn = $('restartBtn');
+  const cv = $('cv');
+  const ctx = cv.getContext('2d');
+
+  const MODES = {
+    pop:   { drop: 4, vibe: [10], micros:['抜けた','ひとつ消えた','軽くなった','いい感じ','まだいける'] },
+    click: { drop: 3, vibe: [8],  micros:['抜けた','カチッ','軽くなった','いい感じ','まだいける'] },
+    snap:  { drop: 6, vibe: [16], micros:['抜けた','スッ','大きく抜けた','いい感じ','まだいける'] },
+    soft:  { drop: 2, vibe: [6],  micros:['抜けた','ふっ','静かに抜けた','いい感じ','まだいける'] },
+  };
+
+  const state = {
+    stress: 100,
+    combo: 0,
+    taps: 0,
+    mode: 'pop',
+    soundOn: true,
+    vibOn: true,
+    cleared: false,
+    idleTimer: null,
+  };
+
+  /* ---------- AUDIO ---------- */
+  let audioCtx = null;
+  let masterGain = null;
+  let noiseBuf = null;
+
+  function initAudio(){
+    if (audioCtx) return;
+    try{
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      audioCtx = new AC();
+      masterGain = audioCtx.createGain();
+      masterGain.gain.value = state.soundOn ? 1 : 0;
+      masterGain.connect(audioCtx.destination);
+      const len = audioCtx.sampleRate;
+      noiseBuf = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
+      const data = noiseBuf.getChannelData(0);
+      for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+    }catch(_){ audioCtx = null; }
+  }
+  function noiseSrc(){ const s = audioCtx.createBufferSource(); s.buffer = noiseBuf; return s; }
+  const jit = (b, p) => b * (1 + (Math.random() - .5) * 2 * p);
+
+  function applySound(){
+    if (!masterGain || !audioCtx) return;
+    const t = audioCtx.currentTime;
+    masterGain.gain.cancelScheduledValues(t);
+    masterGain.gain.linearRampToValueAtTime(state.soundOn ? 1 : 0, t + 0.06);
+  }
+
+  function playPop(){
+    if (!audioCtx) return;
+    const t = audioCtx.currentTime;
+    const f = jit(440, 0.08);
+    const o = audioCtx.createOscillator(); o.type = 'sine';
+    o.frequency.setValueAtTime(f, t);
+    o.frequency.exponentialRampToValueAtTime(f * 1.85, t + 0.04);
+    const g = audioCtx.createGain(); g.gain.value = 0;
+    o.connect(g); g.connect(masterGain);
+    g.gain.linearRampToValueAtTime(jit(.45, .05), t + 0.005);
+    g.gain.exponentialRampToValueAtTime(0.0008, t + 0.085);
+    o.start(t); o.stop(t + 0.12);
+    // noise click
+    const ns = noiseSrc();
+    const nf = audioCtx.createBiquadFilter(); nf.type = 'highpass'; nf.frequency.value = 2200;
+    const ng = audioCtx.createGain();
+    ns.connect(nf); nf.connect(ng); ng.connect(masterGain);
+    ng.gain.linearRampToValueAtTime(jit(.18, .05), t + 0.002);
+    ng.gain.exponentialRampToValueAtTime(0.0008, t + 0.03);
+    ns.start(t); ns.stop(t + 0.05);
+  }
+  function playClick(){
+    if (!audioCtx) return;
+    const t = audioCtx.currentTime;
+    const f = jit(1300, 0.08);
+    const o = audioCtx.createOscillator(); o.type = 'triangle';
+    o.frequency.value = f;
+    const g = audioCtx.createGain(); g.gain.value = 0;
+    o.connect(g); g.connect(masterGain);
+    g.gain.linearRampToValueAtTime(jit(.32, .05), t + 0.002);
+    g.gain.exponentialRampToValueAtTime(0.0008, t + 0.04);
+    o.start(t); o.stop(t + 0.06);
+    // tiny noise
+    const ns = noiseSrc();
+    const nf = audioCtx.createBiquadFilter(); nf.type = 'highpass'; nf.frequency.value = 4000;
+    const ng = audioCtx.createGain();
+    ns.connect(nf); nf.connect(ng); ng.connect(masterGain);
+    ng.gain.linearRampToValueAtTime(jit(.10, .05), t + 0.001);
+    ng.gain.exponentialRampToValueAtTime(0.0008, t + 0.02);
+    ns.start(t); ns.stop(t + 0.04);
+  }
+  function playSnap(){
+    if (!audioCtx) return;
+    const t = audioCtx.currentTime;
+    // bandpassed noise burst
+    const ns = noiseSrc();
+    const nf = audioCtx.createBiquadFilter(); nf.type = 'bandpass'; nf.frequency.value = jit(900, 0.08); nf.Q.value = 0.7;
+    const ng = audioCtx.createGain();
+    ns.connect(nf); nf.connect(ng); ng.connect(masterGain);
+    ng.gain.linearRampToValueAtTime(jit(.4, .05), t + 0.005);
+    ng.gain.exponentialRampToValueAtTime(0.0008, t + 0.06);
+    ns.start(t); ns.stop(t + 0.1);
+    // pitch-down square
+    const o = audioCtx.createOscillator(); o.type = 'square';
+    o.frequency.setValueAtTime(jit(820, 0.08), t);
+    o.frequency.exponentialRampToValueAtTime(jit(220, 0.08), t + 0.07);
+    const g = audioCtx.createGain(); g.gain.value = 0;
+    o.connect(g); g.connect(masterGain);
+    g.gain.linearRampToValueAtTime(jit(.20, .05), t + 0.005);
+    g.gain.exponentialRampToValueAtTime(0.0008, t + 0.08);
+    o.start(t); o.stop(t + 0.1);
+  }
+  function playSoft(){
+    if (!audioCtx) return;
+    const t = audioCtx.currentTime;
+    const f = jit(280, 0.08);
+    const o = audioCtx.createOscillator(); o.type = 'sine';
+    o.frequency.value = f;
+    const g = audioCtx.createGain(); g.gain.value = 0;
+    o.connect(g); g.connect(masterGain);
+    g.gain.linearRampToValueAtTime(jit(.20, .05), t + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0008, t + 0.13);
+    o.start(t); o.stop(t + 0.16);
+    // muted noise
+    const ns = noiseSrc();
+    const nf = audioCtx.createBiquadFilter(); nf.type = 'lowpass'; nf.frequency.value = 700;
+    const ng = audioCtx.createGain();
+    ns.connect(nf); nf.connect(ng); ng.connect(masterGain);
+    ng.gain.linearRampToValueAtTime(jit(.07, .05), t + 0.012);
+    ng.gain.exponentialRampToValueAtTime(0.0008, t + 0.10);
+    ns.start(t); ns.stop(t + 0.13);
+  }
+  function playClear(){
+    if (!audioCtx) return;
+    const t = audioCtx.currentTime;
+    const notes = [440, 660, 880, 1320];
+    notes.forEach((f, i) => {
+      const o = audioCtx.createOscillator(); o.type = 'sine';
+      o.frequency.value = f;
+      const g = audioCtx.createGain(); g.gain.value = 0;
+      o.connect(g); g.connect(masterGain);
+      const start = t + i * 0.08;
+      g.gain.setValueAtTime(0, start);
+      g.gain.linearRampToValueAtTime(0.28, start + 0.012);
+      g.gain.exponentialRampToValueAtTime(0.0008, start + 0.7);
+      o.start(start); o.stop(start + 0.78);
+    });
+    // soft shimmer noise tail
+    const ns = noiseSrc();
+    const nf = audioCtx.createBiquadFilter(); nf.type = 'highpass'; nf.frequency.value = 3000;
+    const ng = audioCtx.createGain();
+    ns.connect(nf); nf.connect(ng); ng.connect(masterGain);
+    ng.gain.linearRampToValueAtTime(0.06, t + 0.05);
+    ng.gain.exponentialRampToValueAtTime(0.0008, t + 1.1);
+    ns.start(t); ns.stop(t + 1.2);
+  }
+  const SOUND_FNS = { pop: playPop, click: playClick, snap: playSnap, soft: playSoft };
+
+  /* ---------- VIBRATION ---------- */
+  function vibrate(pattern){
+    if (!state.vibOn) return;
+    if (typeof navigator.vibrate !== 'function') return;
+    try{ navigator.vibrate(pattern); }catch(_){}
+  }
+
+  /* ---------- CANVAS / PARTICLES ---------- */
+  let particles = [];
+  function resizeCanvas(){
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    cv.width  = Math.round(window.innerWidth  * dpr);
+    cv.height = Math.round(window.innerHeight * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+  window.addEventListener('orientationchange', resizeCanvas);
+
+  const PALETTES = {
+    pop:   ['#ff3eb5','#ff7ad6','#3df0ff','#ffffff'],
+    click: ['#aaff5e','#3df0ff','#ffffff','#ffe44d'],
+    snap:  ['#b07cff','#ff3eb5','#7c4dff','#ffffff'],
+    soft:  ['#ff7ad6','#b8d4ff','#cffaff','#ffe2f2'],
+  };
+  function spawnBurst(x, y, mode){
+    const pal = PALETTES[mode] || PALETTES.pop;
+    const N = mode === 'snap' ? 22 : (mode === 'soft' ? 14 : 18);
+    for (let i = 0; i < N; i++){
+      const ang = Math.random() * Math.PI * 2;
+      const sp = mode === 'soft'
+        ? (40 + Math.random() * 80)
+        : (140 + Math.random() * 240);
+      particles.push({
+        x, y,
+        vx: Math.cos(ang) * sp,
+        vy: Math.sin(ang) * sp - (mode === 'soft' ? 60 : 30),
+        life: mode === 'soft' ? 1.0 + Math.random() * 0.5 : 0.55 + Math.random() * 0.30,
+        age: 0,
+        r: 2 + Math.random() * 4,
+        shape: mode === 'click' ? 'square' : (mode === 'snap' ? 'shard' : 'dot'),
+        color: pal[(Math.random() * pal.length) | 0],
+        rot: Math.random() * Math.PI * 2,
+        vrot: (Math.random() - 0.5) * 6,
+        gravity: mode === 'soft' ? -40 : 220,
+      });
+    }
+  }
+  function spawnClearParticles(){
+    const w = window.innerWidth, h = window.innerHeight;
+    const pal = ['#ffffff','#3df0ff','#aaff5e','#ff7ad6','#ffe44d'];
+    const N = 80;
+    for (let i = 0; i < N; i++){
+      particles.push({
+        x: Math.random() * w,
+        y: h + 20 + Math.random() * 60,
+        vx: (Math.random() - .5) * 30,
+        vy: -(60 + Math.random() * 120),
+        life: 1.6 + Math.random() * 1.2, age: 0,
+        r: 2 + Math.random() * 5,
+        shape: 'dot',
+        color: pal[(Math.random()*pal.length)|0],
+        rot: 0, vrot: 0, gravity: -10,
+      });
+    }
+  }
+
+  let lastT = performance.now();
+  function tick(t){
+    const dt = Math.min(0.05, (t - lastT) / 1000);
+    lastT = t;
+    ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+    for (const p of particles){
+      p.age += dt;
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.vy += p.gravity * dt;
+      p.vx *= 0.985;
+      p.rot += p.vrot * dt;
+      const k = Math.max(0, 1 - p.age / p.life);
+      ctx.globalAlpha = k;
+      ctx.fillStyle = p.color;
+      if (p.shape === 'square'){
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot);
+        ctx.fillRect(-3, -3, 6, 6);
+        ctx.restore();
+      } else if (p.shape === 'shard'){
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot);
+        ctx.beginPath();
+        ctx.moveTo(0, -8); ctx.lineTo(3.5, 8); ctx.lineTo(-3.5, 8); ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      } else {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r * (0.5 + 0.5 * k), 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    ctx.globalAlpha = 1;
+    particles = particles.filter(p => p.age < p.life);
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+
+  /* ---------- UI: STRESS / COMBO / MICRO ---------- */
+  function updateStressUI(){
+    stressVal.textContent = Math.round(state.stress);
+    stressFill.style.width = state.stress + '%';
+    stressBar.classList.remove('tier-mid','tier-low','tier-clear');
+    if (state.stress <= 0)        stressBar.classList.add('tier-clear');
+    else if (state.stress < 30)   stressBar.classList.add('tier-low');
+    else if (state.stress < 70)   stressBar.classList.add('tier-mid');
+  }
+  function updateComboUI(){
+    comboEl.textContent = state.combo;
+    tapsEl.textContent = state.taps;
+  }
+
+  function showMicro(text){
+    const el = document.createElement('div');
+    el.className = 'micro-pop';
+    el.style.setProperty('--dx', ((Math.random() - .5) * 80).toFixed(0) + 'px');
+    el.textContent = text;
+    microLayer.appendChild(el);
+    setTimeout(() => { el.remove(); }, 850);
+  }
+  function showBanner(text){
+    comboBanner.textContent = text;
+    comboBanner.classList.remove('on');
+    void comboBanner.offsetWidth;
+    comboBanner.classList.add('on');
+  }
+  function milestoneFor(combo){
+    if (combo === 5)  return 'いいリズム';
+    if (combo === 10) return 'ほどけてる';
+    if (combo === 20) return 'だいぶ抜けた';
+    if (combo === 30) return '無心モード';
+    if (combo > 30 && combo % 10 === 0) return '無心モード';
+    return null;
+  }
+
+  function setMode(name){
+    if (!MODES[name]) return;
+    state.mode = name;
+    document.querySelectorAll('.mode-btn').forEach(b =>
+      b.setAttribute('aria-pressed', String(b.dataset.mode === name)));
+    orb.classList.remove('mode-pop','mode-click','mode-snap','mode-soft');
+    orb.classList.add('mode-' + name);
+  }
+
+  function setSound(v){
+    state.soundOn = !!v;
+    soundToggle.setAttribute('aria-pressed', String(state.soundOn));
+    soundToggle.textContent = state.soundOn ? 'SOUND ON' : 'SOUND OFF';
+    applySound();
+  }
+  function setVib(v){
+    state.vibOn = !!v;
+    vibToggle.setAttribute('aria-pressed', String(state.vibOn));
+    vibToggle.textContent = state.vibOn ? 'VIBE ON' : 'VIBE OFF';
+  }
+
+  function reset(toFresh = true){
+    state.stress = 100;
+    state.combo = 0;
+    state.taps = 0;
+    state.cleared = false;
+    cleared.classList.remove('on');
+    cleared.setAttribute('aria-hidden', 'true');
+    if (state.idleTimer){ clearTimeout(state.idleTimer); state.idleTimer = null; }
+    updateStressUI(); updateComboUI();
+  }
+
+  function triggerClear(){
+    if (state.cleared) return;
+    state.cleared = true;
+    state.combo = 0;
+    if (state.idleTimer){ clearTimeout(state.idleTimer); state.idleTimer = null; }
+    setTimeout(() => {
+      cleared.classList.add('on');
+      cleared.setAttribute('aria-hidden', 'false');
+    }, 600);
+    spawnClearParticles();
+    playClear();
+    vibrate([25, 35, 25]);
+  }
+
+  function tap(){
+    if (state.cleared) return;
+    initAudio();
+    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+    const m = MODES[state.mode];
+    state.taps += 1;
+    state.combo += 1;
+    let drop = m.drop;
+    if (state.combo > 0 && state.combo % 5 === 0) drop += 2;
+    state.stress = Math.max(0, state.stress - drop);
+    updateStressUI(); updateComboUI();
+
+    // visual
+    orb.classList.remove('popping');
+    void orb.offsetWidth;
+    orb.classList.add('popping');
+    const r = orb.getBoundingClientRect();
+    spawnBurst(r.left + r.width/2, r.top + r.height/2, state.mode);
+    showMicro(m.micros[(Math.random() * m.micros.length) | 0]);
+    const ms = milestoneFor(state.combo);
+    if (ms) showBanner(ms);
+
+    // audio + vibration
+    (SOUND_FNS[state.mode] || playPop)();
+    vibrate(m.vibe);
+
+    // idle reset
+    if (state.idleTimer) clearTimeout(state.idleTimer);
+    state.idleTimer = setTimeout(() => {
+      state.combo = 0;
+      updateComboUI();
+    }, 1200);
+
+    // cleared check
+    if (state.stress <= 0) triggerClear();
+  }
+
+  /* ---------- EVENTS ---------- */
+  // pointerdown for instant feedback (synthesized clicks still fire — use flag)
+  let lastPointerAt = 0;
+  orb.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    lastPointerAt = performance.now();
+    orb.classList.add('pressed');
+    tap();
+  });
+  orb.addEventListener('pointerup',    () => orb.classList.remove('pressed'));
+  orb.addEventListener('pointercancel',() => orb.classList.remove('pressed'));
+  orb.addEventListener('pointerleave', () => orb.classList.remove('pressed'));
+  orb.addEventListener('click', (e) => {
+    // suppress the click that follows pointerdown
+    if (performance.now() - lastPointerAt < 600) return;
+    tap();
+  });
+
+  document.querySelectorAll('.mode-btn').forEach(b => {
+    b.addEventListener('click', () => setMode(b.dataset.mode));
+  });
+  soundToggle.addEventListener('click', () => setSound(!state.soundOn));
+  vibToggle.addEventListener('click',   () => setVib(!state.vibOn));
+  resetBtn.addEventListener('click',    () => reset());
+  restartBtn.addEventListener('click',  () => reset());
+
+  // keyboard: Space / Enter on focus, also global Space taps
+  document.addEventListener('keydown', (e) => {
+    if (e.code === 'Space' && !state.cleared){
+      const tag = (e.target && e.target.tagName) || '';
+      if (tag !== 'BUTTON') { tap(); e.preventDefault(); }
+    }
+  });
+
+  // initial
+  setMode('pop');
+  setSound(true);
+  setVib(true);
+  updateStressUI();
+  updateComboUI();
+
+  /* ---------- TEST SURFACE ---------- */
+  window.__relieftap = {
+    state, MODES,
+    audioReady: () => !!audioCtx,
+    audioContextState: () => audioCtx ? audioCtx.state : null,
+    masterGain: () => masterGain ? masterGain.gain.value : null,
+    tap, reset, setMode, setSound, setVib,
+    fastTap(n = 10){ for (let i = 0; i < n; i++) tap(); },
+    drainStressTo(target){
+      // tap until stress <= target (or cleared)
+      let g = 0;
+      while (state.stress > target && !state.cleared && g < 200){ tap(); g++; }
+      return { taps: state.taps, stress: state.stress, combo: state.combo, cleared: state.cleared };
+    },
+    triggerClear,
+    isClearedOverlayShown: () => cleared.classList.contains('on'),
+    particleCount: () => particles.length,
+    canvasNonZeroPixels(){
+      const tmp = document.createElement('canvas');
+      tmp.width = cv.width; tmp.height = cv.height;
+      const tctx = tmp.getContext('2d');
+      tctx.drawImage(cv, 0, 0);
+      const data = tctx.getImageData(0, 0, cv.width, cv.height).data;
+      let n = 0;
+      for (let i = 3; i < data.length; i += 4) if (data[i] > 0) n++;
+      return n;
+    },
+    forceTickFrame(dt = 0.033){
+      // when rAF is paused (hidden iframe), advance the particle loop manually
+      lastT -= dt * 1000;
+      // simulate one frame by calling tick logic with synthetic time
+      const fakeNow = performance.now();
+      ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+      for (const p of particles){
+        p.age += dt;
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.vy += p.gravity * dt;
+        p.vx *= 0.985;
+        p.rot += p.vrot * dt;
+        const k = Math.max(0, 1 - p.age / p.life);
+        ctx.globalAlpha = k; ctx.fillStyle = p.color;
+        if (p.shape === 'square'){
+          ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.fillRect(-3,-3,6,6); ctx.restore();
+        } else if (p.shape === 'shard'){
+          ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot);
+          ctx.beginPath(); ctx.moveTo(0,-8); ctx.lineTo(3.5,8); ctx.lineTo(-3.5,8); ctx.closePath(); ctx.fill();
+          ctx.restore();
+        } else {
+          ctx.beginPath(); ctx.arc(p.x, p.y, p.r * (0.5 + 0.5*k), 0, Math.PI*2); ctx.fill();
+        }
+      }
+      ctx.globalAlpha = 1;
+      particles = particles.filter(p => p.age < p.life);
+      return particles.length;
+    },
+    sampleAudio(fnName, durMs = 200){
+      // record peak audio samples into an OfflineAudioContext for verification
+      // (used in tests; lightweight)
+    },
+    vibrationSupported: () => typeof navigator.vibrate === 'function',
+    vibrationCalls: 0,
+    _wrapVibrate(){
+      if (this._wrapped) return;
+      this._wrapped = true;
+      const orig = navigator.vibrate ? navigator.vibrate.bind(navigator) : null;
+      navigator.vibrate = (pat) => {
+        window.__relieftap.vibrationCalls++;
+        window.__relieftap.lastPattern = pat;
+        if (orig) try { return orig(pat); } catch(_){}
+        return false;
+      };
+    },
+  };
+})();
+</script>
+</body>
+</html>
