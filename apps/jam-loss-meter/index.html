@@ -1,0 +1,642 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
+<meta name="theme-color" content="#0a0a0a" />
+<title>JAM LOSS METER — その渋滞、何を失ってる？</title>
+<style>
+  :root{
+    --bg-0:#050505;
+    --bg-1:#0c0c0c;
+    --bg-2:#141414;
+    --ink:#e8e8e8;
+    --sub:#8a8a8a;
+    --dim:#303030;
+    --amber:#ffb000;
+    --amber-glow:rgba(255,176,0,.65);
+    --green:#00ff70;
+    --green-glow:rgba(0,255,112,.55);
+    --red:#ff3344;
+    --red-glow:rgba(255,51,68,.6);
+    --line:rgba(255,255,255,.07);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    font-family:ui-monospace,"SF Mono","Menlo","Consolas","Liberation Mono","Hiragino Sans","Noto Sans JP","Yu Gothic UI",monospace,sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(circle at 50% 0%, rgba(255,176,0,.06), transparent 60%),
+      linear-gradient(180deg, var(--bg-0), var(--bg-1) 50%, var(--bg-2));
+    background-attachment:fixed;
+    min-height:100dvh;
+    overflow-x:hidden;
+  }
+  body::before{
+    content:"";position:fixed;inset:0;
+    background-image:radial-gradient(rgba(255,176,0,.08) 1px, transparent 1.2px);
+    background-size:4px 4px;
+    pointer-events:none;
+    -webkit-mask-image:radial-gradient(circle at 50% 30%, #000 20%, transparent 80%);
+            mask-image:radial-gradient(circle at 50% 30%, #000 20%, transparent 80%);
+    z-index:0;
+  }
+  .wrap{
+    max-width:480px;margin:0 auto;
+    padding:max(14px,env(safe-area-inset-top)) 16px max(20px,env(safe-area-inset-bottom));
+    min-height:100dvh;
+    display:flex;flex-direction:column;
+    position:relative;z-index:1;
+  }
+
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;
+    border:1px solid var(--line);
+    background:linear-gradient(180deg,rgba(255,176,0,.05),transparent);
+    padding:8px 12px;border-radius:8px;
+    font-size:10px;letter-spacing:.35em;color:var(--sub);
+  }
+  .topbar .dot{
+    display:inline-block;width:8px;height:8px;border-radius:50%;
+    background:var(--amber);box-shadow:0 0 10px var(--amber);
+    margin-right:8px;vertical-align:middle;
+    animation:blink 1.6s infinite;
+  }
+  @keyframes blink{50%{opacity:.35;}}
+  #clock{color:var(--amber);text-shadow:0 0 6px var(--amber-glow);}
+
+  header{text-align:center;margin-top:16px;}
+  h1{
+    margin:0;font-size:30px;line-height:1.1;font-weight:900;
+    letter-spacing:.12em;
+    color:var(--amber);
+    text-shadow:0 0 12px var(--amber-glow),0 0 24px var(--amber-glow);
+  }
+  .sub{margin:6px 0 0;color:var(--sub);font-size:12px;letter-spacing:.25em;}
+
+  .panel{
+    margin-top:18px;
+    border:1px solid var(--line);border-radius:14px;padding:16px;
+    background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,0));
+  }
+  .panel-title{
+    font-size:10px;letter-spacing:.4em;color:var(--amber);
+    text-shadow:0 0 6px var(--amber-glow);margin-bottom:14px;
+  }
+
+  .row{margin-bottom:14px;}
+  .row:last-child{margin-bottom:0;}
+  .lbl-row{
+    display:flex;justify-content:space-between;align-items:baseline;
+    font-size:11px;letter-spacing:.2em;color:var(--sub);
+    margin-bottom:8px;
+  }
+  .lbl-val{
+    color:var(--amber);font-weight:800;font-size:14px;
+    text-shadow:0 0 6px var(--amber-glow);font-feature-settings:"tnum";
+  }
+
+  input[type="range"]{
+    -webkit-appearance:none;appearance:none;
+    width:100%;height:6px;border-radius:99px;
+    background:linear-gradient(90deg,var(--amber) 0%,var(--amber) var(--p,12%),#1a1a1a var(--p,12%));
+    outline:none;
+  }
+  input[type="range"]::-webkit-slider-thumb{
+    -webkit-appearance:none;appearance:none;
+    width:22px;height:22px;border-radius:50%;background:var(--amber);
+    box-shadow:0 0 14px var(--amber-glow);cursor:pointer;border:0;
+  }
+  input[type="range"]::-moz-range-thumb{
+    width:22px;height:22px;border-radius:50%;background:var(--amber);
+    box-shadow:0 0 14px var(--amber-glow);cursor:pointer;border:0;
+  }
+
+  .chips{display:flex;flex-wrap:wrap;gap:6px;}
+  .chip{
+    appearance:none;border:1px solid var(--dim);
+    background:rgba(255,255,255,.02);
+    color:var(--ink);font:inherit;font-size:12px;
+    padding:8px 12px;border-radius:6px;
+    cursor:pointer;letter-spacing:.08em;
+    min-width:36px;
+    transition:all .12s ease;
+  }
+  .chip[aria-pressed="true"]{
+    border-color:var(--amber);
+    background:rgba(255,176,0,.12);
+    color:var(--amber);
+    box-shadow:0 0 12px var(--amber-glow);
+  }
+
+  .stepper{display:flex;align-items:center;gap:8px;}
+  .stepper button{
+    appearance:none;width:38px;height:38px;
+    border:1px solid var(--dim);border-radius:6px;
+    background:rgba(255,255,255,.02);
+    color:var(--amber);font:inherit;font-size:18px;font-weight:800;
+    cursor:pointer;
+    transition:border-color .12s ease,background .12s ease;
+  }
+  .stepper button:hover{border-color:var(--amber);background:rgba(255,176,0,.08);}
+  .stepper button:active{transform:translateY(1px);}
+  .stepper input{
+    flex:1;min-width:0;
+    background:rgba(0,0,0,.45);
+    border:1px solid var(--dim);border-radius:6px;
+    padding:8px;color:var(--amber);
+    font:inherit;font-size:16px;font-weight:800;
+    text-align:center;letter-spacing:.04em;
+    text-shadow:0 0 6px var(--amber-glow);
+    outline:none;
+    -moz-appearance:textfield;
+  }
+  .stepper input:focus{border-color:var(--amber);box-shadow:0 0 0 2px rgba(255,176,0,.2);}
+  .stepper input::-webkit-outer-spin-button,
+  .stepper input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+
+  .btn-calc{
+    display:block;width:100%;margin-top:18px;
+    appearance:none;border:0;
+    padding:16px;border-radius:10px;
+    font:inherit;font-weight:900;font-size:16px;letter-spacing:.5em;
+    color:#0a0a0a;
+    background:linear-gradient(180deg,var(--amber),#ff8800);
+    box-shadow:0 0 20px var(--amber-glow),inset 0 1px 0 rgba(255,255,255,.4);
+    cursor:pointer;position:relative;overflow:hidden;
+    transition:transform .12s ease;
+  }
+  .btn-calc:active{transform:translateY(1px);}
+  .btn-calc::before{
+    content:"";position:absolute;inset:0;
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,.5),transparent);
+    transform:translateX(-100%);
+    animation:sweep 2.6s ease-in-out infinite;
+  }
+  @keyframes sweep{50%,100%{transform:translateX(100%);}}
+
+  .alert{
+    position:fixed;inset:0;z-index:50;
+    display:none;align-items:center;justify-content:center;
+    background:rgba(0,0,0,.7);
+    backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+  }
+  .alert.on{display:flex;animation:fadeBg .2s ease;}
+  .alert-text{
+    font-size:54px;font-weight:900;letter-spacing:.15em;
+    color:var(--red);
+    text-shadow:0 0 16px var(--red-glow),0 0 36px var(--red-glow);
+    animation:alertPulse .9s ease;
+  }
+  @keyframes fadeBg{from{opacity:0;}to{opacity:1;}}
+  @keyframes alertPulse{
+    0%{opacity:0;transform:scale(.7);}
+    20%{opacity:1;transform:scale(1.06);}
+    40%{opacity:.5;transform:scale(.98);}
+    60%{opacity:1;transform:scale(1.02);}
+    80%{opacity:.7;}
+    100%{opacity:0;transform:scale(1);}
+  }
+
+  .results{
+    display:none;margin-top:16px;
+  }
+  .results.on{display:block;animation:dropIn .35s ease both;}
+  @keyframes dropIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+
+  .hero{
+    position:relative;overflow:hidden;
+    border:1px solid rgba(255,176,0,.3);
+    background:linear-gradient(180deg,rgba(255,176,0,.06),rgba(0,0,0,0));
+    border-radius:14px;padding:18px 16px;
+    text-align:center;
+  }
+  .hero::before{
+    content:"";position:absolute;left:0;right:0;top:-2px;height:2px;
+    background:linear-gradient(90deg,transparent,var(--amber),transparent);
+    box-shadow:0 0 8px var(--amber-glow);
+    animation:scanH 2.6s linear infinite;
+  }
+  @keyframes scanH{
+    0%{transform:translateY(0);}
+    100%{transform:translateY(160px);}
+  }
+  .hero-label{
+    font-size:10px;letter-spacing:.5em;color:var(--amber);
+    text-shadow:0 0 6px var(--amber-glow);
+  }
+  .hero-num{
+    font-size:64px;font-weight:900;color:var(--amber);
+    text-shadow:0 0 24px var(--amber-glow),0 0 48px var(--amber-glow);
+    line-height:1;margin:12px 0 4px;
+    letter-spacing:.04em;
+    font-feature-settings:"tnum";
+    animation:ledFlicker 5s linear infinite;
+  }
+  @keyframes ledFlicker{
+    0%,93%,100%{opacity:1;}
+    94%{opacity:.86;}
+    95%{opacity:1;}
+    97%{opacity:.93;}
+    98%{opacity:1;}
+  }
+  .hero-num small{font-size:24px;font-weight:700;margin-left:6px;}
+  .hero-sub{
+    font-size:11px;color:var(--sub);letter-spacing:.25em;margin-top:6px;
+    font-feature-settings:"tnum";
+  }
+
+  .grid{
+    display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;
+  }
+  .card{
+    border:1px solid var(--line);
+    background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,0));
+    border-radius:10px;padding:12px;
+    position:relative;
+  }
+  .card .icon{font-size:18px;line-height:1;color:var(--amber);text-shadow:0 0 6px var(--amber-glow);}
+  .card-label{
+    font-size:10px;letter-spacing:.3em;color:var(--sub);margin-top:6px;
+  }
+  .card-val{
+    font-size:22px;font-weight:900;color:var(--amber);
+    text-shadow:0 0 8px var(--amber-glow);
+    margin-top:4px;line-height:1.1;
+    font-feature-settings:"tnum";
+  }
+  .card-val small{font-size:12px;color:var(--sub);margin-left:4px;text-shadow:none;font-weight:600;}
+  .card.red .icon,.card.red .card-val{color:var(--red);text-shadow:0 0 8px var(--red-glow);}
+  .card.green .icon,.card.green .card-val{color:var(--green);text-shadow:0 0 8px var(--green-glow);}
+
+  .energy{
+    grid-column:1 / -1;
+    border:1px solid var(--line);
+    background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,0));
+    border-radius:10px;padding:12px;
+  }
+  .energy-head{
+    display:flex;justify-content:space-between;align-items:baseline;
+    font-size:10px;letter-spacing:.3em;color:var(--sub);
+    margin-bottom:8px;
+  }
+  .energy-head .pct{
+    font-size:18px;font-weight:900;color:var(--amber);
+    text-shadow:0 0 8px var(--amber-glow);letter-spacing:.04em;
+    font-feature-settings:"tnum";
+  }
+  .energy-bar{
+    height:16px;border-radius:4px;background:rgba(255,255,255,.04);
+    border:1px solid var(--dim);position:relative;overflow:hidden;
+  }
+  .energy-bar > i{
+    display:block;height:100%;width:0%;
+    background:linear-gradient(90deg,var(--green) 0%,var(--amber) 50%,var(--red) 100%);
+    box-shadow:0 0 14px rgba(255,176,0,.4);
+    transition:width .9s cubic-bezier(.2,.7,.2,1);
+  }
+  .energy-bar::after{
+    content:"";position:absolute;inset:0;pointer-events:none;
+    background-image:linear-gradient(90deg,rgba(0,0,0,.35) 1px,transparent 1px);
+    background-size:6px 100%;
+  }
+
+  .verdict{
+    grid-column:1 / -1;
+    border:1px solid rgba(255,176,0,.4);
+    background:linear-gradient(180deg,rgba(255,176,0,.08),rgba(255,176,0,0));
+    border-radius:10px;padding:14px;
+    text-align:center;
+  }
+  .verdict-label{
+    font-size:10px;letter-spacing:.5em;color:var(--amber);
+    text-shadow:0 0 6px var(--amber-glow);
+  }
+  .verdict-msg{
+    font-size:17px;font-weight:700;color:var(--ink);margin-top:6px;
+    text-shadow:0 0 10px rgba(255,176,0,.25);
+  }
+
+  .note{
+    margin:14px 0 0;text-align:center;
+    font-size:10px;color:var(--dim);letter-spacing:.15em;line-height:1.7;
+  }
+
+  @media (max-width:380px){
+    h1{font-size:24px;}
+    .hero-num{font-size:52px;}
+    .alert-text{font-size:42px;}
+    .stepper button{width:34px;height:34px;}
+  }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <div class="topbar">
+    <span><span class="dot"></span>SYS ・ JAM ・ MONITOR</span>
+    <span id="clock">00:00</span>
+  </div>
+
+  <header>
+    <h1>JAM LOSS METER</h1>
+    <p class="sub">その渋滞、何を失ってる？</p>
+  </header>
+
+  <section class="panel" aria-labelledby="inputLbl">
+    <div class="panel-title" id="inputLbl">▣ INPUT</div>
+
+    <div class="row">
+      <div class="lbl-row">
+        <span>JAM TIME</span>
+        <span class="lbl-val"><span id="timeOut">35</span> min</span>
+      </div>
+      <input type="range" id="timeIn" min="1" max="300" value="35" step="1" aria-label="渋滞時間（分）">
+    </div>
+
+    <div class="row">
+      <div class="lbl-row">
+        <span>PASSENGERS</span>
+        <span class="lbl-val"><span id="paxOut">1</span> 人</span>
+      </div>
+      <div class="chips" id="paxChips" role="radiogroup" aria-label="乗車人数"></div>
+    </div>
+
+    <div class="row">
+      <div class="lbl-row">
+        <span>HOURLY VALUE</span>
+        <span class="lbl-val">¥ <span id="rateOut">1,500</span> / h</span>
+      </div>
+      <div class="stepper">
+        <button type="button" id="rateMinus" aria-label="-100">−</button>
+        <input type="number" id="rateIn" min="0" max="10000" step="100" value="1500" inputmode="numeric" aria-label="時給感覚">
+        <button type="button" id="ratePlus" aria-label="+100">＋</button>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="lbl-row">
+        <span>ENERGY LEVEL</span>
+        <span class="lbl-val" id="energyOut">普通</span>
+      </div>
+      <div class="chips" id="energyChips" role="radiogroup" aria-label="気力レベル">
+        <button class="chip" type="button" data-val="easy"   aria-pressed="false">余裕</button>
+        <button class="chip" type="button" data-val="normal" aria-pressed="true">普通</button>
+        <button class="chip" type="button" data-val="tired"  aria-pressed="false">かなり疲れてる</button>
+      </div>
+    </div>
+
+    <button class="btn-calc" id="calcBtn" type="button">CALCULATE</button>
+  </section>
+
+  <div class="alert" id="alert" aria-hidden="true">
+    <div class="alert-text">JAM ALERT</div>
+  </div>
+
+  <section class="results" id="results" aria-live="polite">
+    <div class="hero">
+      <div class="hero-label">▣ TOTAL TIME LOST</div>
+      <div class="hero-num"><span id="totalTime">0</span><small>min</small></div>
+      <div class="hero-sub" id="totalFormula">— × — = —</div>
+    </div>
+
+    <div class="grid">
+      <div class="card red">
+        <div class="icon">¥</div>
+        <div class="card-label">INVISIBLE LOSS</div>
+        <div class="card-val">¥ <span id="lossYen">0</span></div>
+      </div>
+      <div class="card">
+        <div class="icon">♪</div>
+        <div class="card-label">SONGS</div>
+        <div class="card-val"><span id="songs">0</span><small>曲分</small></div>
+      </div>
+      <div class="card">
+        <div class="icon">☕</div>
+        <div class="card-label">COFFEE BREAKS</div>
+        <div class="card-val"><span id="coffees">0</span><small>回分</small></div>
+      </div>
+      <div class="card green">
+        <div class="icon">⌬</div>
+        <div class="card-label">DRIVER ENERGY</div>
+        <div class="card-val"><span id="energySpent">0</span><small>%</small></div>
+      </div>
+
+      <div class="energy">
+        <div class="energy-head">
+          <span>▣ ENERGY METER</span>
+          <span class="pct"><span id="energyPct">0</span>%</span>
+        </div>
+        <div class="energy-bar"><i id="energyBar"></i></div>
+      </div>
+
+      <div class="verdict">
+        <div class="verdict-label">▣ VERDICT</div>
+        <div class="verdict-msg" id="verdict">—</div>
+      </div>
+    </div>
+
+    <p class="note">※実際の交通情報ではありません。<br>渋滞ストレスの目安です。</p>
+  </section>
+</main>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const timeIn = $('timeIn'), timeOut = $('timeOut');
+  const paxChips = $('paxChips'), paxOut = $('paxOut');
+  const rateIn = $('rateIn'), rateOut = $('rateOut');
+  const ratePlus = $('ratePlus'), rateMinus = $('rateMinus');
+  const energyChips = $('energyChips'), energyOut = $('energyOut');
+  const calcBtn = $('calcBtn');
+  const alertEl = $('alert');
+  const results = $('results');
+  const totalTimeEl = $('totalTime');
+  const totalFormulaEl = $('totalFormula');
+  const lossYenEl = $('lossYen');
+  const songsEl = $('songs');
+  const coffeesEl = $('coffees');
+  const energySpentEl = $('energySpent');
+  const energyPctEl = $('energyPct');
+  const energyBarEl = $('energyBar');
+  const verdictEl = $('verdict');
+
+  const ENERGY_LABEL  = { easy:'余裕',  normal:'普通', tired:'かなり疲れてる' };
+  const ENERGY_FACTOR = { easy:0.7,    normal:1.0,   tired:1.4 };
+
+  let pax = 1;
+  let energy = 'normal';
+
+  // build pax chips 1..8
+  for (let i = 1; i <= 8; i++){
+    const b = document.createElement('button');
+    b.className = 'chip'; b.type = 'button';
+    b.dataset.val = String(i); b.textContent = String(i);
+    b.setAttribute('aria-pressed', i === 1 ? 'true' : 'false');
+    paxChips.appendChild(b);
+  }
+  paxChips.addEventListener('click', e => {
+    const b = e.target.closest('.chip'); if (!b) return;
+    pax = parseInt(b.dataset.val, 10);
+    paxOut.textContent = pax;
+    paxChips.querySelectorAll('.chip').forEach(c =>
+      c.setAttribute('aria-pressed', String(c === b)));
+  });
+
+  energyChips.addEventListener('click', e => {
+    const b = e.target.closest('.chip'); if (!b) return;
+    energy = b.dataset.val;
+    energyOut.textContent = ENERGY_LABEL[energy];
+    energyChips.querySelectorAll('.chip').forEach(c =>
+      c.setAttribute('aria-pressed', String(c === b)));
+  });
+
+  function updateTime(){
+    const v = parseInt(timeIn.value, 10);
+    timeOut.textContent = v;
+    const p = ((v - 1) / 299) * 100;
+    timeIn.style.setProperty('--p', p.toFixed(2) + '%');
+  }
+  timeIn.addEventListener('input', updateTime);
+  updateTime();
+
+  function clampRate(v){ return Math.max(0, Math.min(10000, v|0)); }
+  function updateRateOut(){
+    const v = clampRate(parseInt(rateIn.value || '0', 10));
+    rateOut.textContent = v.toLocaleString();
+  }
+  rateIn.addEventListener('input', () => {
+    let v = parseInt(rateIn.value || '0', 10);
+    if (isNaN(v)) v = 0;
+    v = clampRate(v);
+    if (String(v) !== rateIn.value) rateIn.value = String(v);
+    updateRateOut();
+  });
+  ratePlus.addEventListener('click', () => {
+    rateIn.value = String(clampRate(parseInt(rateIn.value || '0', 10) + 100));
+    updateRateOut();
+  });
+  rateMinus.addEventListener('click', () => {
+    rateIn.value = String(clampRate(parseInt(rateIn.value || '0', 10) - 100));
+    updateRateOut();
+  });
+  updateRateOut();
+
+  function getVerdict(min){
+    if (min < 15) return 'まだ笑える渋滞。';
+    if (min < 30) return 'そろそろ予定を削り始めるゾーン。';
+    if (min < 60) return 'これはもう移動じゃなくて待機。';
+    return '一回、出る時間を考え直していい。';
+  }
+
+  function calculate(){
+    const min  = Math.max(1, Math.min(300, parseInt(timeIn.value, 10) || 1));
+    const rate = clampRate(parseInt(rateIn.value || '0', 10));
+    const totalMin  = min * pax;
+    const lossYen   = Math.round((totalMin / 60) * rate);
+    const energyPct = Math.min(100, Math.round(min * ENERGY_FACTOR[energy]));
+    const songs   = +(min / 4).toFixed(1);
+    const coffees = +(min / 15).toFixed(1);
+    const verdict = getVerdict(min);
+    return { min, rate, pax, energy, totalMin, lossYen, energyPct, songs, coffees, verdict };
+  }
+
+  function tweenNumber(el, to, dur, fmt){
+    const from = parseFloat(String(el.textContent).replace(/,/g, '')) || 0;
+    const t0 = performance.now();
+    function step(t){
+      const k = Math.min(1, (t - t0) / dur);
+      const e = 1 - Math.pow(1 - k, 3);
+      const n = from + (to - from) * e;
+      el.textContent = fmt(n);
+      if (k < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
+  function render(r){
+    totalFormulaEl.textContent = `${r.min}min × ${r.pax}人 = ${r.totalMin}min`;
+    tweenNumber(totalTimeEl, r.totalMin,    900, n => Math.round(n).toString());
+    tweenNumber(lossYenEl,   r.lossYen,     900, n => Math.round(n).toLocaleString());
+    tweenNumber(songsEl,     r.songs,       900, n => n.toFixed(1));
+    tweenNumber(coffeesEl,   r.coffees,     900, n => n.toFixed(1));
+    tweenNumber(energySpentEl, r.energyPct, 900, n => Math.round(n).toString());
+    tweenNumber(energyPctEl,   r.energyPct, 900, n => Math.round(n).toString());
+    requestAnimationFrame(() => { energyBarEl.style.width = r.energyPct + '%'; });
+    verdictEl.textContent = r.verdict;
+  }
+
+  function fireAlert(){
+    alertEl.classList.add('on');
+    alertEl.setAttribute('aria-hidden', 'false');
+    setTimeout(() => {
+      alertEl.classList.remove('on');
+      alertEl.setAttribute('aria-hidden', 'true');
+    }, 850);
+  }
+
+  let busy = false;
+  function runCalc(){
+    if (busy) return;
+    busy = true;
+    const r = calculate();
+    fireAlert();
+    setTimeout(() => {
+      results.classList.add('on');
+      render(r);
+      try { results.scrollIntoView({ behavior:'smooth', block:'start' }); } catch(_){}
+      busy = false;
+    }, 350);
+  }
+  calcBtn.addEventListener('click', runCalc);
+
+  // topbar clock
+  const clockEl = $('clock');
+  function tickClock(){
+    const d = new Date();
+    clockEl.textContent =
+      String(d.getHours()).padStart(2,'0') + ':' +
+      String(d.getMinutes()).padStart(2,'0');
+  }
+  tickClock();
+  setInterval(tickClock, 30 * 1000);
+
+  // test surface
+  window.__jam = {
+    calculate, render, runCalc, getVerdict,
+    setTime(v){ timeIn.value = String(v); updateTime(); },
+    setPax(n){
+      pax = n; paxOut.textContent = n;
+      paxChips.querySelectorAll('.chip').forEach(c =>
+        c.setAttribute('aria-pressed', String(parseInt(c.dataset.val,10) === n)));
+    },
+    setRate(v){ rateIn.value = String(clampRate(v)); updateRateOut(); },
+    setEnergy(k){
+      energy = k; energyOut.textContent = ENERGY_LABEL[k];
+      energyChips.querySelectorAll('.chip').forEach(c =>
+        c.setAttribute('aria-pressed', String(c.dataset.val === k)));
+    },
+    state(){
+      return {
+        time: parseInt(timeIn.value,10),
+        pax, energy,
+        rate: clampRate(parseInt(rateIn.value || '0',10)),
+        results: {
+          totalTime: totalTimeEl.textContent,
+          lossYen:   lossYenEl.textContent,
+          songs:     songsEl.textContent,
+          coffees:   coffeesEl.textContent,
+          energyPct: energyPctEl.textContent,
+          verdict:   verdictEl.textContent,
+          formula:   totalFormulaEl.textContent,
+          barWidth:  energyBarEl.style.width,
+        },
+        resultsVisible: results.classList.contains('on'),
+        alertOn: alertEl.classList.contains('on'),
+      };
+    },
+  };
+})();
+</script>
+</body>
+</html>
