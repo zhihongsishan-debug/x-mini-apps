@@ -1,0 +1,730 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
+<meta name="theme-color" content="#04050d" />
+<title>SELF TUNE — 戻るだけ。</title>
+<style>
+  :root{
+    --bg-0:#04050d;
+    --bg-1:#0a0c1f;
+    --ink:#e8efff;
+    --sub:#8c92b0;
+    --line:rgba(255,255,255,.08);
+    --cyan:#3df0ff;
+    --violet:#a371ff;
+    --pink:#ff7ac6;
+    --gold:#ffd28a;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Sans","Noto Sans JP","Yu Gothic UI",system-ui,sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(60% 50% at 50% 0%, rgba(124,77,255,.18), transparent 60%),
+      radial-gradient(60% 50% at 50% 110%, rgba(61,240,255,.12), transparent 60%),
+      linear-gradient(180deg, var(--bg-0) 0%, var(--bg-1) 100%);
+    background-attachment:fixed;
+    min-height:100dvh;
+    overflow:hidden;
+  }
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;
+    background-image:radial-gradient(rgba(255,255,255,.04) 1px,transparent 1.2px);
+    background-size:4px 4px;
+    -webkit-mask-image:radial-gradient(circle at 50% 50%, #000 30%, transparent 80%);
+            mask-image:radial-gradient(circle at 50% 50%, #000 30%, transparent 80%);
+    z-index:0;
+  }
+
+  .app{
+    position:relative;z-index:1;
+    width:100%;max-width:480px;margin:0 auto;
+    min-height:100dvh;
+    padding:max(14px,env(safe-area-inset-top)) 16px max(20px,env(safe-area-inset-bottom));
+    display:flex;flex-direction:column;
+  }
+
+  .top{
+    display:flex;justify-content:space-between;align-items:center;
+    height:32px;
+    font-size:10px;letter-spacing:.4em;color:var(--sub);
+  }
+  .phase-label{
+    color:var(--cyan);text-shadow:0 0 6px rgba(61,240,255,.5);
+    transition:color .8s ease,text-shadow .8s ease;
+  }
+  .sound-toggle{
+    appearance:none;border:1px solid var(--line);
+    background:rgba(255,255,255,.04);
+    color:var(--ink);font:inherit;
+    font-size:10px;letter-spacing:.25em;
+    padding:6px 12px;border-radius:999px;
+    cursor:pointer;transition:all .15s ease;
+  }
+  .sound-toggle:hover{border-color:var(--cyan);color:var(--cyan);}
+  .sound-toggle.off{color:var(--sub);}
+  .sound-toggle .ico{display:inline-block;margin-right:6px;}
+
+  .screen{display:none;flex:1;flex-direction:column;}
+  .screen.on{display:flex;animation:screenIn .35s ease both;}
+  @keyframes screenIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+
+  /* START */
+  .start{align-items:center;justify-content:center;text-align:center;}
+  .start h1{
+    margin:0;font-size:38px;font-weight:800;letter-spacing:.25em;
+    background:linear-gradient(90deg,var(--cyan),var(--violet) 50%,var(--pink));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    text-shadow:0 0 30px rgba(124,77,255,.25);
+  }
+  .start .lead{margin:10px 0 40px;color:var(--sub);font-size:13px;letter-spacing:.4em;}
+  .start .startBtn{
+    appearance:none;border:0;cursor:pointer;
+    padding:18px 56px;border-radius:999px;
+    font:inherit;font-weight:700;font-size:14px;letter-spacing:.45em;
+    color:#04050d;
+    background:linear-gradient(135deg,var(--cyan),var(--violet) 60%,var(--pink));
+    box-shadow:0 12px 40px rgba(124,77,255,.4),inset 0 1px 0 rgba(255,255,255,.5);
+    transition:transform .12s ease;
+  }
+  .start .startBtn:active{transform:translateY(1px);}
+  .start .disc{
+    margin-top:40px;
+    color:var(--sub);opacity:.6;
+    font-size:10px;letter-spacing:.18em;line-height:1.8;
+    max-width:280px;
+  }
+
+  /* SESSION */
+  .session{align-items:center;justify-content:flex-start;}
+  .stage{
+    width:100%;
+    aspect-ratio:1 / 1;
+    max-height:54vh;
+    position:relative;
+    margin-top:8px;
+  }
+  canvas{display:block;width:100%;height:100%;}
+  .text-box{
+    text-align:center;
+    margin-top:14px;
+    min-height:74px;
+  }
+  .main-text{
+    font-size:22px;font-weight:600;letter-spacing:.12em;
+    color:var(--ink);line-height:1.4;
+    transition:opacity .35s ease;
+  }
+  .main-text br + span{font-size:18px;}
+  .sub-text{
+    margin-top:8px;
+    font-size:12px;letter-spacing:.4em;
+    color:var(--sub);
+    transition:opacity .35s ease,color .8s ease;
+  }
+  .progress{
+    width:100%;height:3px;
+    background:rgba(255,255,255,.06);
+    border-radius:99px;overflow:hidden;
+    margin-top:14px;
+  }
+  .progress > i{
+    display:block;height:100%;width:0%;
+    background:linear-gradient(90deg,var(--cyan),var(--violet),var(--pink),var(--gold));
+    box-shadow:0 0 10px rgba(124,77,255,.3);
+    transition:width .12s linear;
+  }
+  .controls{margin-top:14px;text-align:center;}
+  .endBtn{
+    appearance:none;border:1px solid var(--line);
+    background:rgba(255,255,255,.03);
+    color:var(--sub);font:inherit;
+    font-size:11px;letter-spacing:.4em;
+    padding:10px 28px;border-radius:999px;
+    cursor:pointer;transition:all .15s ease;
+  }
+  .endBtn:hover{border-color:var(--sub);color:var(--ink);}
+
+  /* END */
+  .end{align-items:center;justify-content:center;text-align:center;}
+  .end h2{
+    margin:0;font-size:48px;font-weight:800;letter-spacing:.32em;
+    background:linear-gradient(90deg,var(--gold),#ffe8d6 60%,var(--gold));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    text-shadow:0 0 36px rgba(255,210,138,.3);
+  }
+  .end .stable-msg{margin:20px 0 38px;color:var(--ink);font-size:16px;letter-spacing:.18em;}
+  .end .restartBtn{
+    appearance:none;border:1px solid rgba(255,210,138,.4);
+    background:rgba(255,210,138,.08);
+    color:var(--gold);font:inherit;
+    font-size:13px;letter-spacing:.4em;
+    padding:14px 36px;border-radius:999px;
+    cursor:pointer;transition:all .15s ease;
+  }
+  .end .restartBtn:hover{background:rgba(255,210,138,.16);border-color:var(--gold);}
+  .end .restartBtn:active{transform:translateY(1px);}
+  .end .note{
+    margin-top:38px;color:var(--sub);opacity:.7;
+    font-size:11px;letter-spacing:.22em;line-height:1.7;
+    max-width:300px;
+  }
+
+  @media (max-width:380px){
+    .start h1{font-size:30px;}
+    .end h2{font-size:38px;}
+    .main-text{font-size:19px;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <span class="phase-label" id="phaseLabel">SELF ・ TUNE</span>
+    <button class="sound-toggle" id="soundToggle" type="button" aria-pressed="true">
+      <span class="ico" id="soundIco">●</span><span id="soundTxt">SOUND ON</span>
+    </button>
+  </header>
+
+  <section class="screen start on" id="startScreen">
+    <h1>SELF TUNE</h1>
+    <p class="lead">戻るだけ。</p>
+    <button class="startBtn" id="startBtn" type="button">START</button>
+    <p class="disc">
+      状態を整えるためのガイドです。<br>
+      医学的・科学的な効果を主張するものではありません。
+    </p>
+  </section>
+
+  <section class="screen session" id="sessionScreen">
+    <div class="stage"><canvas id="cv"></canvas></div>
+    <div class="text-box">
+      <div class="main-text" id="mainText">…</div>
+      <div class="sub-text" id="subText">…</div>
+    </div>
+    <div class="progress"><i id="progBar"></i></div>
+    <div class="controls"><button class="endBtn" id="endBtn" type="button">END</button></div>
+  </section>
+
+  <section class="screen end" id="endScreen">
+    <h2>STABLE</h2>
+    <p class="stable-msg">そのままでいい</p>
+    <button class="restartBtn" id="restartBtn" type="button">もう一度</button>
+    <p class="note">戻ったら、そこから始めればいい。</p>
+  </section>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const startScreen   = $('startScreen');
+  const sessionScreen = $('sessionScreen');
+  const endScreen     = $('endScreen');
+  const startBtn      = $('startBtn');
+  const endBtn        = $('endBtn');
+  const restartBtn    = $('restartBtn');
+  const soundToggle   = $('soundToggle');
+  const soundIco      = $('soundIco');
+  const soundTxt      = $('soundTxt');
+  const phaseLabel    = $('phaseLabel');
+  const mainText      = $('mainText');
+  const subText       = $('subText');
+  const progBar       = $('progBar');
+  const cv            = $('cv');
+  const ctx           = cv.getContext('2d');
+
+  const PHASES = [
+    { id:'BREATH',  dur:25, text:'口で吐く',         alt:'鼻で吸う', sub:'ゆっくりでいい'   },
+    { id:'HEART',   dur:20, text:'意識を心臓に置く', sub:'内側に戻る'                       },
+    { id:'FEEL',    dur:18, text:'今の感情を感じる', sub:'変えようとしない'                  },
+    { id:'OBSERVE', dur:17, text:'反応しない',       sub:'見るだけ'                          },
+    { id:'LOCK',    dur:10, text:'そのままでいい',   sub:'STABLE'                            },
+  ];
+  const TOTAL = PHASES.reduce((s,p)=>s+p.dur, 0); // 90
+
+  // start ↔ end palette per phase. inner = orb glow, outer = halo + particles
+  const PAL = {
+    BREATH:  { start:['#5a5cff','#4a3aff'], end:['#7c4dff','#5a5cff'] },
+    HEART:   { start:['#a371ff','#7c4dff'], end:['#ff7ac6','#a371ff'] },
+    FEEL:    { start:['#3df0ff','#5a5cff'], end:['#3df0ff','#80f0ff'] },
+    OBSERVE: { start:['#80f0ff','#3df0ff'], end:['#ffd28a','#ffe8c0'] },
+    LOCK:    { start:['#ffe8c0','#ffd28a'], end:['#ffe8c0','#ffd28a'] },
+  };
+
+  const W = 360, H = 360;
+  function resizeCanvas(){
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const r = cv.getBoundingClientRect();
+    if (r.width < 1 || r.height < 1) return;
+    cv.width  = Math.max(1, Math.round(r.width  * dpr));
+    cv.height = Math.max(1, Math.round(r.height * dpr));
+    ctx.setTransform(cv.width/W, 0, 0, cv.height/H, 0, 0);
+  }
+  window.addEventListener('resize', resizeCanvas);
+  window.addEventListener('orientationchange', resizeCanvas);
+
+  /* ---------- AUDIO ---------- */
+  let audioCtx = null;
+  let master = null;
+  let droneGain = null;
+  let noiseBuffer = null;
+  let soundEnabled = true;
+  let lockFadeStartedAt = -1;
+
+  function initAudio(){
+    if (audioCtx) return;
+    try{
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      audioCtx = new AC();
+      master = audioCtx.createGain();
+      master.gain.value = soundEnabled ? 1 : 0;
+      master.connect(audioCtx.destination);
+
+      // drone: detuned sines through lowpass
+      const o1 = audioCtx.createOscillator(); o1.type='sine'; o1.frequency.value = 110;
+      const o2 = audioCtx.createOscillator(); o2.type='sine'; o2.frequency.value = 110.6;
+      const o3 = audioCtx.createOscillator(); o3.type='sine'; o3.frequency.value = 220;
+      const filt = audioCtx.createBiquadFilter(); filt.type='lowpass'; filt.frequency.value = 700; filt.Q.value = 0.7;
+      droneGain = audioCtx.createGain(); droneGain.gain.value = 0;
+      o1.connect(filt); o2.connect(filt); o3.connect(filt);
+      filt.connect(droneGain); droneGain.connect(master);
+      o1.start(); o2.start(); o3.start();
+
+      // noise buffer for wind
+      const len = audioCtx.sampleRate * 4;
+      noiseBuffer = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
+      const data = noiseBuffer.getChannelData(0);
+      for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+    }catch(_){ audioCtx = null; }
+  }
+
+  function setDroneLevel(v, ramp = 0.6){
+    if (!droneGain || !audioCtx) return;
+    const t = audioCtx.currentTime;
+    droneGain.gain.cancelScheduledValues(t);
+    droneGain.gain.linearRampToValueAtTime(Math.max(0, v), t + ramp);
+  }
+
+  function thump(freq, peakGain, dur){
+    if (!audioCtx || !master) return;
+    const o = audioCtx.createOscillator(); o.type='sine'; o.frequency.value = freq;
+    const g = audioCtx.createGain(); g.gain.value = 0;
+    o.connect(g); g.connect(master);
+    const t = audioCtx.currentTime;
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(peakGain, t + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.start(t); o.stop(t + dur + 0.05);
+  }
+  function heartbeat(){
+    thump(70, 0.5, 0.18);
+    setTimeout(() => thump(55, 0.35, 0.22), 220);
+  }
+  function windBurst(dur = 2.4, peak = 0.15){
+    if (!audioCtx || !noiseBuffer) return;
+    const src = audioCtx.createBufferSource(); src.buffer = noiseBuffer; src.loop = false;
+    const filt = audioCtx.createBiquadFilter(); filt.type='bandpass'; filt.frequency.value = 700; filt.Q.value = 0.5;
+    const g = audioCtx.createGain(); g.gain.value = 0;
+    src.connect(filt); filt.connect(g); g.connect(master);
+    const t = audioCtx.currentTime;
+    g.gain.linearRampToValueAtTime(peak,    t + 0.4);
+    g.gain.linearRampToValueAtTime(0,       t + dur);
+    src.start(t);
+    src.stop(t + dur + 0.1);
+  }
+  function masterFadeOut(dur = 2){
+    if (!master || !audioCtx) return;
+    const t = audioCtx.currentTime;
+    master.gain.cancelScheduledValues(t);
+    master.gain.linearRampToValueAtTime(0.0001, t + dur);
+  }
+  function applySoundEnabled(){
+    if (!master || !audioCtx) return;
+    const t = audioCtx.currentTime;
+    master.gain.cancelScheduledValues(t);
+    if (soundEnabled){
+      // if LOCK fade is active, respect it; otherwise restore
+      if (lockFadeStartedAt >= 0 && state.running) {
+        // continue lock fade by computing residual ramp
+        master.gain.linearRampToValueAtTime(0, t + 1.5);
+      } else {
+        master.gain.linearRampToValueAtTime(1, t + 0.2);
+      }
+    } else {
+      master.gain.linearRampToValueAtTime(0, t + 0.15);
+    }
+  }
+  function setSoundEnabled(v){
+    soundEnabled = !!v;
+    soundToggle.setAttribute('aria-pressed', String(soundEnabled));
+    soundToggle.classList.toggle('off', !soundEnabled);
+    soundIco.textContent = soundEnabled ? '●' : '○';
+    soundTxt.textContent = soundEnabled ? 'SOUND ON' : 'SOUND OFF';
+    applySoundEnabled();
+  }
+  soundToggle.addEventListener('click', () => setSoundEnabled(!soundEnabled));
+
+  /* ---------- VISUAL STATE ---------- */
+  const state = {
+    running: false,
+    elapsed: 0,
+    phaseIdx: 0,
+    phaseT: 0,
+    particles: [],
+    rafLast: 0,
+    raf: 0,
+    lastBeatAt: -100,
+    lastWindAt: -100,
+    glowBurstAt: -100,
+  };
+
+  function spawnParticle(){
+    const ang = Math.random() * Math.PI * 2;
+    const dist = 30 + Math.random() * 60;
+    state.particles.push({
+      x: W/2 + Math.cos(ang)*dist,
+      y: H/2 + Math.sin(ang)*dist,
+      vx: Math.cos(ang) * (.04 + Math.random()*.14),
+      vy: Math.sin(ang) * (.04 + Math.random()*.14),
+      life: 4 + Math.random()*3, age:0,
+      r: .6 + Math.random()*1.4,
+    });
+  }
+  function updateParticles(dt, target){
+    for (const p of state.particles){
+      p.age += dt;
+      p.x += p.vx * 60 * dt;
+      p.y += p.vy * 60 * dt;
+    }
+    state.particles = state.particles.filter(p => p.age < p.life);
+    while (state.particles.length < target) spawnParticle();
+  }
+
+  const lerp = (a,b,t) => a + (b - a) * t;
+  function hexRGB(h){ const n = parseInt(h.slice(1),16); return [(n>>16)&255,(n>>8)&255,n&255]; }
+  function lerpRGB(a,b,t){ return [lerp(a[0],b[0],t)|0, lerp(a[1],b[1],t)|0, lerp(a[2],b[2],t)|0]; }
+  const rgba = (c,a) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
+
+  function getPalette(phaseIdx, phaseT){
+    const ph = PHASES[phaseIdx];
+    const k  = Math.max(0, Math.min(1, phaseT / ph.dur));
+    const cur = PAL[ph.id];
+    return {
+      inner: lerpRGB(hexRGB(cur.start[0]), hexRGB(cur.end[0]), k),
+      outer: lerpRGB(hexRGB(cur.start[1]), hexRGB(cur.end[1]), k),
+    };
+  }
+  function circleSize(phaseId, phaseT){
+    const base = 80;
+    if (phaseId === 'BREATH'){
+      const cycle = 8;
+      const x = (phaseT % cycle) / cycle;
+      const v = (Math.cos(x * Math.PI * 2) + 1) / 2;  // 1 (full) → 0 (empty) → 1
+      return base * (0.62 + v * 0.62);                 // 49.6 → 99.2
+    }
+    if (phaseId === 'HEART'){
+      const cycle = 0.9;
+      const x = (phaseT % cycle) / cycle;
+      const peak = Math.max(
+        Math.exp(-Math.pow((x - 0.0)  / 0.06, 2)) * 0.18,
+        Math.exp(-Math.pow((x - 0.22) / 0.07, 2)) * 0.10
+      );
+      return base * (0.95 + peak);
+    }
+    if (phaseId === 'FEEL'){
+      const v = (Math.sin(phaseT * 0.6) + 1) / 2;
+      return base * (0.92 + v * 0.10);
+    }
+    if (phaseId === 'OBSERVE'){
+      const v = (Math.sin(phaseT * 0.35) + 1) / 2;
+      return base * (0.96 + v * 0.04);
+    }
+    return base; // LOCK: still
+  }
+  function particleTarget(phaseId, phaseT, dur){
+    if (phaseId === 'BREATH') return 80;
+    if (phaseId === 'HEART')  return 50;
+    if (phaseId === 'FEEL')   return 60;
+    if (phaseId === 'OBSERVE') return Math.max(0, Math.round(28 * (1 - phaseT/dur)));
+    return 0;
+  }
+
+  function draw(palette, radius){
+    ctx.clearRect(0,0,W,H);
+    const cx = W/2, cy = H/2;
+
+    // outer halo
+    const halo = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius * 2.7);
+    halo.addColorStop(0,    rgba(palette.inner, 0.45));
+    halo.addColorStop(0.5,  rgba(palette.outer, 0.12));
+    halo.addColorStop(1,    rgba(palette.outer, 0));
+    ctx.fillStyle = halo;
+    ctx.beginPath(); ctx.arc(cx, cy, radius * 2.7, 0, Math.PI*2); ctx.fill();
+
+    // particles
+    for (const p of state.particles){
+      const k = Math.max(0, 1 - p.age / p.life);
+      ctx.fillStyle = rgba(palette.outer, 0.45 * k);
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r * k, 0, Math.PI*2); ctx.fill();
+    }
+
+    // inner orb
+    const orb = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
+    orb.addColorStop(0,   rgba(palette.inner, 0.95));
+    orb.addColorStop(0.6, rgba(palette.inner, 0.4));
+    orb.addColorStop(1,   rgba(palette.outer, 0));
+    ctx.fillStyle = orb;
+    ctx.beginPath(); ctx.arc(cx, cy, radius, 0, Math.PI*2); ctx.fill();
+
+    // hairline ring
+    ctx.strokeStyle = rgba(palette.inner, 0.25);
+    ctx.lineWidth = 0.6;
+    ctx.beginPath(); ctx.arc(cx, cy, radius * 0.92, 0, Math.PI*2); ctx.stroke();
+
+    // LOCK once-glow burst
+    const since = state.elapsed - state.glowBurstAt;
+    if (since >= 0 && since < 3.2){
+      const a = Math.max(0, 1 - since/3.2) * 0.45;
+      const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius * 4.2);
+      g.addColorStop(0,   rgba([255,232,180], a));
+      g.addColorStop(1,   rgba([255,232,180], 0));
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(cx, cy, radius * 4.2, 0, Math.PI*2); ctx.fill();
+    }
+  }
+
+  function showScreen(name){
+    [startScreen, sessionScreen, endScreen].forEach(s => s.classList.remove('on'));
+    if (name === 'start')   startScreen.classList.add('on');
+    if (name === 'session') sessionScreen.classList.add('on');
+    if (name === 'end')     endScreen.classList.add('on');
+  }
+
+  function updatePhaseUI(){
+    const p = PHASES[state.phaseIdx];
+    phaseLabel.textContent = p.id;
+    if (p.id === 'BREATH'){
+      mainText.innerHTML = `${p.text}<br><span style="opacity:.45">${p.alt}</span>`;
+    } else {
+      mainText.textContent = p.text;
+    }
+    subText.textContent = p.sub;
+  }
+
+  function applyPhaseAudio(phaseId){
+    if (!audioCtx) return;
+    if (phaseId === 'BREATH') { setDroneLevel(0.06, 0.6); }
+    if (phaseId === 'HEART')  { setDroneLevel(0.05, 0.8); }
+    if (phaseId === 'FEEL')   { setDroneLevel(0.04, 0.8); }
+    if (phaseId === 'OBSERVE'){ setDroneLevel(0.02, 1.5); }
+    if (phaseId === 'LOCK'){
+      setDroneLevel(0, 8);
+      // schedule master fade to true silence over LOCK duration
+      const t = audioCtx.currentTime;
+      lockFadeStartedAt = state.elapsed;
+      master.gain.cancelScheduledValues(t);
+      master.gain.setValueAtTime(soundEnabled ? 1 : 0, t);
+      master.gain.linearRampToValueAtTime(0, t + PHASES[state.phaseIdx].dur);
+    }
+  }
+
+  function startSession(){
+    state.running = true;
+    state.elapsed = 0;
+    state.phaseIdx = 0;
+    state.phaseT = 0;
+    state.particles.length = 0;
+    state.lastBeatAt = -100;
+    state.lastWindAt = -100;
+    state.glowBurstAt = -100;
+    lockFadeStartedAt = -1;
+
+    initAudio();
+    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+    if (master){
+      master.gain.cancelScheduledValues(audioCtx.currentTime);
+      master.gain.setValueAtTime(soundEnabled ? 1 : 0, audioCtx.currentTime);
+    }
+
+    showScreen('session');
+    requestAnimationFrame(() => { resizeCanvas(); });
+    updatePhaseUI();
+    applyPhaseAudio(PHASES[0].id);
+
+    state.rafLast = performance.now();
+    cancelAnimationFrame(state.raf);
+    state.raf = requestAnimationFrame(tick);
+  }
+
+  function endSession(toEndScreen = true){
+    state.running = false;
+    cancelAnimationFrame(state.raf);
+    masterFadeOut(2);
+    if (toEndScreen) showScreen('end');
+  }
+
+  function tick(now){
+    const dt = Math.min(0.05, (now - state.rafLast) / 1000);
+    state.rafLast = now;
+    if (!state.running) return;
+
+    state.elapsed += dt;
+    state.phaseT  += dt;
+    let cur = PHASES[state.phaseIdx];
+
+    // phase advance
+    while (state.phaseT >= cur.dur && state.phaseIdx < PHASES.length - 1){
+      state.phaseT -= cur.dur;
+      state.phaseIdx++;
+      cur = PHASES[state.phaseIdx];
+      updatePhaseUI();
+      applyPhaseAudio(cur.id);
+      if (cur.id === 'LOCK') state.glowBurstAt = state.elapsed;
+    }
+    // session finished
+    if (state.elapsed >= TOTAL){
+      state.running = false;
+      // wait briefly so the silence is felt before transition
+      setTimeout(() => { if (!state.running) showScreen('end'); }, 600);
+      return;
+    }
+
+    // BREATH text rotation + wind
+    if (cur.id === 'BREATH'){
+      const cycle = 8;
+      const x = (state.phaseT % cycle) / cycle;
+      const inhalePrimary = x >= 0.5;
+      mainText.innerHTML = inhalePrimary
+        ? `<span style="opacity:.45">${cur.text}</span><br>${cur.alt}`
+        : `${cur.text}<br><span style="opacity:.45">${cur.alt}</span>`;
+      // wind on exhale start (x≈0)
+      if (state.elapsed - state.lastWindAt > cycle - 0.5 && !inhalePrimary && x < 0.06){
+        state.lastWindAt = state.elapsed;
+        windBurst(2.4, 0.15);
+      }
+    }
+    // HEART beat
+    if (cur.id === 'HEART'){
+      if (state.elapsed - state.lastBeatAt > 0.9){
+        state.lastBeatAt = state.elapsed;
+        heartbeat();
+      }
+    }
+
+    // particles + visual
+    updateParticles(dt, particleTarget(cur.id, state.phaseT, cur.dur));
+    const palette = getPalette(state.phaseIdx, state.phaseT);
+    const radius = circleSize(cur.id, state.phaseT);
+    draw(palette, radius);
+
+    // progress bar
+    progBar.style.width = ((state.elapsed / TOTAL) * 100).toFixed(2) + '%';
+
+    state.raf = requestAnimationFrame(tick);
+  }
+
+  /* ---------- Events ---------- */
+  startBtn.addEventListener('click', () => {
+    initAudio();
+    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+    startSession();
+  });
+  endBtn.addEventListener('click', () => endSession(true));
+  restartBtn.addEventListener('click', () => {
+    if (master && audioCtx){
+      master.gain.cancelScheduledValues(audioCtx.currentTime);
+      master.gain.setValueAtTime(soundEnabled ? 1 : 0, audioCtx.currentTime);
+    }
+    startSession();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.code === 'Space'){
+      if (startScreen.classList.contains('on')){ startBtn.click(); e.preventDefault(); }
+      else if (endScreen.classList.contains('on')){ restartBtn.click(); e.preventDefault(); }
+    }
+    if (e.code === 'Escape' && sessionScreen.classList.contains('on')){
+      endSession(true); e.preventDefault();
+    }
+  });
+
+  // initial
+  resizeCanvas();
+  showScreen('start');
+
+  /* ---------- test surface (dev-only hooks; no runtime effect) ---------- */
+  window.__selftune = {
+    PHASES, TOTAL,
+    state,
+    audioReady: () => !!audioCtx,
+    audioContextState: () => audioCtx ? audioCtx.state : null,
+    soundEnabled: () => soundEnabled,
+    setSoundEnabled,
+    startSession,
+    endSession,
+    skipTo(phaseIdx, intoPhaseSec = 0){
+      let t = 0;
+      for (let i = 0; i < phaseIdx; i++) t += PHASES[i].dur;
+      state.elapsed = t + intoPhaseSec;
+      state.phaseIdx = phaseIdx;
+      state.phaseT = intoPhaseSec;
+      updatePhaseUI();
+      applyPhaseAudio(PHASES[phaseIdx].id);
+      if (PHASES[phaseIdx].id === 'LOCK') state.glowBurstAt = state.elapsed;
+    },
+    finishNow(){
+      state.elapsed = TOTAL;
+      state.phaseIdx = PHASES.length - 1;
+      state.phaseT = PHASES[PHASES.length - 1].dur;
+    },
+    // Manually advance simulation + render — used only when rAF is unavailable (tests / hidden iframes)
+    forceTick(dt){
+      const cur = PHASES[state.phaseIdx];
+      state.elapsed += dt;
+      state.phaseT  += dt;
+      let p = cur;
+      while (state.phaseT >= p.dur && state.phaseIdx < PHASES.length - 1){
+        state.phaseT -= p.dur;
+        state.phaseIdx++;
+        p = PHASES[state.phaseIdx];
+        updatePhaseUI();
+        applyPhaseAudio(p.id);
+        if (p.id === 'LOCK') state.glowBurstAt = state.elapsed;
+      }
+      updateParticles(dt, particleTarget(p.id, state.phaseT, p.dur));
+      const palette = getPalette(state.phaseIdx, state.phaseT);
+      const radius  = circleSize(p.id, state.phaseT);
+      draw(palette, radius);
+      progBar.style.width = ((state.elapsed / TOTAL) * 100).toFixed(2) + '%';
+      return { phaseId: p.id, elapsed: state.elapsed, particles: state.particles.length };
+    },
+    drawNow(){
+      resizeCanvas();
+      const p = PHASES[state.phaseIdx];
+      const palette = getPalette(state.phaseIdx, state.phaseT);
+      const radius  = circleSize(p.id, state.phaseT);
+      draw(palette, radius);
+    },
+    currentPhaseId: () => PHASES[state.phaseIdx]?.id,
+    currentScreen: () => {
+      if (startScreen.classList.contains('on')) return 'start';
+      if (sessionScreen.classList.contains('on')) return 'session';
+      if (endScreen.classList.contains('on')) return 'end';
+      return null;
+    },
+    progressPct: () => parseFloat(progBar.style.width) || 0,
+    masterGain: () => master ? master.gain.value : null,
+    droneGain: () => droneGain ? droneGain.gain.value : null,
+    particleCount: () => state.particles.length,
+    mainText: () => mainText.textContent,
+    subText: () => subText.textContent,
+    isRunning: () => state.running,
+  };
+})();
+</script>
+</body>
+</html>
