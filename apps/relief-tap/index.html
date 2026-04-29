@@ -129,6 +129,33 @@
     55%{transform:scale(1.07);}
     100%{transform:scale(1);}
   }
+  .orb.popping-strong{animation:orbPopStrong .28s cubic-bezier(.4,1.8,.5,1);}
+  @keyframes orbPopStrong{
+    0%{transform:scale(.86);}
+    55%{transform:scale(1.13);}
+    100%{transform:scale(1);}
+  }
+  .orb.silenced{
+    animation:none;transform:scale(1);
+    transition:transform .8s ease, box-shadow 1.0s ease, opacity .8s ease;
+    opacity:.85;
+  }
+  .app.bump-first{animation:screenBumpSoft .18s ease;}
+  .app.shake-snap{animation:screenBumpSnap .12s ease;}
+  @keyframes screenBumpSoft{
+    0%{transform:translate(0,0);}
+    30%{transform:translate(0,-1px);}
+    60%{transform:translate(0,.6px);}
+    100%{transform:translate(0,0);}
+  }
+  @keyframes screenBumpSnap{
+    0%{transform:translate(0,0);}
+    18%{transform:translate(-1.6px,1px);}
+    44%{transform:translate(1.6px,-1px);}
+    72%{transform:translate(-.8px,.5px);}
+    100%{transform:translate(0,0);}
+  }
+  body.silencing::before{opacity:.5;transition:opacity .8s ease;}
   /* Mode-specific orb skins */
   .orb.mode-pop  { --c1:#ff3eb5; --c2:#3df0ff; --c3:#ffffff; }
   .orb.mode-click{
@@ -384,11 +411,12 @@
   const cv = $('cv');
   const ctx = cv.getContext('2d');
 
+  const MICROS = ['抜けた','軽くなった','ひとつ消えた','いい感じ','無心でOK'];
   const MODES = {
-    pop:   { drop: 4, vibe: [10], micros:['抜けた','ひとつ消えた','軽くなった','いい感じ','まだいける'] },
-    click: { drop: 3, vibe: [8],  micros:['抜けた','カチッ','軽くなった','いい感じ','まだいける'] },
-    snap:  { drop: 6, vibe: [16], micros:['抜けた','スッ','大きく抜けた','いい感じ','まだいける'] },
-    soft:  { drop: 2, vibe: [6],  micros:['抜けた','ふっ','静かに抜けた','いい感じ','まだいける'] },
+    pop:   { drop: 4, vibe: [10] },
+    click: { drop: 3, vibe: [8]  },
+    snap:  { drop: 6, vibe: [20] },
+    soft:  { drop: 2, vibe: [6]  },
   };
 
   const state = {
@@ -399,6 +427,8 @@
     soundOn: true,
     vibOn: true,
     cleared: false,
+    silencing: false,
+    firstTapDone: false,
     idleTimer: null,
   };
 
@@ -429,10 +459,14 @@
     if (!masterGain || !audioCtx) return;
     const t = audioCtx.currentTime;
     masterGain.gain.cancelScheduledValues(t);
-    masterGain.gain.linearRampToValueAtTime(state.soundOn ? 1 : 0, t + 0.06);
+    if (state.silencing){
+      masterGain.gain.linearRampToValueAtTime(0, t + 0.06);
+    } else {
+      masterGain.gain.linearRampToValueAtTime(state.soundOn ? 1 : 0, t + 0.06);
+    }
   }
 
-  function playPop(){
+  function playPop(volMult = 1){
     if (!audioCtx) return;
     const t = audioCtx.currentTime;
     const f = jit(440, 0.08);
@@ -441,7 +475,7 @@
     o.frequency.exponentialRampToValueAtTime(f * 1.85, t + 0.04);
     const g = audioCtx.createGain(); g.gain.value = 0;
     o.connect(g); g.connect(masterGain);
-    g.gain.linearRampToValueAtTime(jit(.45, .05), t + 0.005);
+    g.gain.linearRampToValueAtTime(jit(.45, .05) * volMult, t + 0.005);
     g.gain.exponentialRampToValueAtTime(0.0008, t + 0.085);
     o.start(t); o.stop(t + 0.12);
     // noise click
@@ -449,11 +483,11 @@
     const nf = audioCtx.createBiquadFilter(); nf.type = 'highpass'; nf.frequency.value = 2200;
     const ng = audioCtx.createGain();
     ns.connect(nf); nf.connect(ng); ng.connect(masterGain);
-    ng.gain.linearRampToValueAtTime(jit(.18, .05), t + 0.002);
+    ng.gain.linearRampToValueAtTime(jit(.18, .05) * volMult, t + 0.002);
     ng.gain.exponentialRampToValueAtTime(0.0008, t + 0.03);
     ns.start(t); ns.stop(t + 0.05);
   }
-  function playClick(){
+  function playClick(volMult = 1){
     if (!audioCtx) return;
     const t = audioCtx.currentTime;
     const f = jit(1300, 0.08);
@@ -461,7 +495,7 @@
     o.frequency.value = f;
     const g = audioCtx.createGain(); g.gain.value = 0;
     o.connect(g); g.connect(masterGain);
-    g.gain.linearRampToValueAtTime(jit(.32, .05), t + 0.002);
+    g.gain.linearRampToValueAtTime(jit(.32, .05) * volMult, t + 0.002);
     g.gain.exponentialRampToValueAtTime(0.0008, t + 0.04);
     o.start(t); o.stop(t + 0.06);
     // tiny noise
@@ -469,19 +503,28 @@
     const nf = audioCtx.createBiquadFilter(); nf.type = 'highpass'; nf.frequency.value = 4000;
     const ng = audioCtx.createGain();
     ns.connect(nf); nf.connect(ng); ng.connect(masterGain);
-    ng.gain.linearRampToValueAtTime(jit(.10, .05), t + 0.001);
+    ng.gain.linearRampToValueAtTime(jit(.10, .05) * volMult, t + 0.001);
     ng.gain.exponentialRampToValueAtTime(0.0008, t + 0.02);
     ns.start(t); ns.stop(t + 0.04);
   }
-  function playSnap(){
+  function playSnap(volMult = 1){
     if (!audioCtx) return;
     const t = audioCtx.currentTime;
+    // low-end thump (subtle weight; final-polished from .32 -> .25 to stay non-aggressive)
+    const tho = audioCtx.createOscillator(); tho.type = 'sine';
+    tho.frequency.setValueAtTime(jit(72, 0.05), t);
+    tho.frequency.exponentialRampToValueAtTime(jit(46, 0.05), t + 0.09);
+    const thg = audioCtx.createGain(); thg.gain.value = 0;
+    tho.connect(thg); thg.connect(masterGain);
+    thg.gain.linearRampToValueAtTime(jit(.25, .05) * volMult, t + 0.005);
+    thg.gain.exponentialRampToValueAtTime(0.0008, t + 0.11);
+    tho.start(t); tho.stop(t + 0.14);
     // bandpassed noise burst
     const ns = noiseSrc();
     const nf = audioCtx.createBiquadFilter(); nf.type = 'bandpass'; nf.frequency.value = jit(900, 0.08); nf.Q.value = 0.7;
     const ng = audioCtx.createGain();
     ns.connect(nf); nf.connect(ng); ng.connect(masterGain);
-    ng.gain.linearRampToValueAtTime(jit(.4, .05), t + 0.005);
+    ng.gain.linearRampToValueAtTime(jit(.4, .05) * volMult, t + 0.005);
     ng.gain.exponentialRampToValueAtTime(0.0008, t + 0.06);
     ns.start(t); ns.stop(t + 0.1);
     // pitch-down square
@@ -490,11 +533,11 @@
     o.frequency.exponentialRampToValueAtTime(jit(220, 0.08), t + 0.07);
     const g = audioCtx.createGain(); g.gain.value = 0;
     o.connect(g); g.connect(masterGain);
-    g.gain.linearRampToValueAtTime(jit(.20, .05), t + 0.005);
+    g.gain.linearRampToValueAtTime(jit(.20, .05) * volMult, t + 0.005);
     g.gain.exponentialRampToValueAtTime(0.0008, t + 0.08);
     o.start(t); o.stop(t + 0.1);
   }
-  function playSoft(){
+  function playSoft(volMult = 1){
     if (!audioCtx) return;
     const t = audioCtx.currentTime;
     const f = jit(280, 0.08);
@@ -502,7 +545,7 @@
     o.frequency.value = f;
     const g = audioCtx.createGain(); g.gain.value = 0;
     o.connect(g); g.connect(masterGain);
-    g.gain.linearRampToValueAtTime(jit(.20, .05), t + 0.012);
+    g.gain.linearRampToValueAtTime(jit(.20, .05) * volMult, t + 0.012);
     g.gain.exponentialRampToValueAtTime(0.0008, t + 0.13);
     o.start(t); o.stop(t + 0.16);
     // muted noise
@@ -510,7 +553,7 @@
     const nf = audioCtx.createBiquadFilter(); nf.type = 'lowpass'; nf.frequency.value = 700;
     const ng = audioCtx.createGain();
     ns.connect(nf); nf.connect(ng); ng.connect(masterGain);
-    ng.gain.linearRampToValueAtTime(jit(.07, .05), t + 0.012);
+    ng.gain.linearRampToValueAtTime(jit(.07, .05) * volMult, t + 0.012);
     ng.gain.exponentialRampToValueAtTime(0.0008, t + 0.10);
     ns.start(t); ns.stop(t + 0.13);
   }
@@ -549,6 +592,7 @@
 
   /* ---------- CANVAS / PARTICLES ---------- */
   let particles = [];
+  const MAX_PARTICLES = 260; // hard cap so rapid taps stay smooth & uncluttered
   function resizeCanvas(){
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     cv.width  = Math.round(window.innerWidth  * dpr);
@@ -565,25 +609,42 @@
     snap:  ['#b07cff','#ff3eb5','#7c4dff','#ffffff'],
     soft:  ['#ff7ad6','#b8d4ff','#cffaff','#ffe2f2'],
   };
-  function spawnBurst(x, y, mode){
+  function spawnBurst(x, y, mode, countMult = 1){
     const pal = PALETTES[mode] || PALETTES.pop;
-    const N = mode === 'snap' ? 22 : (mode === 'soft' ? 14 : 18);
+    // mode-personality counts (snap punchier, soft fewer, click crisp, pop bouncy)
+    const baseN = mode === 'snap' ? 26 : (mode === 'soft' ? 11 : (mode === 'click' ? 14 : 18));
+    const N = Math.max(1, Math.round(baseN * countMult));
+    // particle cap: drop oldest if we'd exceed the limit (keeps rapid taps smooth)
+    if (particles.length + N > MAX_PARTICLES){
+      const drop = particles.length + N - MAX_PARTICLES;
+      particles.splice(0, drop);
+    }
     for (let i = 0; i < N; i++){
       const ang = Math.random() * Math.PI * 2;
-      const sp = mode === 'soft'
-        ? (40 + Math.random() * 80)
-        : (140 + Math.random() * 240);
+      // velocity per mode personality
+      const sp = mode === 'soft'   ? (35 + Math.random() * 70)
+              : mode === 'snap'    ? (180 + Math.random() * 260)
+              : mode === 'click'   ? (160 + Math.random() * 200)
+              : /* pop */            (130 + Math.random() * 220);
+      // life per mode (soft = long fade, click = short crisp, snap = mid sharp)
+      const life = mode === 'soft'  ? (1.4 + Math.random() * 0.7)
+                : mode === 'click'  ? (0.40 + Math.random() * 0.20)
+                : mode === 'snap'   ? (0.55 + Math.random() * 0.30)
+                : /* pop */           (0.60 + Math.random() * 0.35);
+      // size per mode
+      const r = mode === 'snap' ? 2.6 + Math.random() * 5.0
+             : mode === 'click' ? 1.6 + Math.random() * 2.2
+             : mode === 'soft'  ? 2.0 + Math.random() * 3.4
+             : /* pop */           2.4 + Math.random() * 4.0;
       particles.push({
         x, y,
         vx: Math.cos(ang) * sp,
         vy: Math.sin(ang) * sp - (mode === 'soft' ? 60 : 30),
-        life: mode === 'soft' ? 1.0 + Math.random() * 0.5 : 0.55 + Math.random() * 0.30,
-        age: 0,
-        r: 2 + Math.random() * 4,
+        life, age: 0, r,
         shape: mode === 'click' ? 'square' : (mode === 'snap' ? 'shard' : 'dot'),
         color: pal[(Math.random() * pal.length) | 0],
         rot: Math.random() * Math.PI * 2,
-        vrot: (Math.random() - 0.5) * 6,
+        vrot: (Math.random() - 0.5) * (mode === 'snap' ? 9 : 6),
         gravity: mode === 'soft' ? -40 : 220,
       });
     }
@@ -633,7 +694,7 @@
         ctx.translate(p.x, p.y);
         ctx.rotate(p.rot);
         ctx.beginPath();
-        ctx.moveTo(0, -8); ctx.lineTo(3.5, 8); ctx.lineTo(-3.5, 8); ctx.closePath();
+        ctx.moveTo(0, -10); ctx.lineTo(4, 10); ctx.lineTo(-4, 10); ctx.closePath();
         ctx.fill();
         ctx.restore();
       } else {
@@ -711,9 +772,14 @@
     state.combo = 0;
     state.taps = 0;
     state.cleared = false;
+    state.silencing = false;
+    state.firstTapDone = false;
     cleared.classList.remove('on');
     cleared.setAttribute('aria-hidden', 'true');
+    orb.classList.remove('silenced','popping','popping-strong');
+    document.body.classList.remove('silencing');
     if (state.idleTimer){ clearTimeout(state.idleTimer); state.idleTimer = null; }
+    applySound(); // restore master gain after silence
     updateStressUI(); updateComboUI();
   }
 
@@ -722,20 +788,33 @@
     state.cleared = true;
     state.combo = 0;
     if (state.idleTimer){ clearTimeout(state.idleTimer); state.idleTimer = null; }
-    setTimeout(() => {
-      cleared.classList.add('on');
-      cleared.setAttribute('aria-hidden', 'false');
-    }, 600);
     spawnClearParticles();
     playClear();
     vibrate([25, 35, 25]);
+    // shimmer plays out for ~1.0s, then 0.8s of silent stillness, then overlay
+    setTimeout(() => {
+      state.silencing = true;
+      orb.classList.add('silenced');
+      document.body.classList.add('silencing');
+      // hard mute (no new sound, no toggling back during silence)
+      if (masterGain && audioCtx){
+        const t = audioCtx.currentTime;
+        masterGain.gain.cancelScheduledValues(t);
+        masterGain.gain.linearRampToValueAtTime(0, t + 0.18);
+      }
+      setTimeout(() => {
+        cleared.classList.add('on');
+        cleared.setAttribute('aria-hidden', 'false');
+      }, 800);
+    }, 1000);
   }
 
   function tap(){
-    if (state.cleared) return;
+    if (state.cleared || state.silencing) return;
     initAudio();
     if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
     const m = MODES[state.mode];
+    const isFirst = !state.firstTapDone;
     state.taps += 1;
     state.combo += 1;
     let drop = m.drop;
@@ -743,19 +822,38 @@
     state.stress = Math.max(0, state.stress - drop);
     updateStressUI(); updateComboUI();
 
-    // visual
-    orb.classList.remove('popping');
+    // visual: stronger pop on first tap
+    orb.classList.remove('popping','popping-strong');
     void orb.offsetWidth;
-    orb.classList.add('popping');
+    orb.classList.add(isFirst ? 'popping-strong' : 'popping');
+
+    // particle burst (1.35x count on first tap — final polish: gentler boost)
     const r = orb.getBoundingClientRect();
-    spawnBurst(r.left + r.width/2, r.top + r.height/2, state.mode);
-    showMicro(m.micros[(Math.random() * m.micros.length) | 0]);
+    spawnBurst(r.left + r.width/2, r.top + r.height/2, state.mode, isFirst ? 1.35 : 1);
+
+    // microtext: force "抜けた" on first tap
+    showMicro(isFirst ? '抜けた' : MICROS[(Math.random() * MICROS.length) | 0]);
+
     const ms = milestoneFor(state.combo);
     if (ms) showBanner(ms);
 
-    // audio + vibration
-    (SOUND_FNS[state.mode] || playPop)();
+    // audio + vibration (volume +15% on first tap — final polish: gentler boost)
+    const volMult = isFirst ? 1.15 : 1;
+    (SOUND_FNS[state.mode] || playPop)(volMult);
     vibrate(m.vibe);
+
+    // screen feedback: subtle bump on first tap, brief shake on SNAP
+    const app = document.querySelector('.app');
+    if (isFirst){
+      app.classList.remove('bump-first'); void app.offsetWidth;
+      app.classList.add('bump-first');
+    }
+    if (state.mode === 'snap'){
+      app.classList.remove('shake-snap'); void app.offsetWidth;
+      app.classList.add('shake-snap');
+    }
+
+    state.firstTapDone = true;
 
     // idle reset
     if (state.idleTimer) clearTimeout(state.idleTimer);
@@ -855,7 +953,7 @@
           ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.fillRect(-3,-3,6,6); ctx.restore();
         } else if (p.shape === 'shard'){
           ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot);
-          ctx.beginPath(); ctx.moveTo(0,-8); ctx.lineTo(3.5,8); ctx.lineTo(-3.5,8); ctx.closePath(); ctx.fill();
+          ctx.beginPath(); ctx.moveTo(0,-10); ctx.lineTo(4,10); ctx.lineTo(-4,10); ctx.closePath(); ctx.fill();
           ctx.restore();
         } else {
           ctx.beginPath(); ctx.arc(p.x, p.y, p.r * (0.5 + 0.5*k), 0, Math.PI*2); ctx.fill();
