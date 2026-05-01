@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
+<meta name="theme-color" content="#0a0e1a" />
+<title>FX Entry GO / WAIT Starter Kit — エントリー迷う人へ</title>
+<style>
+  :root{
+    --bg-0:#070a14;
+    --bg-1:#0a0e1a;
+    --bg-2:#0f1730;
+    --ink:#e7ecf7;
+    --sub:#8d9ab8;
+    --line:rgba(255,255,255,.08);
+    --accent:#5eb3ff;
+    --ok:#5fe7a8;
+    --warn:#ffc857;
+    --bad:#ff6b6b;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-user-select:none;user-select:none;}
+  html,body{height:100%;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Sans","Noto Sans JP","Yu Gothic UI",system-ui,sans-serif;
+    background:#000;color:var(--ink);
+    min-height:100dvh;
+    display:flex;align-items:center;justify-content:center;
+    overflow:hidden;
+  }
+  .frame{
+    position:relative;
+    width:min(100vw,100dvh);
+    height:min(100vw,100dvh);
+    background:
+      radial-gradient(40% 30% at 18% 12%, rgba(94,179,255,.20), transparent 60%),
+      radial-gradient(40% 35% at 88% 18%, rgba(95,231,168,.15), transparent 60%),
+      linear-gradient(180deg,var(--bg-0) 0%,var(--bg-1) 50%,var(--bg-2) 100%);
+    overflow:hidden;
+  }
+  .frame::before{
+    content:"";position:absolute;inset:0;pointer-events:none;
+    background-image:radial-gradient(rgba(255,255,255,.04) 1px,transparent 1.2px);
+    background-size:6px 6px;
+    -webkit-mask-image:radial-gradient(circle at 50% 50%, #000 35%, transparent 90%);
+            mask-image:radial-gradient(circle at 50% 50%, #000 35%, transparent 90%);
+  }
+  .frame::after{
+    content:"";position:absolute;inset:0;pointer-events:none;
+    background:repeating-linear-gradient(180deg,rgba(94,179,255,.04) 0,rgba(94,179,255,.04) 1px,transparent 1px,transparent 4px);
+    mix-blend-mode:screen;opacity:.45;
+  }
+
+  /* TOP */
+  .top{
+    position:absolute;left:0;right:0;top:8%;text-align:center;z-index:3;
+  }
+  .brand{
+    font-size:min(1.5vmin,16px);font-weight:800;letter-spacing:.55em;
+    color:var(--accent);text-shadow:0 0 10px rgba(94,179,255,.55);
+  }
+  .head{
+    margin-top:1.2vmin;
+    font-size:min(8vmin,86px);font-weight:900;letter-spacing:.16em;line-height:1.05;
+    color:var(--ink);
+    text-shadow:0 0 20px rgba(94,179,255,.4);
+  }
+  .head .em{
+    background:linear-gradient(90deg,var(--accent),var(--ok));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .sub{
+    margin-top:1.2vmin;
+    font-size:min(2.4vmin,26px);font-weight:700;letter-spacing:.18em;
+    color:var(--sub);
+  }
+  .sub .pill{
+    display:inline-block;margin:0 .35em;padding:.18em .8em;border-radius:6px;
+    font-size:.78em;font-weight:900;letter-spacing:.22em;
+    border:1px solid;
+  }
+  .sub .pill.go{border-color:rgba(95,231,168,.55);color:var(--ok);background:rgba(95,231,168,.10);}
+  .sub .pill.wait{border-color:rgba(255,107,107,.55);color:var(--bad);background:rgba(255,107,107,.10);}
+
+  /* DASHBOARD MOCK */
+  .dash{
+    position:absolute;
+    left:9%;right:9%;top:36%;
+    border-radius:min(2.4vmin,24px);
+    border:1px solid rgba(94,179,255,.4);
+    background:linear-gradient(180deg,rgba(94,179,255,.06),rgba(94,179,255,.01));
+    backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+    padding:min(3.4vmin,34px);
+    box-shadow:0 16px 50px rgba(0,0,0,.6),0 0 24px rgba(95,231,168,.18),inset 0 1px 0 rgba(255,255,255,.10);
+  }
+  .dash::before{
+    content:"";position:absolute;inset:-1px;border-radius:inherit;padding:1px;
+    background:linear-gradient(135deg,rgba(94,179,255,.55),rgba(95,231,168,.45));
+    -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor;mask-composite:exclude;
+    pointer-events:none;opacity:.55;
+  }
+  .dash-head{
+    display:flex;align-items:center;justify-content:space-between;
+    font-size:min(1.3vmin,13px);letter-spacing:.4em;color:var(--sub);
+    margin-bottom:1.6vmin;
+  }
+  .dash-head .h-l{color:var(--accent);text-shadow:0 0 6px rgba(94,179,255,.5);}
+  .dash-head .h-tk{
+    color:var(--ok);font-weight:800;
+    text-shadow:0 0 6px rgba(95,231,168,.55);
+  }
+
+  .row{
+    display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:min(2.0vmin,20px);
+    align-items:end;
+  }
+  .cell{position:relative;}
+  .cell-l{
+    font-size:min(1.3vmin,13px);letter-spacing:.4em;color:var(--sub);
+    margin-bottom:.6vmin;
+  }
+  .score{
+    font-size:min(11vmin,118px);font-weight:900;line-height:.95;
+    color:#dcfff0;letter-spacing:.04em;font-feature-settings:"tnum";
+    text-shadow:0 0 24px rgba(95,231,168,.5),0 0 60px rgba(95,231,168,.3);
+  }
+  .score small{font-size:.34em;font-weight:700;color:var(--sub);margin-left:.3em;}
+  .decision{
+    font-size:min(6vmin,64px);font-weight:900;letter-spacing:.18em;line-height:1;
+    color:var(--ok);
+    text-shadow:0 0 18px rgba(95,231,168,.65),0 0 42px rgba(95,231,168,.4);
+  }
+  .risk{
+    font-size:min(4vmin,42px);font-weight:900;letter-spacing:.18em;
+    color:var(--ink);
+    padding:.18em .55em;border-radius:.4em;
+    background:rgba(95,231,168,.12);
+    border:1px solid rgba(95,231,168,.45);
+    box-shadow:inset 0 0 16px rgba(95,231,168,.18);
+  }
+
+  /* Score bar */
+  .bar{
+    grid-column:1 / -1;
+    margin-top:min(2.4vmin,24px);
+    height:min(1.4vmin,14px);
+    background:rgba(255,255,255,.06);
+    border:1px solid var(--line);
+    border-radius:99px;overflow:hidden;
+    position:relative;
+  }
+  .bar > i{
+    display:block;height:100%;width:85%;
+    background:linear-gradient(90deg,var(--bad) 0%,var(--warn) 50%,var(--ok) 100%);
+    border-radius:99px;
+    box-shadow:0 0 16px rgba(95,231,168,.5);
+  }
+  .bar > .mark{
+    position:absolute;left:80%;top:-4px;bottom:-4px;
+    border-left:2px dashed rgba(255,200,87,.65);
+  }
+  .bar-leg{
+    grid-column:1 / -1;
+    margin-top:.8vmin;
+    display:flex;justify-content:space-between;
+    font-size:min(1.0vmin,10px);letter-spacing:.34em;color:var(--sub);
+  }
+
+  /* BOTTOM tagline */
+  .bottom{
+    position:absolute;left:0;right:0;bottom:7%;text-align:center;z-index:3;
+  }
+  .product{
+    font-size:min(2.4vmin,26px);font-weight:900;letter-spacing:.32em;
+    color:var(--ink);
+    text-shadow:0 0 14px rgba(94,179,255,.4);
+  }
+  .product .slash{color:var(--accent);}
+  .tagline{
+    margin-top:1.2vmin;
+    font-size:min(1.4vmin,14px);letter-spacing:.32em;color:var(--sub);
+  }
+  .badge-set{
+    margin-top:1.6vmin;
+    display:flex;justify-content:center;gap:.8vmin;flex-wrap:wrap;
+    font-size:min(1.0vmin,11px);letter-spacing:.4em;color:var(--sub);
+  }
+  .badge-set span{
+    display:inline-block;padding:.4vmin .9vmin;border-radius:99px;
+    border:1px solid var(--line);background:rgba(255,255,255,.04);
+  }
+
+  /* footer mark */
+  .mark-foot{
+    position:absolute;left:0;right:0;bottom:1.8%;
+    text-align:center;
+    font-size:min(.95vmin,10px);letter-spacing:.45em;color:var(--sub);
+    opacity:.45;
+  }
+</style>
+</head>
+<body>
+<div class="frame" id="frame" aria-label="FX GO/WAIT Starter Kit promo 1:1">
+
+  <header class="top">
+    <div class="brand">FX ・ GO / WAIT ・ CHECKER</div>
+    <div class="head">エントリー<span class="em">迷う人</span>へ</div>
+    <div class="sub">
+      <span class="pill go">GO</span> / <span class="pill wait">WAIT</span> を見える化
+    </div>
+  </header>
+
+  <div class="dash">
+    <div class="dash-head">
+      <span class="h-l">▣ ENTRY DECISION</span>
+      <span class="h-tk">LIVE ・ ON</span>
+    </div>
+    <div class="row">
+      <div class="cell">
+        <div class="cell-l">SCORE</div>
+        <div class="score">85<small>/100</small></div>
+      </div>
+      <div class="cell">
+        <div class="cell-l">DECISION</div>
+        <div class="decision">GO</div>
+      </div>
+      <div class="cell">
+        <div class="cell-l">RISK</div>
+        <div class="risk">LOW</div>
+      </div>
+      <div class="bar" aria-hidden="true">
+        <i></i>
+        <div class="mark"></div>
+      </div>
+      <div class="bar-leg" aria-hidden="true">
+        <span>0</span><span>WAIT</span><span>CAUTION</span><span>GO</span><span>100</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom">
+    <div class="product">FX Entry <span class="slash">GO / WAIT</span> Starter Kit</div>
+    <div class="tagline">7条件 ・ スコア ・ 判定 ・ MT5パネル</div>
+    <div class="badge-set">
+      <span>HTML TOOL</span><span>MT5 INDICATOR</span><span>DOCS PDF/HTML</span>
+    </div>
+  </div>
+
+  <div class="mark-foot">x-mini-apps ・ fx-go-wait-starter-kit</div>
+</div>
+</body>
+</html>

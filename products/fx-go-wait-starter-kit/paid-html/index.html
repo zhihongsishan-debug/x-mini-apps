@@ -1,0 +1,408 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
+<meta name="theme-color" content="#0a0e1a" />
+<title>FX GO / WAIT Checker — 完全版</title>
+<style>
+  :root{
+    --bg-0:#0a0e1a;
+    --bg-1:#10172a;
+    --bg-2:#16203a;
+    --ink:#e7ecf7;
+    --sub:#8d9ab8;
+    --line:rgba(255,255,255,.07);
+    --accent:#5eb3ff;
+    --ok:#5fe7a8;
+    --warn:#ffc857;
+    --bad:#ff6b6b;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;}
+  html,body{height:100%;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Sans","Noto Sans JP","Yu Gothic UI",system-ui,sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(40% 30% at 80% 0%, rgba(94,179,255,.10), transparent 60%),
+      linear-gradient(180deg, var(--bg-0) 0%, var(--bg-1) 60%, var(--bg-2) 100%);
+    background-attachment:fixed;
+    min-height:100dvh;
+    overflow-x:hidden;
+  }
+  .app{
+    max-width:520px;margin:0 auto;
+    padding:max(16px,env(safe-area-inset-top)) 18px max(20px,env(safe-area-inset-bottom));
+    display:flex;flex-direction:column;gap:14px;
+  }
+  header{padding-bottom:8px;border-bottom:1px solid var(--line);}
+  .brand{font-size:10px;letter-spacing:.5em;color:var(--accent);text-shadow:0 0 8px rgba(94,179,255,.5);}
+  h1{margin:6px 0 4px;font-size:22px;font-weight:800;letter-spacing:.04em;color:var(--ink);}
+  .sub{font-size:12px;color:var(--sub);letter-spacing:.06em;}
+  .badge-pro{
+    display:inline-block;margin-left:8px;
+    font-size:10px;font-weight:800;letter-spacing:.25em;
+    padding:3px 8px;border-radius:4px;
+    background:rgba(95,231,168,.16);
+    border:1px solid rgba(95,231,168,.4);
+    color:var(--ok);vertical-align:middle;
+  }
+
+  .panel{
+    border:1px solid var(--line);border-radius:12px;
+    background:linear-gradient(180deg,rgba(255,255,255,.025),rgba(255,255,255,0));
+    padding:14px 14px 12px;
+  }
+  .panel-title{
+    font-size:10px;letter-spacing:.32em;color:var(--accent);
+    margin-bottom:12px;
+  }
+
+  /* ========== HERO RESULT ========== */
+  .result{
+    border-radius:14px;
+    padding:18px 16px 16px;
+    background:linear-gradient(180deg,rgba(94,179,255,.08),rgba(94,179,255,.02));
+    border:1px solid rgba(94,179,255,.25);
+    position:relative;
+    overflow:hidden;
+    transition:background .35s ease,border-color .35s ease,box-shadow .35s ease;
+  }
+  .result.tier-go{
+    background:linear-gradient(180deg,rgba(95,231,168,.10),rgba(95,231,168,.02));
+    border-color:rgba(95,231,168,.4);
+    box-shadow:0 8px 30px rgba(95,231,168,.15);
+  }
+  .result.tier-caution{
+    background:linear-gradient(180deg,rgba(255,200,87,.10),rgba(255,200,87,.02));
+    border-color:rgba(255,200,87,.4);
+    box-shadow:0 8px 30px rgba(255,200,87,.15);
+  }
+  .result.tier-wait{
+    background:linear-gradient(180deg,rgba(255,107,107,.10),rgba(255,107,107,.02));
+    border-color:rgba(255,107,107,.4);
+    box-shadow:0 8px 30px rgba(255,107,107,.12);
+  }
+
+  .row{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;}
+  .score-block{flex:1;}
+  .score-label{font-size:10px;letter-spacing:.32em;color:var(--sub);}
+  .score-val{
+    font-size:54px;font-weight:900;line-height:1;color:var(--ink);
+    font-feature-settings:"tnum";letter-spacing:.02em;margin-top:4px;
+    text-shadow:0 0 18px rgba(94,179,255,.3);
+    transition:text-shadow .35s ease,color .35s ease;
+  }
+  .result.tier-go    .score-val{color:#dcfff0;text-shadow:0 0 18px rgba(95,231,168,.55);}
+  .result.tier-caution .score-val{color:#fff4dc;text-shadow:0 0 18px rgba(255,200,87,.5);}
+  .result.tier-wait    .score-val{color:#ffe2e2;text-shadow:0 0 18px rgba(255,107,107,.45);}
+  .score-val .denom{font-size:18px;font-weight:700;color:var(--sub);margin-left:4px;}
+  .badge-block{flex:0 0 auto;text-align:right;}
+  .decision-badge{
+    display:inline-block;
+    font-size:18px;font-weight:900;letter-spacing:.28em;
+    padding:9px 16px;border-radius:8px;
+    background:rgba(94,179,255,.16);color:var(--accent);
+    border:1px solid rgba(94,179,255,.4);
+    transition:all .35s ease;
+  }
+  .result.tier-go    .decision-badge{background:rgba(95,231,168,.18);color:var(--ok);border-color:rgba(95,231,168,.5);box-shadow:0 0 18px rgba(95,231,168,.45);}
+  .result.tier-caution .decision-badge{background:rgba(255,200,87,.18);color:var(--warn);border-color:rgba(255,200,87,.5);box-shadow:0 0 14px rgba(255,200,87,.4);}
+  .result.tier-wait    .decision-badge{background:rgba(255,107,107,.18);color:var(--bad);border-color:rgba(255,107,107,.5);box-shadow:0 0 14px rgba(255,107,107,.35);}
+
+  .meter-bar{
+    margin-top:14px;
+    height:8px;border-radius:99px;
+    background:rgba(255,255,255,.06);overflow:hidden;
+    border:1px solid var(--line);
+  }
+  .meter-bar > i{
+    display:block;height:100%;width:0%;
+    background:linear-gradient(90deg,var(--bad) 0%,var(--warn) 50%,var(--ok) 100%);
+    transition:width .45s cubic-bezier(.2,.7,.2,1);
+  }
+
+  .risk-row{
+    display:grid;grid-template-columns:1fr 1fr;gap:10px;
+    margin-top:14px;
+  }
+  .risk-cell{
+    padding:9px 12px;border-radius:8px;
+    background:rgba(0,0,0,.18);border:1px solid var(--line);
+  }
+  .risk-cell .l{font-size:9px;letter-spacing:.3em;color:var(--sub);}
+  .risk-cell .v{
+    font-size:13px;font-weight:800;letter-spacing:.06em;color:var(--ink);
+    margin-top:3px;
+  }
+  .risk-cell.risk-low .v{color:var(--ok);}
+  .risk-cell.risk-mid .v{color:var(--warn);}
+  .risk-cell.risk-high .v{color:var(--bad);}
+
+  .advice{
+    margin-top:14px;
+    font-size:13px;line-height:1.65;color:var(--ink);
+    padding:11px 12px;border-radius:8px;
+    background:rgba(0,0,0,.18);
+    border:1px solid var(--line);
+  }
+
+  .missing{
+    margin-top:14px;
+  }
+  .missing-l{font-size:9px;letter-spacing:.3em;color:var(--sub);margin-bottom:6px;}
+  .missing-list{
+    list-style:none;
+    display:flex;flex-direction:column;gap:5px;
+  }
+  .missing-list li{
+    font-size:12px;color:var(--sub);
+    padding:6px 10px;border-radius:6px;
+    background:rgba(255,107,107,.06);border:1px solid rgba(255,107,107,.18);
+  }
+  .missing-list li::before{content:"− ";color:var(--bad);font-weight:800;}
+  .missing-list .none{
+    background:rgba(95,231,168,.06);border-color:rgba(95,231,168,.18);
+    color:var(--ok);
+  }
+  .missing-list .none::before{content:"✓ ";}
+
+  /* ========== CHECKLIST ========== */
+  .check-list{display:flex;flex-direction:column;gap:8px;}
+  .check{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:11px 12px;border-radius:10px;
+    background:rgba(255,255,255,.03);
+    border:1px solid var(--line);
+    cursor:pointer;
+    transition:background .15s ease,border-color .15s ease;
+  }
+  .check:hover{background:rgba(255,255,255,.05);border-color:rgba(94,179,255,.25);}
+  .check[aria-pressed="true"]{
+    background:rgba(95,231,168,.10);
+    border-color:rgba(95,231,168,.4);
+    box-shadow:inset 0 0 0 1px rgba(95,231,168,.18);
+  }
+  .check .num{flex:0 0 22px;font-size:11px;font-weight:800;color:var(--sub);font-feature-settings:"tnum";}
+  .check .text{flex:1;font-size:13px;color:var(--ink);line-height:1.4;}
+  .check .toggle{
+    flex:0 0 56px;text-align:center;
+    font-size:11px;font-weight:800;letter-spacing:.18em;
+    padding:5px 8px;border-radius:6px;
+    border:1px solid var(--line);color:var(--sub);
+    background:rgba(0,0,0,.2);transition:all .15s ease;
+  }
+  .check[aria-pressed="true"] .toggle{
+    color:#0a0e1a;background:var(--ok);border-color:var(--ok);
+    box-shadow:0 0 8px rgba(95,231,168,.45);
+  }
+
+  .reset{
+    appearance:none;border:1px solid var(--line);
+    background:rgba(255,255,255,.03);
+    color:var(--sub);font:inherit;font-size:11px;letter-spacing:.25em;
+    padding:9px 16px;border-radius:8px;cursor:pointer;
+    align-self:flex-start;
+  }
+  .reset:hover{border-color:var(--accent);color:var(--ink);}
+
+  .disclaimer{
+    margin-top:6px;
+    font-size:10px;line-height:1.7;letter-spacing:.06em;color:var(--sub);opacity:.75;
+    text-align:center;
+  }
+  .footer{margin-top:6px;text-align:center;font-size:9px;letter-spacing:.25em;color:var(--sub);opacity:.5;}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand">FX ・ GO / WAIT ・ CHECKER</div>
+    <h1>エントリー判定<span class="badge-pro">PRO</span></h1>
+    <div class="sub">7条件 × スコア判定 × GO / CAUTION / WAIT</div>
+  </header>
+
+  <section class="result" id="result" aria-live="polite">
+    <div class="row">
+      <div class="score-block">
+        <div class="score-label">SCORE</div>
+        <div class="score-val"><span id="scoreVal">0</span><span class="denom">/ 100</span></div>
+      </div>
+      <div class="badge-block">
+        <span class="decision-badge" id="decisionBadge">WAIT</span>
+      </div>
+    </div>
+    <div class="meter-bar"><i id="meterFill"></i></div>
+    <div class="risk-row">
+      <div class="risk-cell risk-high" id="riskCell">
+        <div class="l">RISK</div>
+        <div class="v" id="riskVal">HIGH</div>
+      </div>
+      <div class="risk-cell">
+        <div class="l">CHECKED</div>
+        <div class="v"><span id="cntVal">0</span> / 7</div>
+      </div>
+    </div>
+    <div class="advice" id="adviceBox">見送り推奨です。条件不足のまま入る場面ではありません。</div>
+    <div class="missing">
+      <div class="missing-l">MISSING CONDITIONS</div>
+      <ul class="missing-list" id="missingList"></ul>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="checklistLbl">
+    <div class="panel-title" id="checklistLbl">▣ CHECKLIST (7)</div>
+    <div class="check-list" id="list"></div>
+  </section>
+
+  <button class="reset" id="resetBtn" type="button">RESET</button>
+  <p class="disclaimer">このツールは投資助言ではありません。売買判断は必ずご自身の責任で行ってください。</p>
+  <p class="footer">FX GO / WAIT Starter Kit ・ paid-html</p>
+</div>
+
+<script>
+(() => {
+  const ITEMS = [
+    '上位足トレンドが一致している',
+    '押し目 / 戻り目が成立している',
+    'ブレイク確認がある',
+    'ボラティリティが十分',
+    'RR 1:1.5以上が見込める',
+    '損切り位置が明確',
+    '時間帯が悪くない',
+  ];
+  const POINT_PER_YES = 15;
+  const MAX_SCORE = 100;
+  const MSG = {
+    GO:      '条件はかなり揃っています。ただしロット管理は必須です。',
+    CAUTION: '条件は一部弱いです。無理に入らず、追加確認を推奨します。',
+    WAIT:    '見送り推奨です。条件不足のまま入る場面ではありません。',
+  };
+
+  const state = ITEMS.map(() => false);
+
+  const list = document.getElementById('list');
+  const scoreVal = document.getElementById('scoreVal');
+  const cntVal = document.getElementById('cntVal');
+  const decisionBadge = document.getElementById('decisionBadge');
+  const meterFill = document.getElementById('meterFill');
+  const riskCell = document.getElementById('riskCell');
+  const riskVal = document.getElementById('riskVal');
+  const adviceBox = document.getElementById('adviceBox');
+  const missingList = document.getElementById('missingList');
+  const resultBox = document.getElementById('result');
+
+  function calcScore(s){
+    const yes = s.filter(Boolean).length;
+    return Math.min(MAX_SCORE, yes * POINT_PER_YES);
+  }
+  function decisionFor(score){
+    if (score >= 80) return 'GO';
+    if (score >= 60) return 'CAUTION';
+    return 'WAIT';
+  }
+  function riskFor(score, missingCount){
+    if (score >= 80) return missingCount === 0 ? 'LOW' : 'MEDIUM';
+    if (score >= 60) return 'MEDIUM';
+    return 'HIGH';
+  }
+
+  function renderChecklist(){
+    list.innerHTML = '';
+    ITEMS.forEach((label, i) => {
+      const row = document.createElement('div');
+      row.className = 'check';
+      row.setAttribute('role', 'button');
+      row.setAttribute('tabindex', '0');
+      row.setAttribute('aria-pressed', String(state[i]));
+      row.innerHTML =
+        '<span class="num">' + (i+1) + '.</span>' +
+        '<span class="text"></span>' +
+        '<span class="toggle">' + (state[i] ? 'YES' : 'NO') + '</span>';
+      row.querySelector('.text').textContent = label;
+      row.addEventListener('click', () => {
+        state[i] = !state[i];
+        renderAll();
+      });
+      row.addEventListener('keydown', (e) => {
+        if (e.code === 'Space' || e.code === 'Enter'){
+          e.preventDefault();
+          state[i] = !state[i];
+          renderAll();
+        }
+      });
+      list.appendChild(row);
+    });
+  }
+  function renderResult(){
+    const yes = state.filter(Boolean).length;
+    const missingIdx = state.map((v,i) => v ? -1 : i).filter(i => i >= 0);
+    const score = calcScore(state);
+    const decision = decisionFor(score);
+    const risk = riskFor(score, missingIdx.length);
+
+    scoreVal.textContent = score;
+    cntVal.textContent = yes;
+    decisionBadge.textContent = decision;
+    meterFill.style.width = score + '%';
+    adviceBox.textContent = MSG[decision];
+
+    resultBox.classList.remove('tier-go','tier-caution','tier-wait');
+    if (decision === 'GO')      resultBox.classList.add('tier-go');
+    if (decision === 'CAUTION') resultBox.classList.add('tier-caution');
+    if (decision === 'WAIT')    resultBox.classList.add('tier-wait');
+
+    riskCell.classList.remove('risk-low','risk-mid','risk-high');
+    if (risk === 'LOW')    riskCell.classList.add('risk-low');
+    if (risk === 'MEDIUM') riskCell.classList.add('risk-mid');
+    if (risk === 'HIGH')   riskCell.classList.add('risk-high');
+    riskVal.textContent = risk;
+
+    missingList.innerHTML = '';
+    if (missingIdx.length === 0){
+      const li = document.createElement('li');
+      li.className = 'none';
+      li.textContent = '全て揃っています';
+      missingList.appendChild(li);
+    } else {
+      for (const i of missingIdx){
+        const li = document.createElement('li');
+        li.textContent = (i + 1) + '. ' + ITEMS[i];
+        missingList.appendChild(li);
+      }
+    }
+  }
+  function renderAll(){ renderChecklist(); renderResult(); }
+
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    for (let i = 0; i < state.length; i++) state[i] = false;
+    renderAll();
+  });
+
+  // Test surface
+  window.__fxPaid = {
+    state, ITEMS, MSG,
+    calcScore, decisionFor, riskFor,
+    setAll(v){ for(let i=0;i<state.length;i++) state[i] = !!v; renderAll(); },
+    setN(n){ for(let i=0;i<state.length;i++) state[i] = i < n; renderAll(); },
+    toggle(i){ state[i] = !state[i]; renderAll(); },
+    snap(){
+      return {
+        yes: state.filter(Boolean).length,
+        score: parseInt(scoreVal.textContent, 10),
+        decision: decisionBadge.textContent,
+        risk: riskVal.textContent,
+        advice: adviceBox.textContent,
+        missingCount: missingList.querySelectorAll('li').length,
+        missingFirstClass: missingList.querySelector('li')?.className || '',
+        meterWidth: meterFill.style.width,
+        tier: ['tier-go','tier-caution','tier-wait'].find(c => resultBox.classList.contains(c)),
+      };
+    },
+  };
+
+  renderAll();
+})();
+</script>
+</body>
+</html>

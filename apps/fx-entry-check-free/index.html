@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
+<meta name="theme-color" content="#0a0e1a" />
+<title>FX ENTRY CHECK (Free) — 7条件チェック</title>
+<style>
+  :root{
+    --bg-0:#0a0e1a;
+    --bg-1:#10172a;
+    --bg-2:#16203a;
+    --ink:#e7ecf7;
+    --sub:#8d9ab8;
+    --line:rgba(255,255,255,.07);
+    --accent:#5eb3ff;
+    --ok:#5fe7a8;
+    --warn:#ffc857;
+    --bad:#ff6b6b;
+    --lock:#5b6688;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;}
+  html,body{height:100%;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Sans","Noto Sans JP","Yu Gothic UI",system-ui,sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(40% 30% at 80% 0%, rgba(94,179,255,.10), transparent 60%),
+      linear-gradient(180deg, var(--bg-0) 0%, var(--bg-1) 60%, var(--bg-2) 100%);
+    background-attachment:fixed;
+    min-height:100dvh;
+    overflow-x:hidden;
+  }
+  .app{
+    max-width:520px;margin:0 auto;
+    padding:max(16px,env(safe-area-inset-top)) 18px max(20px,env(safe-area-inset-bottom));
+    display:flex;flex-direction:column;gap:14px;
+  }
+  header{text-align:left;padding-bottom:8px;border-bottom:1px solid var(--line);}
+  .brand{font-size:10px;letter-spacing:.5em;color:var(--accent);text-shadow:0 0 8px rgba(94,179,255,.5);}
+  h1{margin:6px 0 4px;font-size:22px;font-weight:800;letter-spacing:.04em;color:var(--ink);}
+  .sub{font-size:12px;color:var(--sub);letter-spacing:.06em;}
+  .badge-free{
+    display:inline-block;margin-left:8px;
+    font-size:10px;font-weight:800;letter-spacing:.25em;
+    padding:3px 8px;border-radius:4px;
+    background:rgba(94,179,255,.14);
+    border:1px solid rgba(94,179,255,.4);
+    color:var(--accent);vertical-align:middle;
+  }
+
+  .panel{
+    border:1px solid var(--line);border-radius:12px;
+    background:linear-gradient(180deg,rgba(255,255,255,.025),rgba(255,255,255,0));
+    padding:14px 14px 12px;
+  }
+  .panel-title{
+    font-size:10px;letter-spacing:.32em;color:var(--accent);
+    margin-bottom:12px;
+  }
+
+  .check-list{display:flex;flex-direction:column;gap:8px;}
+  .check{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:11px 12px;border-radius:10px;
+    background:rgba(255,255,255,.03);
+    border:1px solid var(--line);
+    cursor:pointer;
+    transition:background .15s ease,border-color .15s ease;
+  }
+  .check:hover{background:rgba(255,255,255,.05);border-color:rgba(94,179,255,.25);}
+  .check[aria-pressed="true"]{
+    background:rgba(95,231,168,.10);
+    border-color:rgba(95,231,168,.4);
+    box-shadow:inset 0 0 0 1px rgba(95,231,168,.18);
+  }
+  .check .num{
+    flex:0 0 22px;
+    font-size:11px;font-weight:800;color:var(--sub);
+    font-feature-settings:"tnum";
+  }
+  .check .text{
+    flex:1;font-size:13px;color:var(--ink);
+    line-height:1.4;
+  }
+  .check .toggle{
+    flex:0 0 56px;
+    text-align:center;
+    font-size:11px;font-weight:800;letter-spacing:.18em;
+    padding:5px 8px;border-radius:6px;
+    border:1px solid var(--line);
+    color:var(--sub);
+    background:rgba(0,0,0,.2);
+    transition:all .15s ease;
+  }
+  .check[aria-pressed="true"] .toggle{
+    color:#0a0e1a;background:var(--ok);border-color:var(--ok);
+    box-shadow:0 0 8px rgba(95,231,168,.45);
+  }
+
+  /* Counter */
+  .counter{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:14px 14px;border-radius:12px;
+    background:linear-gradient(180deg,rgba(94,179,255,.05),rgba(94,179,255,.01));
+    border:1px solid rgba(94,179,255,.25);
+  }
+  .counter-label{font-size:10px;letter-spacing:.32em;color:var(--sub);}
+  .counter-val{
+    font-size:24px;font-weight:900;color:var(--accent);
+    font-feature-settings:"tnum";letter-spacing:.04em;
+    text-shadow:0 0 12px rgba(94,179,255,.45);
+  }
+  .counter-val .denom{font-size:14px;font-weight:700;color:var(--sub);margin-left:4px;}
+
+  /* Locked decision section (Free version teaser) */
+  .locked{
+    border:1px dashed rgba(94,179,255,.3);
+    border-radius:12px;
+    padding:18px 14px;
+    background:linear-gradient(180deg,rgba(94,179,255,.04),rgba(0,0,0,0));
+    text-align:center;
+    position:relative;
+    overflow:hidden;
+  }
+  .locked::before{
+    content:"";position:absolute;inset:0;
+    background:repeating-linear-gradient(135deg,rgba(255,255,255,.015) 0,rgba(255,255,255,.015) 8px,transparent 8px,transparent 16px);
+    pointer-events:none;
+  }
+  .locked-icon{font-size:18px;color:var(--lock);letter-spacing:.18em;}
+  .locked-row{
+    display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;
+    margin:14px 0;
+  }
+  .locked-cell{
+    background:rgba(0,0,0,.25);
+    border:1px solid var(--line);
+    border-radius:8px;padding:10px 6px;
+    text-align:center;
+  }
+  .locked-cell .lk-l{font-size:9px;letter-spacing:.3em;color:var(--sub);margin-bottom:4px;}
+  .locked-cell .lk-v{
+    font-size:14px;color:var(--lock);font-weight:800;letter-spacing:.06em;
+    filter:blur(2px);
+  }
+  .locked-cta{
+    margin-top:6px;font-size:13px;color:var(--ink);font-weight:600;line-height:1.6;
+  }
+  .locked-cta b{color:var(--accent);}
+  .cta-btn{
+    display:inline-block;margin-top:14px;
+    padding:11px 20px;border-radius:8px;
+    background:linear-gradient(180deg,#5eb3ff,#3a87d8);
+    color:#04070d;font-weight:800;font-size:12px;letter-spacing:.2em;text-decoration:none;
+    box-shadow:0 6px 18px rgba(94,179,255,.35);
+  }
+  .cta-btn:active{transform:translateY(1px);}
+
+  .reset{
+    appearance:none;border:1px solid var(--line);
+    background:rgba(255,255,255,.03);
+    color:var(--sub);font:inherit;font-size:11px;letter-spacing:.25em;
+    padding:9px 16px;border-radius:8px;cursor:pointer;
+    align-self:flex-start;
+  }
+  .reset:hover{border-color:var(--accent);color:var(--ink);}
+
+  .disclaimer{
+    margin-top:6px;
+    font-size:10px;line-height:1.7;letter-spacing:.06em;color:var(--sub);opacity:.75;
+    text-align:center;
+  }
+  .footer{margin-top:6px;text-align:center;font-size:9px;letter-spacing:.25em;color:var(--sub);opacity:.5;}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand">FX ・ ENTRY ・ CHECK</div>
+    <h1>FX エントリー前チェック<span class="badge-free">FREE</span></h1>
+    <div class="sub">取引する前に、7つの条件を確認するだけ。</div>
+  </header>
+
+  <section class="panel" aria-labelledby="checklistLbl">
+    <div class="panel-title" id="checklistLbl">▣ CHECKLIST (7)</div>
+    <div class="check-list" id="list"></div>
+  </section>
+
+  <section class="counter" aria-live="polite">
+    <span class="counter-label">CHECKED</span>
+    <span class="counter-val"><span id="cntVal">0</span><span class="denom">/ 7</span></span>
+  </section>
+
+  <button class="reset" id="resetBtn" type="button">RESET</button>
+
+  <section class="locked" aria-label="完全版でアンロック">
+    <div class="locked-icon">▣ LOCKED</div>
+    <div class="locked-row">
+      <div class="locked-cell"><div class="lk-l">SCORE</div><div class="lk-v">XX / 100</div></div>
+      <div class="locked-cell"><div class="lk-l">DECISION</div><div class="lk-v">GO / WAIT</div></div>
+      <div class="locked-cell"><div class="lk-l">RISK</div><div class="lk-v">LOW</div></div>
+    </div>
+    <p class="locked-cta">完全版では <b>スコア判定・GO/WAIT・MT5表示</b> まで使えます。</p>
+    <a class="cta-btn" href="#" id="ctaBtn" aria-label="完全版を見る">完全版を見る</a>
+  </section>
+
+  <p class="disclaimer">投資助言ではありません。最終判断はご自身で行ってください。</p>
+  <p class="footer">x-mini-apps ・ fx-entry-check-free</p>
+</div>
+
+<script>
+(() => {
+  const ITEMS = [
+    '上位足トレンドが一致している',
+    '押し目 / 戻り目が成立している',
+    'ブレイク確認がある',
+    'ボラティリティが十分',
+    'RR 1:1.5以上が見込める',
+    '損切り位置が明確',
+    '時間帯が悪くない',
+  ];
+  const list = document.getElementById('list');
+  const cntVal = document.getElementById('cntVal');
+  const state = ITEMS.map(() => false);
+
+  function render(){
+    list.innerHTML = '';
+    ITEMS.forEach((label, i) => {
+      const row = document.createElement('div');
+      row.className = 'check';
+      row.setAttribute('role', 'button');
+      row.setAttribute('tabindex', '0');
+      row.setAttribute('aria-pressed', String(state[i]));
+      row.innerHTML =
+        '<span class="num">' + (i+1) + '.</span>' +
+        '<span class="text"></span>' +
+        '<span class="toggle">' + (state[i] ? 'YES' : 'NO') + '</span>';
+      row.querySelector('.text').textContent = label;
+      row.addEventListener('click', () => {
+        state[i] = !state[i];
+        render();
+        update();
+      });
+      row.addEventListener('keydown', (e) => {
+        if (e.code === 'Space' || e.code === 'Enter'){
+          e.preventDefault();
+          state[i] = !state[i];
+          render(); update();
+        }
+      });
+      list.appendChild(row);
+    });
+  }
+  function update(){
+    const n = state.filter(Boolean).length;
+    cntVal.textContent = n;
+  }
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    for (let i = 0; i < state.length; i++) state[i] = false;
+    render(); update();
+  });
+
+  // Test surface
+  window.__fxFree = {
+    state, ITEMS,
+    toggle(i){ state[i] = !state[i]; render(); update(); },
+    setAll(v){ for(let i=0;i<state.length;i++) state[i] = !!v; render(); update(); },
+    countYes(){ return state.filter(Boolean).length; },
+    hasAutoDecision(){
+      // Ensure free version does NOT show auto decision elements
+      return Boolean(document.querySelector('.decision-real'));
+    },
+    hasScoreDisplay(){
+      return Boolean(document.querySelector('.score-real'));
+    },
+  };
+
+  render();
+})();
+</script>
+</body>
+</html>
