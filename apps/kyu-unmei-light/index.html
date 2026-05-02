@@ -1,0 +1,496 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
+<meta name="theme-color" content="#0a0518" />
+<title>九運命術ライト診断</title>
+<style>
+  :root{
+    --bg-0:#06030f;
+    --bg-1:#0a0518;
+    --bg-2:#160a30;
+    --gold:#e4c272;
+    --gold-deep:#b08a3e;
+    --violet:#a371ff;
+    --cyan:#3df0ff;
+    --pink:#ff7ac6;
+    --ink:#f0e9d6;
+    --sub:#968aaf;
+    --line:rgba(228,194,114,.18);
+    --serif:"Hiragino Mincho ProN","Yu Mincho","Noto Serif CJK JP","MS Mincho",serif;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Sans","Noto Sans JP","Yu Gothic UI",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    font-family:var(--sans);
+    color:var(--ink);
+    background:
+      radial-gradient(60% 40% at 50% 0%, rgba(228,194,114,.14), transparent 70%),
+      radial-gradient(50% 40% at 92% 110%, rgba(163,113,255,.20), transparent 70%),
+      linear-gradient(180deg, var(--bg-0) 0%, var(--bg-1) 50%, var(--bg-2) 100%);
+    background-attachment:fixed;
+    min-height:100dvh;
+    overflow-x:hidden;
+  }
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;
+    background-image:
+      linear-gradient(rgba(228,194,114,.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(228,194,114,.045) 1px, transparent 1px);
+    background-size:32px 32px;
+    -webkit-mask-image:radial-gradient(circle at 50% 30%, #000 30%, transparent 80%);
+            mask-image:radial-gradient(circle at 50% 30%, #000 30%, transparent 80%);
+    z-index:0;
+  }
+
+  .wrap{
+    position:relative;z-index:1;
+    max-width:480px;margin:0 auto;
+    padding:max(20px,env(safe-area-inset-top)) 20px max(28px,env(safe-area-inset-bottom));
+    min-height:100dvh;
+    display:flex;flex-direction:column;
+  }
+
+  header{text-align:center;margin-bottom:24px;}
+  .brand{
+    font-family:var(--serif);
+    font-size:13px;letter-spacing:.85em;
+    color:var(--gold);
+    text-shadow:0 0 12px rgba(228,194,114,.4);
+    margin-bottom:8px;
+  }
+  h1{
+    margin:0;
+    font-family:var(--serif);
+    font-size:30px;font-weight:600;letter-spacing:.18em;
+    background:linear-gradient(135deg,var(--gold) 0%, #fff 50%, var(--gold) 100%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    text-shadow:0 0 24px rgba(228,194,114,.3);
+  }
+  .sub{margin:8px 0 0;font-size:12px;color:var(--sub);letter-spacing:.18em;}
+
+  /* ========== FORM ========== */
+  .form{
+    margin-top:6px;
+    border:1px solid var(--line);
+    border-radius:18px;
+    padding:22px;
+    background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,0));
+    backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+    position:relative;
+  }
+  .form::before{
+    content:"";position:absolute;inset:-1px;border-radius:inherit;padding:1px;
+    background:linear-gradient(135deg,rgba(228,194,114,.45),rgba(163,113,255,.32));
+    -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor;mask-composite:exclude;
+    pointer-events:none;
+  }
+  .form label{display:block;margin-bottom:14px;}
+  .lbl{
+    display:block;font-size:11px;letter-spacing:.4em;
+    color:var(--gold);margin-bottom:6px;
+  }
+  .form input{
+    width:100%;
+    padding:14px;
+    background:rgba(0,0,0,.4);
+    border:1px solid rgba(255,255,255,.10);
+    border-radius:10px;
+    color:var(--ink);
+    font:inherit;font-size:15px;
+    outline:none;
+    transition:border-color .2s ease,box-shadow .2s ease;
+    color-scheme:dark;
+  }
+  .form input:focus{
+    border-color:var(--gold);
+    box-shadow:0 0 0 3px rgba(228,194,114,.15);
+  }
+  .form input::placeholder{color:rgba(240,233,214,.32);}
+
+  .diag-btn{
+    appearance:none;border:0;cursor:pointer;
+    width:100%;padding:16px;margin-top:6px;
+    border-radius:12px;
+    font-family:var(--serif);font-weight:600;
+    font-size:16px;letter-spacing:.4em;
+    color:#1c1208;
+    background:linear-gradient(135deg,#f5d68f 0%,var(--gold) 50%,var(--gold-deep) 100%);
+    box-shadow:
+      0 8px 28px rgba(228,194,114,.35),
+      inset 0 1px 0 rgba(255,255,255,.55),
+      inset 0 -2px 4px rgba(0,0,0,.2);
+    transition:transform .12s ease,box-shadow .25s ease;
+  }
+  .diag-btn:active{transform:translateY(1px);}
+
+  /* ========== RESULT ========== */
+  .result{margin-top:16px;}
+  .result.hidden{display:none;}
+  .result-card{
+    border:1px solid var(--line);
+    border-radius:22px;
+    padding:28px 22px;
+    background:
+      radial-gradient(60% 40% at 50% 0%, rgba(228,194,114,.10), transparent 80%),
+      linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,0));
+    backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+    position:relative;text-align:center;
+    animation:cardIn .6s cubic-bezier(.2,1.4,.4,1) both;
+  }
+  .result-card::before{
+    content:"";position:absolute;inset:-1px;border-radius:inherit;padding:1px;
+    background:linear-gradient(135deg,rgba(228,194,114,.55),rgba(163,113,255,.4),rgba(228,194,114,.55));
+    -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor;mask-composite:exclude;
+    pointer-events:none;
+  }
+  @keyframes cardIn{
+    0%{opacity:0;transform:translateY(10px) scale(.97);}
+    100%{opacity:1;transform:translateY(0) scale(1);}
+  }
+
+  .type-tagline{
+    font-family:var(--serif);
+    font-size:11px;letter-spacing:.45em;
+    color:var(--sub);
+    margin-bottom:6px;
+  }
+  .type-tagline span{color:var(--gold);}
+  .type-kanji{
+    font-family:var(--serif);
+    font-size:64px;font-weight:600;line-height:1;
+    background:linear-gradient(135deg,#fff 0%,var(--gold) 50%,var(--gold-deep) 100%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    text-shadow:0 0 30px rgba(228,194,114,.45);
+    margin-bottom:10px;
+  }
+  .type-name{
+    font-family:var(--serif);
+    font-size:16px;letter-spacing:.16em;color:var(--ink);
+  }
+  .type-sub{
+    margin-top:4px;
+    font-size:11px;letter-spacing:.35em;color:var(--sub);
+  }
+
+  .divider{
+    margin:18px auto;
+    color:var(--gold);opacity:.6;font-size:14px;letter-spacing:1em;
+  }
+
+  .phase-block{
+    padding:16px;border-radius:14px;
+    background:rgba(0,0,0,.28);
+    border:1px solid rgba(255,255,255,.06);
+  }
+  .phase-label{
+    font-size:10px;letter-spacing:.45em;
+    color:var(--gold);margin-bottom:6px;
+  }
+  .phase-name{
+    font-family:var(--serif);
+    font-size:34px;font-weight:600;line-height:1;
+    color:var(--ink);
+  }
+  .phase-reading{
+    font-size:11px;letter-spacing:.3em;
+    color:var(--sub);margin-top:4px;
+  }
+
+  .score-row{
+    display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px;
+  }
+  .score-block{
+    padding:14px;border-radius:14px;
+    background:rgba(0,0,0,.28);
+    border:1px solid rgba(255,255,255,.06);
+  }
+  .score-label{
+    font-size:10px;letter-spacing:.4em;
+    color:var(--gold);margin-bottom:6px;
+  }
+  .score-num{
+    font-family:var(--serif);
+    font-size:38px;font-weight:600;line-height:1;color:var(--ink);
+    font-feature-settings:"tnum";
+  }
+  .score-num small{
+    font-size:.36em;color:var(--sub);margin-left:3px;font-weight:400;letter-spacing:.04em;
+  }
+
+  .bar{
+    margin-top:16px;
+    height:6px;border-radius:99px;
+    background:rgba(255,255,255,.06);
+    overflow:hidden;
+  }
+  .bar > i{
+    display:block;height:100%;width:0%;
+    background:linear-gradient(90deg,var(--violet),var(--gold),#fff);
+    box-shadow:0 0 12px rgba(228,194,114,.5);
+    border-radius:99px;
+    transition:width 1.0s cubic-bezier(.2,.7,.2,1);
+  }
+
+  .message{
+    margin:18px 0 0;
+    padding:14px 16px;
+    border-radius:12px;
+    background:rgba(228,194,114,.06);
+    border:1px solid rgba(228,194,114,.18);
+    font-size:14px;line-height:1.7;
+    color:var(--ink);letter-spacing:.03em;
+    text-align:left;
+  }
+
+  .reset-btn{
+    appearance:none;
+    border:1px solid rgba(255,255,255,.12);
+    background:rgba(255,255,255,.03);
+    color:var(--sub);
+    font:inherit;font-size:11px;letter-spacing:.4em;
+    padding:12px 28px;border-radius:999px;
+    cursor:pointer;margin:16px auto 0;display:block;
+    transition:all .15s ease;
+  }
+  .reset-btn:hover{color:var(--ink);border-color:var(--gold);}
+
+  /* ========== CTA ========== */
+  .cta{
+    margin-top:28px;
+    padding:22px 20px;
+    border-radius:18px;
+    background:
+      radial-gradient(60% 40% at 50% 0%, rgba(228,194,114,.16), transparent 80%),
+      linear-gradient(180deg,rgba(228,194,114,.06),rgba(228,194,114,.02));
+    border:1px solid rgba(228,194,114,.28);
+    text-align:center;
+    box-shadow:0 8px 32px rgba(228,194,114,.10);
+  }
+  .cta-head{
+    margin:0 0 10px;
+    font-family:var(--serif);
+    font-size:13px;letter-spacing:.55em;
+    color:var(--gold);
+    text-shadow:0 0 12px rgba(228,194,114,.4);
+  }
+  .cta-body{
+    margin:0;
+    font-size:13px;line-height:1.75;
+    color:var(--ink);letter-spacing:.04em;
+  }
+
+  .disclaim{
+    margin:18px 0 0;text-align:center;
+    font-size:10px;letter-spacing:.28em;
+    color:var(--sub);opacity:.55;
+  }
+
+  @media (max-width:380px){
+    h1{font-size:26px;}
+    .type-kanji{font-size:54px;}
+    .phase-name{font-size:28px;}
+    .score-num{font-size:32px;}
+  }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header>
+    <div class="brand">九 ・ 運 命 術</div>
+    <h1>ライト診断</h1>
+    <p class="sub">1分でわかる、あなたのタイプと今の流れ</p>
+  </header>
+
+  <section class="form" id="formScreen">
+    <label>
+      <span class="lbl">誕生日</span>
+      <input type="date" id="birth" required>
+    </label>
+    <label>
+      <span class="lbl">お名前</span>
+      <input type="text" id="name" placeholder="やまだ たろう" autocomplete="name" required>
+    </label>
+    <button type="button" class="diag-btn" id="diagBtn">診 断 す る</button>
+  </section>
+
+  <section class="result hidden" id="resultScreen" aria-live="polite">
+    <div class="result-card">
+      <div class="type-tagline">TYPE <span id="typeNum">—</span></div>
+      <div class="type-kanji" id="typeKanji">—</div>
+      <div class="type-name" id="typeName">—</div>
+      <div class="type-sub" id="typeTag">—</div>
+
+      <div class="divider">⟡ ・ ⟡ ・ ⟡</div>
+
+      <div class="phase-block">
+        <div class="phase-label">⟡ 現 在 の フ ェ ー ズ</div>
+        <div class="phase-name" id="phaseName">—</div>
+        <div class="phase-reading" id="phaseReading">—</div>
+      </div>
+
+      <div class="score-row">
+        <div class="score-block">
+          <div class="score-label">運勢スコア</div>
+          <div class="score-num"><span id="scoreNum">—</span><small>/100</small></div>
+        </div>
+        <div class="score-block">
+          <div class="score-label">未来偏差値</div>
+          <div class="score-num"><span id="devNum">—</span></div>
+        </div>
+      </div>
+      <div class="bar"><i id="scoreBar"></i></div>
+      <p class="message" id="message">—</p>
+    </div>
+    <button type="button" class="reset-btn" id="resetBtn">もう一度</button>
+  </section>
+
+  <section class="cta">
+    <p class="cta-head">⟡ 完 全 版 へ ⟡</p>
+    <p class="cta-body">より詳しい診断（手相補正・恋愛・仕事・金運など）は有料版で確認できます</p>
+  </section>
+
+  <p class="disclaim">※ 本診断はエンタメ用です。</p>
+</main>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+
+  // 9 type definitions
+  const TYPES = {
+    1: { kanji:'啓', name:'切り拓くタイプ',   tag:'始まり ・ パイオニア気質' },
+    2: { kanji:'和', name:'結ぶタイプ',       tag:'調和 ・ 縁を繋ぐ人' },
+    3: { kanji:'創', name:'表現するタイプ',   tag:'創造 ・ 言葉と感性の人' },
+    4: { kanji:'礎', name:'築くタイプ',       tag:'安定 ・ 信頼を積む人' },
+    5: { kanji:'動', name:'変えるタイプ',     tag:'自由 ・ 動いて広げる人' },
+    6: { kanji:'護', name:'守るタイプ',       tag:'愛情 ・ 場を整える人' },
+    7: { kanji:'観', name:'見抜くタイプ',     tag:'探究 ・ 静かに深める人' },
+    8: { kanji:'達', name:'実らせるタイプ',   tag:'達成 ・ 形にする人' },
+    9: { kanji:'静', name:'見届けるタイプ',   tag:'完成 ・ 境を超えていく人' },
+  };
+
+  // 9 phase stages — kanji, reading, fixed score, short message
+  const PHASES = [
+    { kanji:'種', read:'たね',   score:40, msg:'今は静かに種をまく時。慌てず動き出す準備を整えていい。' },
+    { kanji:'芽', read:'め',     score:50, msg:'小さな兆しが出始める季節。素直に動いた分だけ伸びる。' },
+    { kanji:'伸', read:'のび',   score:65, msg:'伸びていく流れの中。広げる行動が運に乗りやすい。' },
+    { kanji:'昇', read:'しょう', score:80, msg:'上昇期。やりたいことを後回しにしないでいい時期。' },
+    { kanji:'極', read:'きわみ', score:95, msg:'頂点の時。受け取るものは大きく、責任もまた重くなる。' },
+    { kanji:'揺', read:'ゆれ',   score:55, msg:'揺れの中で本当に大事なものが浮かんでくる時間。' },
+    { kanji:'崩', read:'ほう',   score:30, msg:'手放す季節。減らした分だけ、軽くなって次へ進める。' },
+    { kanji:'再', read:'さい',   score:60, msg:'組み直す時間。新しい形が用意されている流れ。' },
+    { kanji:'静', read:'せい',   score:75, msg:'静かに見届ける時間。次の波がもう近くまで来ている。' },
+  ];
+
+  // Digital root — normalize 0 → 9 so result is always 1..9
+  function digitalRoot(n){
+    while (n >= 10){
+      let s = 0;
+      while (n > 0){ s += n % 10; n = Math.floor(n / 10); }
+      n = s;
+    }
+    return n === 0 ? 9 : n;
+  }
+
+  function calcType(birthYYYYMMDD){
+    const digits = birthYYYYMMDD.replace(/\D/g, '');
+    let sum = 0;
+    for (const ch of digits) sum += parseInt(ch, 10);
+    return digitalRoot(sum);
+  }
+
+  // Phase index 0..8, deterministic from birthdate digits + name char codes
+  function calcPhaseIndex(birthYYYYMMDD, name){
+    const digits = birthYYYYMMDD.replace(/\D/g, '');
+    let n = 0;
+    for (const ch of digits) n += parseInt(ch, 10);
+    for (const c of name) n += c.charCodeAt(0);
+    return ((n % 9) + 9) % 9;
+  }
+
+  function diagnose(birth, name){
+    const type = calcType(birth);
+    const phaseIdx = calcPhaseIndex(birth, name);
+    const phase = PHASES[phaseIdx];
+    // type base: 1..9 → 11..99
+    const typeBase = type * 11;
+    // weighted blend cycle:type ≈ 55:45
+    const score = Math.max(0, Math.min(100, Math.round(0.55 * phase.score + 0.45 * typeBase)));
+    // deviation score, mean ~50, range ~30..73
+    const dev = Math.max(20, Math.min(80, Math.round(50 + (score - 55) * 0.55)));
+    return { type, phase, phaseIdx, score, dev };
+  }
+
+  function tweenNumber(el, from, to, dur){
+    const t0 = performance.now();
+    function step(t){
+      const k = Math.min(1, (t - t0) / dur);
+      const e = 1 - Math.pow(1 - k, 3);
+      el.textContent = Math.round(from + (to - from) * e);
+      if (k < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
+  function showResult(birth, name){
+    const r = diagnose(birth, name);
+    const t = TYPES[r.type];
+
+    $('typeNum').textContent     = r.type;
+    $('typeKanji').textContent   = t.kanji;
+    $('typeName').textContent    = t.name;
+    $('typeTag').textContent     = t.tag;
+    $('phaseName').textContent   = r.phase.kanji;
+    $('phaseReading').textContent= r.phase.read;
+    $('message').textContent     = r.phase.msg;
+
+    $('scoreNum').textContent = '0';
+    $('devNum').textContent   = '0';
+    $('scoreBar').style.width = '0%';
+
+    $('resultScreen').classList.remove('hidden');
+
+    requestAnimationFrame(() => {
+      $('scoreBar').style.width = r.score + '%';
+      tweenNumber($('scoreNum'), 0, r.score, 900);
+      tweenNumber($('devNum'),   0, r.dev,   900);
+    });
+
+    setTimeout(() => {
+      $('resultScreen').scrollIntoView({behavior:'smooth', block:'start'});
+    }, 80);
+  }
+
+  function flash(el){
+    el.style.boxShadow = '0 0 0 3px rgba(255,107,107,.45)';
+    setTimeout(() => { el.style.boxShadow = ''; }, 600);
+  }
+
+  $('diagBtn').addEventListener('click', () => {
+    const birth = $('birth').value;
+    const name  = $('name').value.trim();
+    if (!birth){ $('birth').focus(); flash($('birth')); return; }
+    if (!name){  $('name').focus();  flash($('name'));  return; }
+    showResult(birth, name);
+  });
+
+  $('resetBtn').addEventListener('click', () => {
+    $('resultScreen').classList.add('hidden');
+    $('birth').value = '';
+    $('name').value  = '';
+    $('birth').focus();
+    window.scrollTo({top:0, behavior:'smooth'});
+  });
+
+  $('name').addEventListener('keydown', e => {
+    if (e.key === 'Enter') $('diagBtn').click();
+  });
+})();
+</script>
+</body>
+</html>
