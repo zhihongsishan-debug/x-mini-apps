@@ -1035,6 +1035,134 @@
     78%{transform:translate(-4px,1px);}
   }
 
+  /* ===== v8 PREMIUM RESULT CARD ===== */
+  .go-rank{
+    margin:14px -8px 8px;
+    padding:16px 8px 14px;
+    border-radius:18px;
+    background:
+      radial-gradient(120% 100% at 50% 0%, rgba(232,255,58,.18), transparent 60%),
+      radial-gradient(120% 100% at 50% 100%, rgba(255,43,181,.16), transparent 60%),
+      linear-gradient(180deg, rgba(0,0,0,.55), rgba(0,0,0,.30));
+    border:1px solid rgba(232,255,58,.35);
+    box-shadow:0 0 26px var(--toxic-glow), 0 0 56px var(--venom), inset 0 0 24px rgba(0,0,0,.55);
+    position:relative;overflow:hidden;
+  }
+  .go-rank::before{
+    content:"";position:absolute;inset:-1px;border-radius:inherit;padding:1.4px;
+    background:linear-gradient(135deg,var(--lime),var(--acid) 35%,var(--pink) 65%,var(--violet));
+    -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor;mask-composite:exclude;
+    pointer-events:none;
+    animation:goBorder 5s linear infinite;
+  }
+  .go-rank-lbl{
+    font-size:9px;letter-spacing:.5em;color:var(--sub);font-weight:800;
+  }
+  .go-rank-val{
+    margin-top:6px;
+    font-size:clamp(22px,7vmin,30px);font-weight:900;letter-spacing:.18em;line-height:1.05;
+    background:linear-gradient(180deg,#fff 5%,var(--acid) 35%,var(--pink) 70%,var(--violet));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    text-shadow:0 0 24px var(--toxic-glow),0 0 40px var(--venom);
+    -webkit-text-stroke:0.4px rgba(255,255,255,.18);
+    animation:rankGlow 2.4s ease-in-out infinite;
+  }
+  @keyframes rankGlow{
+    0%,100%{filter:brightness(1) saturate(1.1);}
+    50%{filter:brightness(1.25) saturate(1.4);}
+  }
+  .go-rank[data-tier="UNHOLY SURVIVOR"] .go-rank-val{
+    animation:rankGlowMax 1.4s ease-in-out infinite;
+  }
+  @keyframes rankGlowMax{
+    0%,100%{filter:brightness(1.1) saturate(1.3) drop-shadow(0 0 8px var(--toxic-glow));}
+    50%    {filter:brightness(1.55) saturate(1.7) drop-shadow(0 0 18px var(--venom));}
+  }
+  .go-daily{
+    margin:8px 0 0;
+    padding:7px 10px;border-radius:10px;
+    background:linear-gradient(90deg,rgba(232,255,58,.10),rgba(255,43,181,.10));
+    border:1px solid rgba(232,255,58,.30);
+    font-size:11px;letter-spacing:.18em;color:#eaffea;font-weight:700;
+    display:flex;align-items:center;justify-content:space-between;gap:8px;
+    position:relative;
+  }
+  .go-daily .gd-badge{
+    flex:0 0 auto;padding:2px 8px;border-radius:99px;
+    font-size:9px;font-weight:900;letter-spacing:.32em;
+  }
+  .go-daily.done .gd-badge{
+    background:linear-gradient(90deg,var(--lime),var(--acid));color:#0a0010;
+    box-shadow:0 0 12px var(--toxic-glow);
+  }
+  .go-daily.miss .gd-badge{
+    background:linear-gradient(90deg,#3a0a25,#180010);color:var(--pink);
+    border:1px solid var(--venom);
+  }
+
+  /* ===== CINEMATIC COMBO MOMENT (4+) ===== */
+  .cine-overlay{
+    position:fixed;inset:0;z-index:55;pointer-events:none;opacity:0;
+    background:radial-gradient(ellipse 35% 30% at 50% 50%, transparent 0%, rgba(0,0,0,.0) 35%, rgba(0,0,0,.78) 92%);
+  }
+  .cine-overlay.on{animation:cineOnce .9s ease-out forwards;}
+  @keyframes cineOnce{
+    0%  {opacity:0;}
+    14% {opacity:1;}
+    65% {opacity:1;}
+    100%{opacity:0;}
+  }
+  .cine-word{
+    position:fixed;left:0;right:0;top:32%;z-index:56;
+    text-align:center;pointer-events:none;
+    font-size:clamp(46px,18vmin,140px);font-weight:900;letter-spacing:.12em;line-height:1;
+    background:linear-gradient(180deg,#fff 0%,var(--acid) 30%,var(--pink) 65%,var(--violet) 95%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    text-shadow:0 0 36px var(--toxic-glow),0 0 70px var(--venom);
+    -webkit-text-stroke:0.6px rgba(255,255,255,.20);
+    opacity:0;transform:scale(.5);
+  }
+  .cine-word.on{animation:cineWordPop .9s cubic-bezier(.2,1.4,.4,1) forwards;}
+  @keyframes cineWordPop{
+    0%  {opacity:0;transform:scale(.4) rotate(-4deg);filter:blur(8px);}
+    18% {opacity:1;transform:scale(1.2) rotate(2deg);filter:blur(0);}
+    50% {opacity:1;transform:scale(1) rotate(0);}
+    100%{opacity:0;transform:scale(1.05);}
+  }
+
+  /* TOXIC DECAY tag pulse on board (set when a cell becomes toxic-marked mid-play) */
+  .decay-tag{
+    position:absolute;top:8px;left:8px;
+    padding:5px 12px;border-radius:99px;
+    background:linear-gradient(90deg, var(--lime), var(--acid));
+    color:#0a0010;font-size:10px;font-weight:900;letter-spacing:.36em;
+    box-shadow:0 0 14px var(--toxic-glow);
+    pointer-events:none;opacity:0;z-index:4;
+  }
+  .decay-tag.on{animation:decayTag 1.4s ease-out forwards;}
+  @keyframes decayTag{
+    0%  {opacity:0;transform:translateY(-6px) scale(.9);}
+    18% {opacity:1;transform:translateY(0) scale(1.05);}
+    65% {opacity:1;}
+    100%{opacity:0;transform:translateY(-4px) scale(1);}
+  }
+
+  /* daily challenge on start screen */
+  .so-daily{
+    margin:14px 0 6px;
+    padding:9px 12px;border-radius:12px;
+    background:linear-gradient(90deg,rgba(232,255,58,.10),rgba(255,43,181,.10));
+    border:1px solid rgba(232,255,58,.32);
+    font-size:11px;letter-spacing:.16em;color:#eaffea;font-weight:700;
+    text-shadow:0 0 8px var(--toxic-glow);
+    position:relative;
+  }
+  .so-daily-lbl{
+    display:block;font-size:9px;letter-spacing:.4em;color:var(--lime);
+    margin-bottom:4px;font-weight:800;
+  }
+
   /* share button on game over */
   .share-btn{
     appearance:none;border:1px solid rgba(255,255,255,.18);cursor:pointer;
@@ -1120,6 +1248,7 @@
         <div class="next-stack" id="nextStack"></div>
       </div>
       <div class="lightning" id="lightning" aria-hidden="true"></div>
+      <div class="decay-tag" id="decayTag" aria-hidden="true">TOXIC DECAY</div>
     </div>
   </section>
 
@@ -1134,7 +1263,11 @@
 <div class="game-over" id="gameOver" aria-hidden="true">
   <div class="go-card">
     <h2>YOU COULDN&#39;T STOP</h2>
-    <p class="go-sub">そのスコア、貼って。</p>
+    <p class="go-sub">このスコア、超えられる？</p>
+    <div class="go-rank" id="goRank" data-tier="TOUCHING POISON">
+      <div class="go-rank-lbl">RANK</div>
+      <div class="go-rank-val" id="goRankVal">TOUCHING POISON</div>
+    </div>
     <div class="go-tier" id="goTier" data-tier="CASUAL">
       <span>ADDICTION</span>
       <span class="go-tier-val" id="goTierVal">CASUAL</span>
@@ -1142,9 +1275,13 @@
     <div class="go-row"><span>SCORE</span><span class="val" id="goScore">0</span></div>
     <div class="go-row"><span>BEST</span><span class="val" id="goBest">0</span></div>
     <div class="go-row" style="border-bottom:0;"><span>MAX CHAIN</span><span class="val" id="goChain">0</span></div>
-    <p class="go-cta" id="goCta">俺のスコア超えられる？</p>
+    <div class="go-daily" id="goDaily" data-state="miss">
+      <span id="goDailyLabel">今日の毒目標</span>
+      <span class="gd-badge" id="goDailyBadge">未達</span>
+    </div>
+    <p class="go-cta" id="goCta">このスコア、超えられる？</p>
     <button class="restart" id="restartBtn" type="button">もう一度</button>
-    <button class="share-btn" id="shareBtn" type="button">Xで挑戦状を投げる</button>
+    <button class="share-btn" id="shareBtn" type="button">Xに挑戦状を投げる</button>
     <p class="share-feedback" id="shareFeedback">コピーしました</p>
     <p class="ss-note">この中毒ゲー、危険。</p>
   </div>
@@ -1155,7 +1292,11 @@
     <div class="so-hero" aria-hidden="true"></div>
     <div class="so-title">CHAIN FEVER<br/>: TOXIC</div>
     <div class="so-tag">TOXIC MODE</div>
-    <p class="so-tagline">addictive neon puzzle</p>
+    <p class="so-tagline">中毒性のある毒ネオン連鎖パズル</p>
+    <div class="so-daily" id="soDaily">
+      <span class="so-daily-lbl">今日の毒チャレンジ</span>
+      <span id="soDailyLabel">今日の毒目標: SCORE 3000</span>
+    </div>
     <div class="so-sub">音 あ り 推 奨</div>
     <button class="so-btn" id="soStartBtn" type="button">TAP TO START</button>
   </div>
@@ -1176,6 +1317,8 @@
 <div class="god-flash" id="godFlash" aria-hidden="true"></div>
 <div class="god-text" id="godText" aria-hidden="true">GOD VENOM</div>
 <div class="god-sub" id="godSub" aria-hidden="true">IMPOSSIBLE</div>
+<div class="cine-overlay" id="cineOverlay" aria-hidden="true"></div>
+<div class="cine-word" id="cineWord" aria-hidden="true">SINFUL</div>
 
 <script>
 (() => {
@@ -1193,6 +1336,10 @@
   const TOXIC_SPAWN_RATE = 0.03;  // 3% chance per blob
   const VENOM_SPAWN_RATE = 0.01;  // 1% chance per blob (BLACK VENOM rare event)
   const GOD_SPAWN_RATE   = 0.003; // 0.3% chance per blob (GOD VENOM ultra rare)
+  /* v8: Toxic Decay — every TOXIC_DECAY_MIN..MAX seconds while playing,
+     mark one random non-special blob as toxic (worth more if cleared). */
+  const TOXIC_DECAY_MIN_MS = 35000;
+  const TOXIC_DECAY_MAX_MS = 45000;
   const FEVER_GOAL = 100;         // gauge max
   const FEVER_DURATION_MS = 12000; // 12s fever window
   const FEVER_MULT = 3;           // x3 score during fever
@@ -1204,10 +1351,64 @@
     { min: 10000, name: 'BROKEN'    },
     { min: 15000, name: 'UNHOLY'    },
   ];
+  /* v8: separate poetic rank ladder (same thresholds, screenshot-worthy titles) */
+  const RANK_LADDER = [
+    { min: 0,     name: 'TOUCHING POISON' },
+    { min: 1000,  name: 'HOOKED'          },
+    { min: 3000,  name: 'TOXIC USER'      },
+    { min: 6000,  name: 'VENOM ADDICT'    },
+    { min: 10000, name: 'BROKEN PLAYER'   },
+    { min: 15000, name: 'UNHOLY SURVIVOR' },
+  ];
   function addictionFor(score){
     let cur = ADDICTION_LADDER[0];
     for (const t of ADDICTION_LADDER) if (score >= t.min) cur = t;
     return cur.name;
+  }
+  function rankFor(score){
+    let cur = RANK_LADDER[0];
+    for (const t of RANK_LADDER) if (score >= t.min) cur = t;
+    return cur.name;
+  }
+  /* v8: deterministic daily challenge — same date, same challenge */
+  const DAILY_CHALLENGES = [
+    { id: 'score3000',  label: '今日の毒目標: SCORE 3000',         goal: { type:'score', value: 3000 } },
+    { id: 'chain4',     label: '今日の毒目標: MAX CHAIN 4',         goal: { type:'chain', value: 4 } },
+    { id: 'enterFever', label: '今日の毒目標: FEVERに入れ',           goal: { type:'fever', value: 1 } },
+    { id: 'blackVenom', label: '今日の毒目標: BLACK VENOMを引け',     goal: { type:'venom', value: 1 } },
+    { id: 'addiction',  label: '今日の毒目標: ADDICTION HOOKED',     goal: { type:'addict', value: 'HOOKED' } },
+  ];
+  function todayKey(){
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return y + '-' + m + '-' + day;
+  }
+  function hashStr(s){
+    let h = 5381 >>> 0;
+    for (let i = 0; i < s.length; i++) h = ((h * 33) ^ s.charCodeAt(i)) >>> 0;
+    return h;
+  }
+  function dailyChallenge(dateKey){
+    const k = dateKey || todayKey();
+    const idx = hashStr(k) % DAILY_CHALLENGES.length;
+    return Object.assign({ dateKey: k }, DAILY_CHALLENGES[idx]);
+  }
+  function evaluateDailyChallenge(challenge){
+    if (!challenge) return false;
+    const g = challenge.goal;
+    if (g.type === 'score')  return state.score      >= g.value;
+    if (g.type === 'chain')  return state.highChain  >= g.value;
+    if (g.type === 'fever')  return state.feverCount >= g.value;
+    if (g.type === 'venom')  return state.venomCleared >= g.value;
+    if (g.type === 'addict'){
+      const tiers = ADDICTION_LADDER.map(t => t.name);
+      const have  = tiers.indexOf(addictionFor(state.score));
+      const need  = tiers.indexOf(g.value);
+      return have >= 0 && have >= need;
+    }
+    return false;
   }
 
   /* ============== STATE ============== */
@@ -1252,6 +1453,10 @@
     nextBGod: false,
     godCleared: 0,
     addictionTier: 'CASUAL',
+    /* v8 TOXIC DECAY + DAILY CHALLENGE */
+    decayNextAt: 0,
+    decayCount: 0,
+    daily: null, // populated in init()
   };
 
   /* ============== AUDIO ============== */
@@ -2118,12 +2323,13 @@
     }
     ctx.globalAlpha = opacity;
 
-    // moving liquid highlight + asymmetric per-blob ovality (slightly stronger asymmetry)
+    // v8: alien organic silhouette — stronger asymmetry + per-seed tilt + slow morphing
     const tt = performance.now() * 0.001;
-    const ovalSx = 1 + Math.sin(seed * 1.7) * 0.06 + Math.cos(tt * 0.7 + seed) * 0.025;
-    const ovalSy = 1 + Math.cos(seed * 2.3) * 0.06 + Math.sin(tt * 0.6 + seed * 1.3) * 0.025;
+    const ovalSx = 1 + Math.sin(seed * 1.7) * 0.13 + Math.cos(tt * 0.7 + seed) * 0.05;
+    const ovalSy = 1 + Math.cos(seed * 2.3) * 0.13 + Math.sin(tt * 0.6 + seed * 1.3) * 0.05;
     const rx = r * sx * ovalSx;
     const ry = r * sy * ovalSy;
+    const tilt = Math.sin(seed * 0.9) * 0.32 + Math.sin(tt * 0.4 + seed) * 0.08; // radians
 
     // drop shadow under blob
     ctx.fillStyle = 'rgba(0,0,0,.55)';
@@ -2157,13 +2363,20 @@
     g1.addColorStop(0.94, shade(color, -.35));
     g1.addColorStop(1,    shade(color, -.55));
     ctx.fillStyle = g1;
-    // asymmetric organic silhouette
-    ctx.beginPath(); ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI*2); ctx.fill();
+    // alien organic silhouette: tilted main body + small bulge offset for non-circular shape
+    ctx.beginPath(); ctx.ellipse(x, y, rx, ry, tilt, 0, Math.PI*2); ctx.fill();
+    // bulge — second smaller ellipse offset for asymmetric organic silhouette
+    const bulgeAng = tilt + Math.PI * 0.5 + Math.sin(seed * 0.6) * 0.4;
+    const bdx = Math.cos(bulgeAng) * rx * 0.32;
+    const bdy = Math.sin(bulgeAng) * ry * 0.32;
+    ctx.beginPath();
+    ctx.ellipse(x + bdx, y + bdy, rx * 0.62, ry * 0.50, tilt + 0.4, 0, Math.PI*2);
+    ctx.fill();
     // soft membrane wash — translucent overlay tilted with breathing
     const memAlpha = 0.10 + 0.06 * Math.abs(Math.sin(tt * 0.8 + seed));
     ctx.fillStyle = 'rgba(255,255,255,' + memAlpha.toFixed(3) + ')';
     ctx.beginPath();
-    ctx.ellipse(x - rx*0.08, y - ry*0.10, rx*0.78, ry*0.55, -0.35, 0, Math.PI*2);
+    ctx.ellipse(x - rx*0.08, y - ry*0.10, rx*0.78, ry*0.55, tilt - 0.35, 0, Math.PI*2);
     ctx.fill();
     // gentle sweat drip (bottom-side, organic)
     const drop = Math.abs(Math.sin(tt * 0.9 + seed * 2.1)) * 0.30 + 0.10;
@@ -2172,13 +2385,13 @@
     ctx.ellipse(x + Math.sin(seed)*rx*0.18, y + ry * (0.58 + drop * 0.18), rx*0.26, ry*0.16*drop, 0, 0, Math.PI*2);
     ctx.fill();
 
-    // inner rim glow (subtle white edge)
+    // inner rim glow (subtle white edge) — match tilted body
     const g2 = ctx.createRadialGradient(x, y, Math.max(rx, ry) * 0.72, x, y, Math.max(rx, ry));
     g2.addColorStop(0, color + '00');
     g2.addColorStop(0.55, color + '00');
     g2.addColorStop(1,   'rgba(255,255,255,.42)');
     ctx.fillStyle = g2;
-    ctx.beginPath(); ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(x, y, rx, ry, tilt, 0, Math.PI*2); ctx.fill();
 
     // primary highlight — moves with the liquid feel
     const hpx = -rx*0.30 + Math.sin(tt * 1.4 + seed * 0.8) * rx*0.06;
@@ -3081,6 +3294,63 @@
     else if (chain >= 3) banner.classList.add('tier-strong');
     void banner.offsetWidth;
     banner.classList.add('on');
+    // v8: cinematic combo for 4+ chains — dim background + giant word, screenshot-worthy
+    if (chain >= 4) fireCinematicCombo(chain);
+  }
+  function fireCinematicCombo(chain){
+    let word;
+    if      (chain === 4)      word = 'SINFUL';
+    else if (chain === 5)      word = 'VENOM';
+    else if (chain <= 7)       word = 'CORRUPTED';
+    else                       word = 'UNHOLY';
+    const ov = $('cineOverlay'); const w = $('cineWord');
+    if (w){ w.textContent = word; w.classList.remove('on'); void w.offsetWidth; w.classList.add('on'); }
+    if (ov){ ov.classList.remove('on'); void ov.offsetWidth; ov.classList.add('on'); }
+    // brief hit-stop boost specifically for screenshot moment (existing freezeFrame already on chain>=3)
+  }
+  /* v8: TOXIC DECAY — periodically mark a normal blob as toxic */
+  function scheduleNextDecay(){
+    state.decayNextAt = performance.now() + (TOXIC_DECAY_MIN_MS + Math.random() * (TOXIC_DECAY_MAX_MS - TOXIC_DECAY_MIN_MS));
+  }
+  function tickToxicDecay(t){
+    if (state.isGameOver || !state.started) return;
+    if (state.isAnimating) return;
+    if (!state.decayNextAt) state.decayNextAt = t + TOXIC_DECAY_MIN_MS;
+    if (t < state.decayNextAt) return;
+    // pick a candidate: any landed normal blob (not toxic, not venom, not god)
+    const candidates = [];
+    for (let r = 0; r < ROWS; r++){
+      for (let c = 0; c < COLS; c++){
+        const cell = state.board[r][c];
+        if (cell && !cell.toxic && !cell.venom && !cell.god) candidates.push([r, c]);
+      }
+    }
+    if (candidates.length === 0){
+      // nothing on board yet — try again soon
+      state.decayNextAt = t + 4000;
+      return;
+    }
+    const [r, c] = candidates[Math.floor(Math.random() * candidates.length)];
+    const cell = state.board[r][c];
+    cell.toxic = true;
+    cell.anim = 'wobble'; cell.t = 0;
+    state.decayCount++;
+    // visual cue
+    const tag = $('decayTag');
+    if (tag){ tag.classList.remove('on'); void tag.offsetWidth; tag.classList.add('on'); }
+    if (audioCtx){
+      // ominous low pulse
+      const tNow = audioCtx.currentTime;
+      const o = audioCtx.createOscillator(); o.type='sine';
+      o.frequency.setValueAtTime(180, tNow);
+      o.frequency.exponentialRampToValueAtTime(110, tNow + 0.40);
+      const g = audioCtx.createGain(); g.gain.value = 0;
+      o.connect(g); g.connect(masterGain);
+      g.gain.linearRampToValueAtTime(0.20, tNow + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.001, tNow + 0.45);
+      o.start(tNow); o.stop(tNow + 0.5);
+    }
+    scheduleNextDecay();
   }
   function showScorePopup(boardC, boardR, points, burst){
     const wrap = boardWrap.getBoundingClientRect();
@@ -3109,15 +3379,31 @@
       try { localStorage.setItem('chainFeverBest', String(state.bestScore)); } catch(_){}
     }
     const tier = addictionFor(state.score);
+    const rank = rankFor(state.score);
     state.addictionTier = tier;
     $('goScore').textContent = state.score;
     $('goBest').textContent  = state.bestScore;
     $('goChain').textContent = state.highChain;
     $('goTierVal').textContent = tier;
     const goTier = $('goTier'); if (goTier) goTier.setAttribute('data-tier', tier);
-    // Pick a CTA based on tier — escalate language as score climbs
+    $('goRankVal').textContent = rank;
+    const goRank = $('goRank'); if (goRank) goRank.setAttribute('data-tier', rank);
+    // daily challenge result
+    const dc = state.daily;
+    if (dc){
+      const done = evaluateDailyChallenge(dc);
+      const goDaily = $('goDaily');
+      if (goDaily){
+        goDaily.classList.remove('done', 'miss');
+        goDaily.classList.add(done ? 'done' : 'miss');
+        goDaily.setAttribute('data-state', done ? 'done' : 'miss');
+      }
+      const lblEl = $('goDailyLabel'); if (lblEl) lblEl.textContent = dc.label;
+      const badgeEl = $('goDailyBadge'); if (badgeEl) badgeEl.textContent = done ? '達成' : '未達';
+    }
+    // tier-specific CTA (escalates with score). v8 uses challenge-flavored copy.
     const ctas = {
-      CASUAL:    '何点いった？',
+      CASUAL:    'このスコア、超えられる？',
       HOOKED:    '俺のスコア超えられる？',
       DEPENDENT: 'お前これ超えられねぇだろ',
       TOXIC:     'この中毒ゲー、危険',
@@ -3168,10 +3454,13 @@
     state.venomCleared = 0;
     state.godCleared = 0;
     state.addictionTier = 'CASUAL';
+    state.decayCount = 0;
+    state.decayNextAt = 0;
     document.body.classList.remove('danger','fever');
     setBgmFever(false);
     updateFeverHUD();
     updateAddictionHUD(true);
+    scheduleNextDecay();
     try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch(_){}
     particles = [];
     $('gameOver').classList.remove('on');
@@ -3230,6 +3519,8 @@
     if ((stackTick & 7) === 0){
       updateFeverHUD();
     }
+    // v8 TOXIC DECAY tick
+    tickToxicDecay(t);
 
     // gravity tick for pair
     if (state.pair && !state.isAnimating && !state.isGameOver){
@@ -3409,8 +3700,14 @@
     const score = state.score;
     const highChain = state.highChain;
     const tier = addictionFor(score);
+    const rank = rankFor(score);
     const url = location.href;
-    return 'CHAIN FEVER: TOXIC\nSCORE: ' + score + '\nMAX CHAIN: ' + highChain + '\nADDICTION: ' + tier + '\n' + url;
+    return 'CHAIN FEVER: TOXIC' +
+      '\nRANK: ' + rank +
+      '\nSCORE: ' + score +
+      '\nMAX CHAIN: ' + highChain +
+      '\nADDICTION: ' + tier +
+      '\n\nこのスコア、超えられる？\n' + url;
   }
   function showShareFeedback(msg){
     const fb = $('shareFeedback');
@@ -3449,7 +3746,7 @@
         document.body.removeChild(ta);
       } catch(_){}
     }
-    showShareFeedback(copied ? 'コピーしました' : 'コピー不可');
+    showShareFeedback(copied ? 'コピーしました' : 'コピーできませんでした');
   }
   $('shareBtn').addEventListener('click', shareScore);
 
@@ -3465,6 +3762,13 @@
   }, { passive: false });
 
   /* ============== INIT ============== */
+  // v8: lock today's daily challenge synchronously at script load — independent of rAF gating
+  state.daily = dailyChallenge();
+  (function paintStartDaily(){
+    const lbl = $('soDailyLabel');
+    if (lbl && state.daily) lbl.textContent = state.daily.label;
+  })();
+
   function init(){
     fitCanvas();
     setSound(true);
@@ -3473,6 +3777,10 @@
     updateHUD();
     updateAddictionHUD(true);
     updateFeverHUD();
+    // re-pin today's daily challenge (also done synchronously above; this is a defensive refresh)
+    state.daily = dailyChallenge();
+    const soDailyLabel = $('soDailyLabel');
+    if (soDailyLabel && state.daily) soDailyLabel.textContent = state.daily.label;
     // DON'T call reset() here — wait for tap-to-start so iOS Safari gets a user gesture
     requestAnimationFrame(loop);
   }
@@ -3646,6 +3954,14 @@
     godClearedCount:   () => state.godCleared,
     buildShareText:    () => buildShareText(),
     triggerProcessChains: () => processChains(),
+    /* v8 helpers */
+    rankForScore:      (s) => rankFor(s),
+    dailyChallengeFor: (k) => dailyChallenge(k),
+    todayKey:          () => todayKey(),
+    evaluateDailyNow:  () => evaluateDailyChallenge(state.daily),
+    forceDecayNow:     () => { state.decayNextAt = performance.now() - 1; tickToxicDecay(performance.now()); return state.decayCount; },
+    decayCount:        () => state.decayCount,
+    fireCinematicCombo:(c) => fireCinematicCombo(c),
   };
 })();
 </script>
