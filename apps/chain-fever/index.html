@@ -3,24 +3,27 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no,maximum-scale=1" />
-<meta name="theme-color" content="#06020f" />
+<meta name="theme-color" content="#040108" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="mobile-web-app-capable" content="yes" />
-<title>CHAIN FEVER</title>
+<title>CHAIN FEVER: TOXIC</title>
 <style>
   :root{
-    --bg-0:#06020f;
-    --bg-1:#0a0420;
-    --bg-2:#15082c;
-    --ink:#f0e9ff;
-    --sub:#8a94c7;
-    --line:rgba(255,255,255,.10);
-    --cyan:#3df0ff;
-    --pink:#ff3eb5;
-    --hot:#ff6ad6;
-    --violet:#a371ff;
-    --lime:#aaff5e;
-    --gold:#ffe44d;
+    --bg-0:#040108;
+    --bg-1:#08021a;
+    --bg-2:#10052a;
+    --ink:#eaffea;
+    --sub:#7d9d8a;
+    --line:rgba(182,255,26,.14);
+    --cyan:#1cf4ff;
+    --pink:#ff2bb5;
+    --hot:#ff5ad0;
+    --violet:#a366ff;
+    --lime:#b6ff1a;
+    --acid:#e8ff3a;
+    --gold:#e8ff3a;
+    --toxic-glow:rgba(182,255,26,.55);
+    --venom:rgba(255,43,181,.55);
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;touch-action:manipulation;}
   html,body{margin:0;padding:0;height:100%;overscroll-behavior:none;}
@@ -28,37 +31,72 @@
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Sans","Noto Sans JP","Yu Gothic UI",system-ui,sans-serif;
     color:var(--ink);
     background:
-      radial-gradient(45% 30% at 18% 12%, rgba(255,62,181,.30), transparent 60%),
-      radial-gradient(45% 35% at 92% 22%, rgba(61,240,255,.25), transparent 60%),
-      radial-gradient(60% 50% at 50% 110%, rgba(176,124,255,.30), transparent 60%),
-      linear-gradient(180deg, var(--bg-0) 0%, var(--bg-1) 50%, var(--bg-2) 100%);
+      radial-gradient(40% 28% at 16% 10%, rgba(182,255,26,.20), transparent 65%),
+      radial-gradient(45% 30% at 92% 18%, rgba(255,43,181,.22), transparent 65%),
+      radial-gradient(55% 50% at 50% 112%, rgba(163,102,255,.30), transparent 60%),
+      radial-gradient(80% 60% at 50% 50%, rgba(8,2,26,.0), rgba(0,0,0,.55) 90%),
+      linear-gradient(180deg, #050010 0%, #07021c 50%, #0c0420 100%);
     background-attachment:fixed;
     height:100dvh;width:100%;
     overflow:hidden;
     position:fixed;
   }
+  /* scanlines + chemical dust grid */
   body::before{
     content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
     background-image:
+      repeating-linear-gradient(0deg, rgba(182,255,26,.045) 0 1px, transparent 1px 3px),
       linear-gradient(rgba(255,255,255,.022) 1px, transparent 1px),
       linear-gradient(90deg, rgba(255,255,255,.022) 1px, transparent 1px),
-      radial-gradient(rgba(255,255,255,.04) 1px, transparent 1.2px);
-    background-size:56px 56px, 56px 56px, 6px 6px;
-    -webkit-mask-image:radial-gradient(ellipse 95% 85% at 50% 50%, #000 35%, rgba(0,0,0,.4) 88%, transparent 100%);
-            mask-image:radial-gradient(ellipse 95% 85% at 50% 50%, #000 35%, rgba(0,0,0,.4) 88%, transparent 100%);
+      radial-gradient(rgba(182,255,26,.05) 1px, transparent 1.2px);
+    background-size:100% 3px, 56px 56px, 56px 56px, 6px 6px;
+    -webkit-mask-image:radial-gradient(ellipse 95% 85% at 50% 50%, #000 30%, rgba(0,0,0,.4) 78%, transparent 100%);
+            mask-image:radial-gradient(ellipse 95% 85% at 50% 50%, #000 30%, rgba(0,0,0,.4) 78%, transparent 100%);
+    mix-blend-mode:screen;
+    opacity:.85;
   }
+  /* drifting toxic smoke + neon vapor */
   body::after{
     content:"";position:fixed;inset:-10%;pointer-events:none;z-index:0;
     background:
-      radial-gradient(22% 18% at 28% 38%, rgba(255,62,181,.30), transparent 75%),
-      radial-gradient(18% 16% at 72% 65%, rgba(61,240,255,.25), transparent 75%),
-      radial-gradient(16% 14% at 50% 8%, rgba(255,228,77,.16), transparent 80%);
-    filter:blur(20px);
-    animation:bgDrift 22s ease-in-out infinite alternate;
+      radial-gradient(20% 16% at 22% 36%, rgba(182,255,26,.30), transparent 75%),
+      radial-gradient(18% 16% at 76% 60%, rgba(255,43,181,.28), transparent 75%),
+      radial-gradient(16% 14% at 50% 12%, rgba(28,244,255,.20), transparent 80%),
+      radial-gradient(22% 20% at 50% 90%, rgba(163,102,255,.30), transparent 80%);
+    filter:blur(26px) saturate(1.15);
+    animation:bgDrift 18s ease-in-out infinite alternate;
+    mix-blend-mode:screen;
   }
   @keyframes bgDrift{
     from{transform:translate(0,0) rotate(0);}
-    to{transform:translate(14px,-18px) rotate(2deg);}
+    to{transform:translate(18px,-22px) rotate(2deg);}
+  }
+  /* vignette */
+  body > .vignette{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:1;
+    background:radial-gradient(ellipse 75% 70% at 50% 50%, transparent 50%, rgba(0,0,0,.55) 92%, rgba(0,0,0,.85));
+  }
+  /* drifting chemical particles */
+  .vapor{
+    position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;
+  }
+  .vapor span{
+    position:absolute;display:block;
+    width:3px;height:3px;border-radius:50%;
+    background:var(--lime);
+    box-shadow:0 0 8px var(--lime),0 0 14px rgba(182,255,26,.35);
+    opacity:.55;
+    animation:vaporRise linear infinite;
+  }
+  .vapor span:nth-child(2n){background:var(--pink);box-shadow:0 0 8px var(--pink);}
+  .vapor span:nth-child(3n){background:var(--cyan);box-shadow:0 0 8px var(--cyan);}
+  .vapor span:nth-child(4n){background:var(--violet);box-shadow:0 0 8px var(--violet);}
+  @keyframes vaporRise{
+    0%{transform:translateY(110vh) translateX(0) scale(.7);opacity:0;}
+    8%{opacity:.6;}
+    50%{transform:translateY(50vh) translateX(20px) scale(1);opacity:.55;}
+    92%{opacity:.4;}
+    100%{transform:translateY(-12vh) translateX(-30px) scale(.6);opacity:0;}
   }
 
   .app{
@@ -75,10 +113,20 @@
     flex:0 0 auto;
   }
   .title{
-    font-size:18px;font-weight:900;letter-spacing:.35em;
-    background:linear-gradient(90deg,var(--cyan),#fff 50%,var(--pink));
+    display:flex;flex-direction:column;line-height:1;
+  }
+  .title-main{
+    font-size:17px;font-weight:900;letter-spacing:.32em;
+    background:linear-gradient(90deg,var(--lime),#fff 50%,var(--pink));
     -webkit-background-clip:text;background-clip:text;color:transparent;
-    text-shadow:0 0 16px rgba(255,62,181,.35);
+    text-shadow:0 0 16px rgba(182,255,26,.35),0 0 22px rgba(255,43,181,.25);
+  }
+  .title-sub{
+    font-size:9px;font-weight:900;letter-spacing:.5em;
+    color:var(--lime);
+    margin-top:3px;
+    text-shadow:0 0 8px var(--toxic-glow);
+    opacity:.92;
   }
   .toggles{display:flex;gap:6px;}
   .topbtn{
@@ -132,23 +180,28 @@
     display:block;width:100%;height:100%;
     border-radius:18px;
     background:
-      radial-gradient(80% 100% at 50% 0%, rgba(176,124,255,.10), transparent 60%),
-      linear-gradient(180deg, rgba(8,4,24,.85), rgba(0,0,0,.55) 60%, rgba(0,0,0,.40));
+      radial-gradient(80% 100% at 50% 0%, rgba(182,255,26,.08), transparent 60%),
+      radial-gradient(60% 60% at 50% 100%, rgba(255,43,181,.06), transparent 70%),
+      linear-gradient(180deg, rgba(2,0,8,.95), rgba(0,0,0,.85) 60%, rgba(0,0,0,.75));
     box-shadow:
-      0 0 0 1px rgba(255,255,255,.10),
-      0 0 32px rgba(176,124,255,.25),
-      0 0 60px rgba(255,62,181,.10),
-      inset 0 0 50px rgba(0,0,0,.55),
-      inset 0 1px 0 rgba(255,255,255,.18);
+      0 0 0 1px rgba(182,255,26,.18),
+      0 0 22px rgba(182,255,26,.30),
+      0 0 60px rgba(255,43,181,.16),
+      inset 0 0 60px rgba(0,0,0,.75),
+      inset 0 1px 0 rgba(255,255,255,.12);
     transition:box-shadow .35s ease;
   }
-  /* glass frame highlight ring */
+  /* toxic glass frame */
   .board-wrap::before{
     content:"";position:absolute;inset:0;border-radius:18px;pointer-events:none;
-    background:linear-gradient(135deg, rgba(255,255,255,.18), rgba(255,255,255,0) 30%, rgba(255,255,255,0) 70%, rgba(255,255,255,.10));
+    background:linear-gradient(135deg, rgba(182,255,26,.55), rgba(182,255,26,0) 28%, rgba(255,43,181,0) 70%, rgba(255,43,181,.45));
     -webkit-mask:linear-gradient(#000,#000) content-box, linear-gradient(#000,#000);
     -webkit-mask-composite:xor;mask-composite:exclude;
-    padding:1px;opacity:.6;mix-blend-mode:overlay;
+    padding:1.4px;opacity:.85;mix-blend-mode:screen;
+  }
+  .board-wrap::after{
+    content:"";position:absolute;inset:0;border-radius:18px;pointer-events:none;
+    box-shadow:inset 0 0 28px rgba(0,0,0,.6),inset 0 0 8px rgba(182,255,26,.18);
   }
   body.danger canvas#board{
     animation:dangerPulse .9s ease-in-out infinite;
@@ -156,18 +209,18 @@
   @keyframes dangerPulse{
     0%,100%{
       box-shadow:
-        0 0 0 1px rgba(255,255,255,.10),
-        0 0 32px rgba(176,124,255,.25),
-        inset 0 0 50px rgba(0,0,0,.55),
-        inset 0 1px 0 rgba(255,255,255,.18);
+        0 0 0 1px rgba(182,255,26,.18),
+        0 0 22px rgba(182,255,26,.30),
+        inset 0 0 60px rgba(0,0,0,.75),
+        inset 0 1px 0 rgba(255,255,255,.12);
     }
     50%{
       box-shadow:
-        0 0 0 2px rgba(255,80,80,.65),
-        0 0 40px rgba(255,80,120,.55),
-        0 0 70px rgba(255,80,80,.30),
-        inset 0 0 60px rgba(120,0,0,.35),
-        inset 0 1px 0 rgba(255,255,255,.18);
+        0 0 0 2px rgba(255,43,181,.85),
+        0 0 36px rgba(255,43,181,.70),
+        0 0 60px rgba(232,255,58,.40),
+        inset 0 0 60px rgba(60,0,40,.55),
+        inset 0 1px 0 rgba(255,255,255,.12);
     }
   }
   body.danger .danger-tag{display:block;}
@@ -175,10 +228,10 @@
     display:none;
     position:absolute;top:8px;left:50%;transform:translateX(-50%);
     font-size:11px;font-weight:900;letter-spacing:.45em;
-    color:#fff;
-    background:linear-gradient(90deg, rgba(255,60,80,.85), rgba(255,120,60,.85));
+    color:#0a0010;
+    background:linear-gradient(90deg, var(--lime), var(--acid) 50%, var(--pink));
     padding:5px 14px;border-radius:99px;
-    box-shadow:0 0 20px rgba(255,80,80,.7);
+    box-shadow:0 0 20px var(--toxic-glow), 0 0 28px var(--venom);
     pointer-events:none;
     animation:dangerTag .55s ease-in-out infinite alternate;
     z-index:3;
@@ -186,6 +239,34 @@
   @keyframes dangerTag{
     from{transform:translateX(-50%) scale(.95);}
     to{transform:translateX(-50%) scale(1.05);}
+  }
+  /* chromatic glitch overlay (5+ chains) */
+  .glitch{
+    position:absolute;inset:0;border-radius:18px;pointer-events:none;
+    mix-blend-mode:screen;opacity:0;z-index:4;
+    background:
+      linear-gradient(90deg, rgba(255,43,181,.0) 0%, rgba(255,43,181,.18) 50%, rgba(28,244,255,.18) 51%, rgba(28,244,255,.0) 100%);
+  }
+  .glitch.on{animation:glitchSlice .55s steps(8) 1;}
+  @keyframes glitchSlice{
+    0%  {opacity:0;transform:translate(0,0);}
+    10% {opacity:.9;transform:translate(-3px,2px);clip-path:inset(10% 0 60% 0);}
+    25% {opacity:.85;transform:translate(4px,-3px);clip-path:inset(40% 0 30% 0);}
+    50% {opacity:.7;transform:translate(-2px,3px);clip-path:inset(70% 0 5% 0);}
+    75% {opacity:.6;transform:translate(3px,-1px);clip-path:inset(20% 0 50% 0);}
+    100%{opacity:0;transform:translate(0,0);clip-path:inset(0 0 0 0);}
+  }
+  /* afterglow pulse on the board after big chain */
+  .afterglow{
+    position:absolute;inset:0;border-radius:18px;pointer-events:none;z-index:2;
+    box-shadow:0 0 0 0 rgba(182,255,26,0);
+    opacity:0;
+  }
+  .afterglow.on{animation:afterglowPulse 1.4s cubic-bezier(.2,.8,.2,1) 1;}
+  @keyframes afterglowPulse{
+    0%  {opacity:0;box-shadow:inset 0 0 0 1px var(--lime),0 0 0 0 var(--toxic-glow);}
+    20% {opacity:1;box-shadow:inset 0 0 60px var(--toxic-glow),0 0 60px var(--toxic-glow),0 0 90px var(--venom);}
+    100%{opacity:0;box-shadow:inset 0 0 0 0 transparent,0 0 0 0 transparent;}
   }
   /* NEXT preview */
   .next-widget{
@@ -211,18 +292,19 @@
     position:absolute;left:0;right:0;top:24%;
     text-align:center;pointer-events:none;
     font-size:clamp(28px, 9vmin, 56px);font-weight:900;letter-spacing:.15em;line-height:1;
-    background:linear-gradient(180deg,#fff,var(--gold) 60%,var(--pink));
+    background:linear-gradient(180deg,#fff,var(--lime) 50%,var(--pink));
     -webkit-background-clip:text;background-clip:text;color:transparent;
-    text-shadow:0 0 24px rgba(255,228,77,.6),0 0 36px rgba(255,62,181,.35);
+    text-shadow:0 0 24px var(--toxic-glow),0 0 36px var(--venom);
     opacity:0;transform:scale(.6);
+    z-index:5;
   }
   .combo-banner .cb-sub{
     display:block;
     font-size:.36em;letter-spacing:.42em;
     margin-top:4px;
-    -webkit-text-fill-color:initial;color:#ffe9b0;
-    text-shadow:0 0 12px rgba(255,228,77,.55);
-    opacity:.85;
+    -webkit-text-fill-color:initial;color:#eaffea;
+    text-shadow:0 0 12px var(--toxic-glow);
+    opacity:.92;
     background:none;
   }
   .combo-banner.on{animation:comboPop .9s cubic-bezier(.2,1.5,.4,1) forwards;}
@@ -301,10 +383,10 @@
     box-shadow:0 6px 18px rgba(163,113,255,.30),inset 0 1px 0 rgba(255,255,255,.25);
   }
   .ctrl-drop{
-    background:linear-gradient(135deg,var(--cyan) 0%,var(--violet) 50%,var(--pink) 100%);
-    color:#06020f;
+    background:linear-gradient(135deg,var(--lime) 0%,var(--cyan) 45%,var(--pink) 100%);
+    color:#0a0010;
     font-size:14px;letter-spacing:.25em;
-    box-shadow:0 8px 24px rgba(255,62,181,.40),inset 0 1px 0 rgba(255,255,255,.4);
+    box-shadow:0 8px 24px var(--venom),0 0 18px var(--toxic-glow),inset 0 1px 0 rgba(255,255,255,.4);
   }
 
   /* ===== GAME OVER ===== */
@@ -334,11 +416,17 @@
     pointer-events:none;
   }
   .go-card h2{
-    margin:0 0 18px;
-    font-size:30px;font-weight:900;letter-spacing:.25em;
-    background:linear-gradient(90deg,var(--cyan),#fff 50%,var(--pink));
+    margin:0 0 6px;
+    font-size:24px;font-weight:900;letter-spacing:.18em;line-height:1.15;
+    background:linear-gradient(90deg,var(--lime),#fff 50%,var(--pink));
     -webkit-background-clip:text;background-clip:text;color:transparent;
-    text-shadow:0 0 18px rgba(255,62,181,.4);
+    text-shadow:0 0 18px var(--toxic-glow),0 0 26px var(--venom);
+  }
+  .go-sub{
+    margin:0 0 16px;
+    font-size:11px;letter-spacing:.4em;color:var(--lime);
+    text-shadow:0 0 8px var(--toxic-glow);
+    opacity:.92;
   }
   .go-row{
     display:flex;justify-content:space-between;align-items:baseline;
@@ -355,9 +443,9 @@
     margin:22px 0 12px;width:100%;padding:14px;
     border-radius:12px;
     font:inherit;font-weight:900;font-size:14px;letter-spacing:.35em;
-    color:#06020f;
-    background:linear-gradient(135deg,var(--cyan),var(--violet) 50%,var(--pink));
-    box-shadow:0 8px 28px rgba(255,62,181,.35),inset 0 1px 0 rgba(255,255,255,.4);
+    color:#0a0010;
+    background:linear-gradient(135deg,var(--lime),var(--acid) 40%,var(--pink));
+    box-shadow:0 8px 28px var(--venom),0 0 18px var(--toxic-glow),inset 0 1px 0 rgba(255,255,255,.4);
   }
   .ss-note{margin:4px 0 0;font-size:11px;color:var(--sub);letter-spacing:.25em;}
 
@@ -393,12 +481,18 @@
     pointer-events:none;
   }
   .so-title{
-    font-size:36px;font-weight:900;letter-spacing:.28em;
-    background:linear-gradient(90deg,var(--cyan),#fff 50%,var(--pink));
+    font-size:30px;font-weight:900;letter-spacing:.22em;
+    background:linear-gradient(90deg,var(--lime),#fff 50%,var(--pink));
     -webkit-background-clip:text;background-clip:text;color:transparent;
-    text-shadow:0 0 28px rgba(255,62,181,.4);
+    text-shadow:0 0 28px var(--toxic-glow),0 0 36px var(--venom);
     animation:soTitlePulse 2.4s ease-in-out infinite;
-    line-height:1;
+    line-height:1.1;
+  }
+  .so-tag{
+    margin-top:6px;
+    font-size:11px;font-weight:900;letter-spacing:.6em;
+    color:var(--lime);
+    text-shadow:0 0 12px var(--toxic-glow);
   }
   @keyframes soTitlePulse{
     0%,100%{filter:brightness(1);transform:scale(1);}
@@ -412,14 +506,14 @@
     appearance:none;border:0;cursor:pointer;
     padding:18px 44px;border-radius:999px;
     font-family:inherit;font-weight:900;font-size:14px;letter-spacing:.4em;
-    color:#06020f;
-    background:linear-gradient(135deg,var(--cyan),var(--violet) 50%,var(--pink));
-    box-shadow:0 12px 40px rgba(255,62,181,.45),inset 0 1px 0 rgba(255,255,255,.5);
+    color:#0a0010;
+    background:linear-gradient(135deg,var(--lime),var(--acid) 40%,var(--pink));
+    box-shadow:0 12px 40px var(--venom),0 0 18px var(--toxic-glow),inset 0 1px 0 rgba(255,255,255,.5);
     animation:soBtnBreathe 1.5s ease-in-out infinite;
   }
   @keyframes soBtnBreathe{
-    0%,100%{transform:scale(1);box-shadow:0 12px 40px rgba(255,62,181,.45),inset 0 1px 0 rgba(255,255,255,.5);}
-    50%{transform:scale(1.06);box-shadow:0 14px 50px rgba(255,62,181,.62),0 0 24px rgba(61,240,255,.4),inset 0 1px 0 rgba(255,255,255,.5);}
+    0%,100%{transform:scale(1);box-shadow:0 12px 40px var(--venom),0 0 18px var(--toxic-glow),inset 0 1px 0 rgba(255,255,255,.5);}
+    50%{transform:scale(1.06);box-shadow:0 14px 50px var(--venom),0 0 28px var(--toxic-glow),0 0 24px rgba(28,244,255,.4),inset 0 1px 0 rgba(255,255,255,.5);}
   }
   @media (max-width:380px){
     .so-title{font-size:28px;letter-spacing:.22em;}
@@ -463,9 +557,9 @@
   .combo-banner.tier-strong{font-size:clamp(34px, 11vmin, 70px);}
   .combo-banner.tier-legendary{
     font-size:clamp(40px, 14vmin, 86px);
-    background:linear-gradient(180deg,#fff,var(--gold) 35%,var(--pink) 75%,var(--violet));
+    background:linear-gradient(180deg,#fff,var(--acid) 35%,var(--pink) 75%,var(--violet));
     -webkit-background-clip:text;background-clip:text;color:transparent;
-    text-shadow:0 0 32px rgba(255,228,77,.7),0 0 60px rgba(255,62,181,.5);
+    text-shadow:0 0 32px var(--toxic-glow),0 0 60px var(--venom);
   }
 
   /* mega shake for 8+ */
@@ -500,9 +594,23 @@
 </head>
 <body>
 
+<div class="vapor" aria-hidden="true">
+  <span style="left:6%;animation-duration:14s;animation-delay:-2s;"></span>
+  <span style="left:18%;animation-duration:18s;animation-delay:-9s;"></span>
+  <span style="left:32%;animation-duration:16s;animation-delay:-5s;"></span>
+  <span style="left:45%;animation-duration:21s;animation-delay:-13s;"></span>
+  <span style="left:58%;animation-duration:13s;animation-delay:-3s;"></span>
+  <span style="left:72%;animation-duration:19s;animation-delay:-7s;"></span>
+  <span style="left:85%;animation-duration:15s;animation-delay:-11s;"></span>
+  <span style="left:92%;animation-duration:22s;animation-delay:-1s;"></span>
+</div>
+
 <div class="app">
   <header class="topbar">
-    <div class="title">CHAIN FEVER</div>
+    <div class="title">
+      <div class="title-main">CHAIN FEVER</div>
+      <div class="title-sub">TOXIC MODE</div>
+    </div>
     <div class="toggles">
       <button class="topbtn" id="soundToggle" type="button" aria-pressed="true">♪ ON</button>
       <button class="topbtn" id="vibToggle" type="button" aria-pressed="true">⫶ ON</button>
@@ -528,10 +636,12 @@
     <div class="board-wrap" id="boardWrap">
       <canvas id="board" width="240" height="480"></canvas>
       <div class="slowmo-flash" id="slowmoFlash"></div>
+      <div class="afterglow" id="afterglow" aria-hidden="true"></div>
+      <div class="glitch" id="glitchOverlay" aria-hidden="true"></div>
       <div class="shockwave" id="shockwave" aria-hidden="true"></div>
       <div class="combo-banner" id="comboBanner"></div>
       <div class="popups" id="popups"></div>
-      <div class="danger-tag" id="dangerTag">DANGER</div>
+      <div class="danger-tag" id="dangerTag">TOXIC LEVEL CRITICAL</div>
       <div class="next-widget" id="nextWidget" aria-label="次のペア">
         <div class="next-lbl">NEXT</div>
         <div class="next-stack" id="nextStack"></div>
@@ -549,20 +659,22 @@
 
 <div class="game-over" id="gameOver" aria-hidden="true">
   <div class="go-card">
-    <h2>GAME OVER</h2>
+    <h2>YOU COULDN&#39;T STOP</h2>
+    <p class="go-sub">そのスコア、貼って。</p>
     <div class="go-row"><span>SCORE</span><span class="val" id="goScore">0</span></div>
     <div class="go-row"><span>BEST</span><span class="val" id="goBest">0</span></div>
-    <div class="go-row" style="border-bottom:0;"><span>HIGH CHAIN</span><span class="val" id="goChain">0</span></div>
+    <div class="go-row" style="border-bottom:0;"><span>MAX CHAIN</span><span class="val" id="goChain">0</span></div>
     <button class="restart" id="restartBtn" type="button">もう一度</button>
     <button class="share-btn" id="shareBtn" type="button">Xでシェア</button>
     <p class="share-feedback" id="shareFeedback">コピーしました</p>
-    <p class="ss-note">スコア出たら貼って</p>
+    <p class="ss-note">毒に呑まれた。</p>
   </div>
 </div>
 
 <div class="start-overlay" id="startOverlay" aria-label="開始">
   <div class="so-card" id="soCard" role="button" tabindex="0">
-    <div class="so-title">CHAIN FEVER</div>
+    <div class="so-title">CHAIN FEVER<br/>: TOXIC</div>
+    <div class="so-tag">TOXIC MODE</div>
     <div class="so-sub">音 あ り 推 奨</div>
     <button class="so-btn" id="soStartBtn" type="button">TAP TO START</button>
   </div>
@@ -579,9 +691,11 @@
 
   /* ============== CONSTANTS ============== */
   const COLS = 6, ROWS = 12;
-  const COLORS = ['#3df0ff','#ff3eb5','#a371ff','#aaff5e']; // cyan / pink / violet / lime
+  const COLORS = ['#b6ff1a','#ff2bb5','#1cf4ff','#a366ff']; // toxic lime / magenta / cyan / violet
+  const TOXIC_TINT = '#e8ff3a'; // acid yellow accent for special toxic blobs
   const NUM_COLORS = COLORS.length;
   const FALL_INIT_MS = 700;
+  const TOXIC_SPAWN_RATE = 0.03; // 3% chance per blob
 
   /* ============== STATE ============== */
   let bestScore = 0;
@@ -891,11 +1005,11 @@
 
   /* ----- voice praise via Web Speech API ----- */
   const VOICE_LINES = {
-    3: 'Nice chain',
-    4: 'Beautiful',
-    5: 'Insane',
-    6: 'Monster chain',
-    8: 'Legendary',
+    3: 'Toxic',
+    4: 'Beautiful damage',
+    5: 'Venom chain',
+    6: 'You like this',
+    8: 'Unholy chain',
   };
   function speakChain(chain){
     if (!state.soundOn) return;
@@ -948,44 +1062,73 @@
   window.addEventListener('orientationchange', fitCanvas);
 
   /* ============== DRAWING ============== */
-  function drawBlob(x, y, r, color, opacity, sx, sy, seed){
+  function shade(hex, amt){
+    // amt in [-1,1]; -1 black, +1 white
+    const m = /^#([0-9a-f]{6})$/i.exec(hex);
+    if (!m) return hex;
+    const v = parseInt(m[1], 16);
+    let r = (v >> 16) & 0xff, g = (v >> 8) & 0xff, b = v & 0xff;
+    if (amt >= 0){ r += (255 - r) * amt; g += (255 - g) * amt; b += (255 - b) * amt; }
+    else        { r += r * amt;          g += g * amt;          b += b * amt; }
+    r = Math.max(0, Math.min(255, r|0));
+    g = Math.max(0, Math.min(255, g|0));
+    b = Math.max(0, Math.min(255, b|0));
+    return '#' + ((1<<24) | (r<<16) | (g<<8) | b).toString(16).slice(1);
+  }
+  function drawBlob(x, y, r, color, opacity, sx, sy, seed, toxic){
     if (opacity <= 0) return;
     sx = sx == null ? 1 : sx;
     sy = sy == null ? 1 : sy;
     seed = seed == null ? 0 : seed;
+    toxic = !!toxic;
     ctx.globalAlpha = opacity;
 
-    // moving liquid highlight + asymmetric per-blob ovality
+    // moving liquid highlight + asymmetric per-blob ovality (slightly stronger asymmetry)
     const tt = performance.now() * 0.001;
-    const ovalSx = 1 + Math.sin(seed * 1.7) * 0.035;
-    const ovalSy = 1 + Math.cos(seed * 2.3) * 0.035;
+    const ovalSx = 1 + Math.sin(seed * 1.7) * 0.06 + Math.cos(tt * 0.7 + seed) * 0.025;
+    const ovalSy = 1 + Math.cos(seed * 2.3) * 0.06 + Math.sin(tt * 0.6 + seed * 1.3) * 0.025;
     const rx = r * sx * ovalSx;
     const ry = r * sy * ovalSy;
 
     // drop shadow under blob
-    ctx.fillStyle = 'rgba(0,0,0,.40)';
+    ctx.fillStyle = 'rgba(0,0,0,.55)';
     ctx.beginPath();
-    ctx.ellipse(x + r*0.06, y + r*0.62, r*0.72*sx, r*0.18, 0, 0, Math.PI*2);
+    ctx.ellipse(x + r*0.06, y + r*0.62, r*0.78*sx, r*0.22, 0, 0, Math.PI*2);
     ctx.fill();
+
+    // smoky aura — wide poisonous halo
+    const gAura = ctx.createRadialGradient(x, y, r*0.35, x, y, r * 2.0);
+    gAura.addColorStop(0, color + 'aa');
+    gAura.addColorStop(0.40, color + '55');
+    gAura.addColorStop(1, color + '00');
+    ctx.fillStyle = gAura;
+    ctx.beginPath(); ctx.arc(x, y, r * 2.0, 0, Math.PI*2); ctx.fill();
 
     // outer color halo
     const g0 = ctx.createRadialGradient(x, y, r*0.30, x, y, r * 1.65);
-    g0.addColorStop(0, color + '99');
-    g0.addColorStop(0.50, color + '33');
+    g0.addColorStop(0, color + 'cc');
+    g0.addColorStop(0.50, color + '44');
     g0.addColorStop(1, color + '00');
     ctx.fillStyle = g0;
     ctx.beginPath(); ctx.arc(x, y, r * 1.65, 0, Math.PI*2); ctx.fill();
 
-    // body — jelly gradient (highlight position drifts with time)
-    const hlOffX = -rx*0.32 + Math.sin(tt * 1.15 + seed) * rx*0.05;
-    const hlOffY = -ry*0.42 + Math.cos(tt * 0.95 + seed * 1.3) * ry*0.04;
+    // body — toxic jelly gradient: bright core + dark venom rim
+    const hlOffX = -rx*0.32 + Math.sin(tt * 1.15 + seed) * rx*0.06;
+    const hlOffY = -ry*0.42 + Math.cos(tt * 0.95 + seed * 1.3) * ry*0.05;
     const g1 = ctx.createRadialGradient(x + hlOffX, y + hlOffY, 0, x, y, Math.max(rx, ry));
     g1.addColorStop(0,    '#ffffff');
-    g1.addColorStop(0.18, color);
-    g1.addColorStop(0.85, color);
-    g1.addColorStop(1,    color + 'aa');
+    g1.addColorStop(0.14, color);
+    g1.addColorStop(0.55, color);
+    g1.addColorStop(0.92, shade(color, -.45));
+    g1.addColorStop(1,    shade(color, -.65));
     ctx.fillStyle = g1;
+    // gooey shape: render asymmetric ellipse, then a small drip below
     ctx.beginPath(); ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI*2); ctx.fill();
+    // melting drip illusion
+    const drop = Math.abs(Math.sin(tt * 0.9 + seed * 2.1)) * 0.35 + 0.15;
+    ctx.beginPath();
+    ctx.ellipse(x + Math.sin(seed)*rx*0.18, y + ry * (0.55 + drop * 0.25), rx*0.32, ry*0.22*drop, 0, 0, Math.PI*2);
+    ctx.fill();
 
     // inner rim glow (subtle white edge)
     const g2 = ctx.createRadialGradient(x, y, Math.max(rx, ry) * 0.72, x, y, Math.max(rx, ry));
@@ -1008,6 +1151,33 @@
     ctx.beginPath();
     ctx.ellipse(x + rx*0.32, y + ry*0.20 + Math.sin(tt*1.6+seed)*ry*0.03, rx*0.10, ry*0.06, 0.4, 0, Math.PI*2);
     ctx.fill();
+
+    // poisonous core — tiny inner glow showing through
+    const gCore = ctx.createRadialGradient(x, y + ry*0.05, 0, x, y + ry*0.05, rx*0.5);
+    gCore.addColorStop(0, 'rgba(255,255,255,.35)');
+    gCore.addColorStop(0.6, color + '00');
+    ctx.fillStyle = gCore;
+    ctx.beginPath();
+    ctx.ellipse(x, y + ry*0.05, rx*0.5, ry*0.45, 0, 0, Math.PI*2);
+    ctx.fill();
+
+    // toxic blob ring + extra glow + small drip mark
+    if (toxic){
+      const pulse = 0.8 + Math.sin(tt * 4 + seed) * 0.2;
+      ctx.lineWidth = Math.max(1.4, rx * 0.10);
+      ctx.strokeStyle = TOXIC_TINT;
+      ctx.shadowColor = TOXIC_TINT;
+      ctx.shadowBlur = 10 * pulse;
+      ctx.beginPath();
+      ctx.ellipse(x, y, rx * 0.96, ry * 0.96, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+      // tiny acid drop mark on top
+      ctx.fillStyle = TOXIC_TINT;
+      ctx.beginPath();
+      ctx.arc(x + rx*0.08, y - ry*0.55, rx * 0.10, 0, Math.PI*2);
+      ctx.fill();
+    }
 
     // eyes with subtle blink
     const blinkPhase = (tt * 0.55 + seed * 1.7) % 1;
@@ -1085,7 +1255,7 @@
         }
         const x = c * CELL + CELL/2;
         const y = r * CELL + CELL/2 + offY;
-        drawBlob(x, y, baseR * scale, COLORS[cell.color], opacity, sx, sy, seed);
+        drawBlob(x, y, baseR * scale, COLORS[cell.color], opacity, sx, sy, seed, !!cell.toxic);
       }
     }
 
@@ -1099,8 +1269,8 @@
       const wsy = (1 + wob) * stretch;
       const psd = (pivot.r * 7 + pivot.c * 13) * 0.41;
       const qsd = (partner.r * 7 + partner.c * 13) * 0.41;
-      drawBlob(pivot.c   * CELL + CELL/2, pivot.r   * CELL + CELL/2, baseR, COLORS[pivot.color],   1, wsx, wsy, psd);
-      drawBlob(partner.c * CELL + CELL/2, partner.r * CELL + CELL/2, baseR, COLORS[partner.color], 1, wsx, wsy, qsd);
+      drawBlob(pivot.c   * CELL + CELL/2, pivot.r   * CELL + CELL/2, baseR, COLORS[pivot.color],   1, wsx, wsy, psd, !!pivot.toxic);
+      drawBlob(partner.c * CELL + CELL/2, partner.r * CELL + CELL/2, baseR, COLORS[partner.color], 1, wsx, wsy, qsd, !!partner.toxic);
     }
 
     // particles
@@ -1141,6 +1311,49 @@
       });
     }
   }
+  function spawnToxicBurst(boardR, boardC){
+    if (particles.length + 14 > MAX_PARTICLES){
+      particles.splice(0, particles.length + 14 - MAX_PARTICLES);
+    }
+    const x = boardC * CELL + CELL/2;
+    const y = boardR * CELL + CELL/2;
+    const speedScale = CELL / 64;
+    for (let i = 0; i < 14; i++){
+      const ang = (i / 14) * Math.PI * 2;
+      const sp = (140 + Math.random() * 220) * speedScale;
+      particles.push({
+        x, y,
+        vx: Math.cos(ang) * sp,
+        vy: Math.sin(ang) * sp - 80 * speedScale,
+        life: 0.7 + Math.random() * 0.5,
+        age: 0,
+        r: (2.4 + Math.random() * 3.6) * speedScale,
+        color: i % 2 ? TOXIC_TINT : '#b6ff1a',
+        gravity: 220 * speedScale,
+      });
+    }
+  }
+  /* extra toxic vapor on big chains — slow drifting acid mist */
+  function spawnToxicVapor(count){
+    if (particles.length + count > MAX_PARTICLES){
+      particles.splice(0, particles.length + count - MAX_PARTICLES);
+    }
+    const speedScale = CELL / 64;
+    for (let i = 0; i < count; i++){
+      const x = Math.random() * CAN_W;
+      const y = CAN_H + 20 + Math.random() * 40;
+      particles.push({
+        x, y,
+        vx: (Math.random() - 0.5) * 60 * speedScale,
+        vy: -(80 + Math.random() * 120) * speedScale,
+        life: 0.9 + Math.random() * 0.6,
+        age: 0,
+        r: (3 + Math.random() * 4) * speedScale,
+        color: Math.random() < .5 ? '#b6ff1a' : '#ff2bb5',
+        gravity: -20 * speedScale, // floats up
+      });
+    }
+  }
 
   /* ============== GAMEPLAY ============== */
   function isFree(r, c){
@@ -1160,6 +1373,8 @@
   }
 
   function spawnPair(){
+    // last guard — never spawn over a floating board
+    ensureNoFloating('spawnPair-entry');
     if (!isFree(0, 2) || !isFree(1, 2)){
       gameOver();
       return;
@@ -1167,11 +1382,15 @@
     // use NEXT preview, then refresh next
     const a = (state.nextA ?? Math.floor(Math.random() * NUM_COLORS));
     const b = (state.nextB ?? Math.floor(Math.random() * NUM_COLORS));
+    const aTox = !!state.nextAToxic;
+    const bTox = !!state.nextBToxic;
     state.nextA = Math.floor(Math.random() * NUM_COLORS);
     state.nextB = Math.floor(Math.random() * NUM_COLORS);
+    state.nextAToxic = Math.random() < TOXIC_SPAWN_RATE;
+    state.nextBToxic = Math.random() < TOXIC_SPAWN_RATE;
     state.pair = {
-      pivot:   { r:1, c:2, color:a },
-      partner: { r:0, c:2, color:b },
+      pivot:   { r:1, c:2, color:a, toxic:aTox },
+      partner: { r:0, c:2, color:b, toxic:bTox },
       orient: 0,
     };
     state.lastFallAt = performance.now();
@@ -1271,11 +1490,16 @@
   function lockPair(){
     if (!state.pair) return;
     const { pivot, partner } = state.pair;
-    state.board[pivot.r][pivot.c]   = { color: pivot.color,   anim: 'wobble', t: 0 };
-    state.board[partner.r][partner.c] = { color: partner.color, anim: 'wobble', t: 0 };
+    state.board[pivot.r][pivot.c]   = { color: pivot.color,   anim: 'wobble', t: 0, toxic: !!pivot.toxic };
+    state.board[partner.r][partner.c] = { color: partner.color, anim: 'wobble', t: 0, toxic: !!partner.toxic };
     state.pair = null;
     playPlace();
     vibrate([10]);
+    /* CRITICAL: apply gravity right after locking. The previous version skipped
+       this, so a horizontal pair could lock with the partner over an empty
+       column and stay floating until a future chain happened to clear it. */
+    forceCompactBoard('post-lockPair');
+    ensureNoFloating('post-lockPair-verify');
     processChains();
   }
 
@@ -1306,23 +1530,81 @@
     return groups;
   }
 
+  /* Hardened gravity: per column, collect non-null cells bottom-up, then rewrite the
+     column from the bottom. Always produces a fully bottom-compacted column. */
   function applyGravity(){
     let moved = false;
     for (let c = 0; c < COLS; c++){
-      let writeRow = ROWS - 1;
+      const stack = []; // bottom-most cells go first
       for (let r = ROWS - 1; r >= 0; r--){
         const cell = state.board[r][c];
-        if (cell !== null){
-          if (writeRow !== r){
-            state.board[writeRow][c] = cell;
-            state.board[r][c] = null;
-            moved = true;
-          }
-          writeRow--;
+        if (cell !== null) stack.push(cell);
+      }
+      // rewrite bottom-up
+      for (let i = 0; i < ROWS; i++){
+        const targetRow = ROWS - 1 - i;
+        const newCell = i < stack.length ? stack[i] : null;
+        if (state.board[targetRow][c] !== newCell){
+          // detect any actual reordering
+          if (newCell === null && state.board[targetRow][c] !== null) moved = true;
+          else if (newCell !== null && state.board[targetRow][c] === null) moved = true;
+          else if (newCell !== state.board[targetRow][c]) moved = true;
         }
+        state.board[targetRow][c] = newCell;
       }
     }
     return moved;
+  }
+
+  /* Invariant: in every column, no filled cell may exist above an empty cell.
+     Returns the number of violating columns found, plus details for debug. */
+  function findFloatingViolations(){
+    const violations = [];
+    for (let c = 0; c < COLS; c++){
+      let seenNull = false;
+      for (let r = ROWS - 1; r >= 0; r--){
+        if (state.board[r][c] === null) seenNull = true;
+        else if (seenNull){ violations.push({ col:c, row:r }); break; }
+      }
+    }
+    return violations;
+  }
+
+  /* Force compaction with optional jelly settle on cells that moved.
+     Always idempotent: after this call, findFloatingViolations() === []. */
+  function forceCompactBoard(reason){
+    const before = state.board.map(row => row.slice());
+    let changed = false;
+    let safety = 0;
+    while (applyGravity()){ changed = true; if (++safety > ROWS) break; }
+    if (changed){
+      // mark every cell that ended up at a different row with a brief settle wobble
+      for (let c = 0; c < COLS; c++){
+        for (let r = 0; r < ROWS; r++){
+          const now = state.board[r][c];
+          const was = before[r][c];
+          if (now !== was && now !== null){
+            // only settle cells that aren't mid-burst/pull (those have own anim)
+            if (now.anim !== 'burst' && now.anim !== 'pull'){
+              now.anim = 'wobble'; now.t = 0;
+            }
+          }
+        }
+      }
+      try { window.__cfDebug && console && console.warn && console.warn('[CHAIN_FEVER] forceCompactBoard:', reason || ''); } catch(_){}
+    }
+    return changed;
+  }
+
+  /* Master gravity check: detects any floating cell and compacts.
+     Cheap when no violation; safe to call frequently. */
+  function ensureNoFloating(reason){
+    const v = findFloatingViolations();
+    if (v.length > 0){
+      forceCompactBoard(reason || 'invariant-violation');
+      return true;
+    }
+    return false;
   }
 
   const wait = (ms) => new Promise(r => setTimeout(r, Math.max(8, ms / state.timeScale)));
@@ -1351,10 +1633,15 @@
       // burst + sound + shake + vibe + score + popup + combo
       const cleared = groups.reduce((s, g) => s + g.cells.length, 0);
       const partsPerCell = chain >= 8 ? 16 : (chain >= 5 ? 13 : (chain >= 3 ? 11 : 9));
+      let toxicCount = 0;
       for (const g of groups){
         for (const [r, c] of g.cells){
-          state.board[r][c] = { color: g.color, anim: 'burst', t: 0 };
-          spawnParticles(r, c, g.color, partsPerCell);
+          const wasToxic = !!(state.board[r][c] && state.board[r][c].toxic);
+          if (wasToxic) toxicCount++;
+          state.board[r][c] = { color: g.color, anim: 'burst', t: 0, toxic: wasToxic };
+          spawnParticles(r, c, g.color, partsPerCell + (wasToxic ? 12 : 0));
+          // extra acid burst for toxic blobs
+          if (wasToxic) spawnToxicBurst(r, c);
         }
       }
 
@@ -1375,6 +1662,11 @@
       // shockwave on 5+, legendary flash on 8+
       if (chain >= 5) fireShockwave();
       if (chain >= 8) fireLegendaryFlash();
+      // chromatic glitch slice on 5+
+      if (chain >= 5) fireGlitch();
+      // toxic afterglow on 4+, vapor mist on 3+
+      if (chain >= 4) fireAfterglow();
+      if (chain >= 3) spawnToxicVapor(chain >= 5 ? 18 : 10);
 
       // voice praise
       speakChain(chain);
@@ -1382,7 +1674,8 @@
       state.totalCleared += cleared;
       const chainBonus = Math.pow(2, chain - 1);
       const colorBonus = groups.length;
-      const points = cleared * 10 * chainBonus * colorBonus;
+      const toxicBonus = toxicCount > 0 ? (1 + toxicCount * 0.5) : 1;
+      const points = Math.round(cleared * 10 * chainBonus * colorBonus * toxicBonus);
       state.score += points;
 
       // popup at the cleared group's centroid
@@ -1417,15 +1710,16 @@
         }
       }
 
-      // gravity — repeat until stable (defensive: column compaction is single-pass per call,
-      // but we re-run to guarantee the no-floating invariant before the next chain check)
-      let moved = applyGravity();
-      let safetyN = 0;
-      while (applyGravity() && ++safetyN < ROWS) { /* compact again if any moved */ }
-      if (moved){
+      // hardened gravity — fully compact every column, then verify invariant
+      const movedAny = forceCompactBoard('post-clear');
+      ensureNoFloating('post-clear-verify');
+      if (movedAny){
         await wait(160);
       }
     }
+    // FINAL invariant check after the cascade ends — no cell may float over a hole
+    forceCompactBoard('post-cascade');
+    ensureNoFloating('post-cascade-verify');
     // After any cascade(s), give a brief recovery window so the player can plan the next move.
     if (chain >= 1) state.recoveryUntil = performance.now() + 1100;
     state.chain = 0;
@@ -1433,7 +1727,11 @@
     // bump fall speed based on cleared total (base only; per-frame variation handled in main loop)
     const level = Math.floor(state.totalCleared / 30);
     state.fallMs = Math.max(180, FALL_INIT_MS - level * 50);
-    if (!state.isGameOver) spawnPair();
+    if (!state.isGameOver){
+      // last-line defence right before spawning the next pair
+      ensureNoFloating('pre-spawnPair');
+      spawnPair();
+    }
   }
 
   async function animatePhase(animType, durMs){
@@ -1494,6 +1792,20 @@
     void lf.offsetWidth;
     lf.classList.add('on');
   }
+  function fireGlitch(){
+    const g = $('glitchOverlay');
+    if (!g) return;
+    g.classList.remove('on');
+    void g.offsetWidth;
+    g.classList.add('on');
+  }
+  function fireAfterglow(){
+    const a = $('afterglow');
+    if (!a) return;
+    a.classList.remove('on');
+    void a.offsetWidth;
+    a.classList.add('on');
+  }
   let freezeRestoreTimer = null;
   function freezeFrame(ms){
     // hit-stop: bring timeScale to near-zero briefly, then restore
@@ -1509,12 +1821,12 @@
     if (chain < 2) return;
     const banner = $('comboBanner');
     let label, sub;
-    if      (chain === 2){ label = '2 CHAIN';    sub = ''; }
-    else if (chain === 3){ label = 'NICE';       sub = '3 CHAIN'; }
-    else if (chain === 4){ label = 'BEAUTIFUL';  sub = '4 CHAIN'; }
-    else if (chain === 5){ label = 'INSANE';     sub = '5 CHAIN'; }
-    else if (chain <= 7) { label = 'MONSTER';    sub = chain + ' CHAIN'; }
-    else                 { label = 'LEGENDARY';  sub = chain + ' CHAIN'; }
+    if      (chain === 2){ label = 'DIRTY';      sub = '2 CHAIN'; }
+    else if (chain === 3){ label = 'TOXIC';      sub = '3 CHAIN'; }
+    else if (chain === 4){ label = 'SINFUL';     sub = '4 CHAIN'; }
+    else if (chain === 5){ label = 'VENOM';      sub = '5 CHAIN'; }
+    else if (chain <= 7) { label = 'CORRUPTED';  sub = chain + ' CHAIN'; }
+    else                 { label = 'UNHOLY';     sub = chain + ' CHAIN'; }
     banner.innerHTML = label + (sub ? '<span class="cb-sub">' + sub + '</span>' : '');
     banner.classList.remove('on','tier-strong','tier-legendary');
     if (chain >= 8) banner.classList.add('tier-legendary');
@@ -1576,6 +1888,8 @@
     state.pairCount = 0;
     state.nextA = Math.floor(Math.random() * NUM_COLORS);
     state.nextB = Math.floor(Math.random() * NUM_COLORS);
+    state.nextAToxic = Math.random() < TOXIC_SPAWN_RATE;
+    state.nextBToxic = Math.random() < TOXIC_SPAWN_RATE;
     state.spokenThresholds.clear();
     document.body.classList.remove('danger');
     try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch(_){}
@@ -1634,6 +1948,11 @@
         state.lastFallAt = t;
         if (!tryFall()) lockPair();
       }
+    }
+
+    // lightweight gravity invariant check every ~8 frames (only when idle, no pair settling)
+    if ((stackTick & 7) === 0 && !state.isAnimating && !state.isGameOver && state.pair){
+      ensureNoFloating('main-loop');
     }
 
     // stack height + danger update (every 4 frames for perf)
@@ -1799,9 +2118,9 @@
   /* ----- share flow ----- */
   function buildShareText(){
     const score = state.score;
-    const best = Math.max(state.bestScore, state.score);
+    const highChain = state.highChain;
     const url = location.href;
-    return 'CHAIN FEVERで遊んだ\nSCORE: ' + score + '\nBEST: ' + best + '\n' + url;
+    return 'CHAIN FEVER: TOXICで遊んだ\nSCORE: ' + score + '\nMAX CHAIN: ' + highChain + '\n' + url;
   }
   function showShareFeedback(msg){
     const fb = $('shareFeedback');
@@ -1942,16 +2261,64 @@
       return { ok: true };
     },
     runGravity: () => applyGravity(),
+    forceCompactBoard: (reason) => forceCompactBoard(reason || 'test'),
+    findFloatingViolations: () => findFloatingViolations(),
+    ensureNoFloating: (reason) => ensureNoFloating(reason || 'test'),
     setupFloatingTest: () => {
       // floating fixture: gaps below blobs in multiple columns
       state.board = Array.from({length:ROWS}, () => Array(COLS).fill(null));
-      state.board[5][0]  = { color:0, anim:null, t:0 };
-      state.board[7][0]  = { color:1, anim:null, t:0 };
-      state.board[2][3]  = { color:2, anim:null, t:0 };
-      state.board[8][3]  = { color:3, anim:null, t:0 };
-      state.board[1][5]  = { color:0, anim:null, t:0 };
-      state.board[6][5]  = { color:1, anim:null, t:0 };
-      state.board[10][5] = { color:2, anim:null, t:0 };
+      state.board[5][0]  = { color:0, anim:null, t:0, toxic:false };
+      state.board[7][0]  = { color:1, anim:null, t:0, toxic:false };
+      state.board[2][3]  = { color:2, anim:null, t:0, toxic:false };
+      state.board[8][3]  = { color:3, anim:null, t:0, toxic:false };
+      state.board[1][5]  = { color:0, anim:null, t:0, toxic:false };
+      state.board[6][5]  = { color:1, anim:null, t:0, toxic:false };
+      state.board[10][5] = { color:2, anim:null, t:0, toxic:false };
+    },
+    /* Gameplay-shaped horizontal-pair float repro:
+       column 2 has a blob at row 11 (the floor blob), column 3 is empty.
+       A horizontal pair (orient=1) with pivot at (10,2) and partner at (10,3)
+       can't fall further because pivot is blocked, so without the lockPair
+       gravity fix the partner stays floating at (10,3). */
+    setupHorizontalLockRepro: () => {
+      state.board = Array.from({length:ROWS}, () => Array(COLS).fill(null));
+      state.board[11][2] = { color:0, anim:null, t:0, toxic:false };
+      // pair sits horizontally at row 10, pivot c=2, partner c=3
+      state.pair = {
+        pivot:   { r: 10, c: 2, color: 1, toxic: false },
+        partner: { r: 10, c: 3, color: 2, toxic: false },
+        orient: 1,
+      };
+    },
+    /* Run a deterministic-ish sequence of N pair lock cycles, each with random
+       moves before drop. Returns array of any floating violations found
+       AT ANY POINT (post-lock, post-cascade, pre-spawn). */
+    simulatePlay: async (n) => {
+      const violations = [];
+      for (let i = 0; i < (n|0); i++){
+        if (!state.pair){
+          if (state.isGameOver) break;
+          spawnPair();
+        }
+        // random horizontal moves
+        const moves = (i * 7 + 3) % 5;
+        for (let m = 0; m < moves; m++){
+          if ((i * 11 + m) & 1) moveLeft(); else moveRight();
+        }
+        // sometimes rotate
+        if (((i * 13) % 3) === 0) rotate();
+        if (((i * 17) % 4) === 0) rotate();
+        hardDrop();
+        // wait for processChains() to settle
+        let guard = 0;
+        while (state.isAnimating && guard++ < 4000){
+          await new Promise(r => setTimeout(r, 8));
+        }
+        const v = findFloatingViolations();
+        if (v.length){ violations.push({ iteration:i, v }); }
+        if (state.isGameOver) break;
+      }
+      return violations;
     },
   };
 })();
