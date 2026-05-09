@@ -1857,16 +1857,40 @@
     ctx.stroke();
     ctx.shadowBlur = 0;
 
-    // sinister glowing eyes (red)
-    ctx.fillStyle = '#ff2050';
-    ctx.shadowColor = '#ff2050'; ctx.shadowBlur = 6;
-    ctx.beginPath();
-    ctx.arc(x - rx*0.22, y - ry*0.05, rx*0.08, 0, Math.PI*2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(x + rx*0.22, y - ry*0.05, rx*0.08, 0, Math.PI*2);
-    ctx.fill();
+    // SHARP CRACKED AURA — radiating jagged shards (replaces eyes)
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(tt * 0.4 + seed);
+    ctx.shadowColor = '#ff1e5e';
+    ctx.shadowBlur = 6;
+    ctx.strokeStyle = 'rgba(255,80,140,' + (0.65 + 0.30 * pulse).toFixed(3) + ')';
+    const shards = 7;
+    for (let i = 0; i < shards; i++){
+      const a = (i / shards) * Math.PI * 2 + Math.sin(seed * 0.7 + i) * 0.3;
+      const len1 = rx * (0.55 + 0.10 * Math.sin(tt * 2 + i));
+      const len2 = rx * (0.95 + 0.08 * Math.sin(tt * 1.7 + i * 1.3));
+      ctx.lineWidth = Math.max(0.6, rx * (0.025 + 0.015 * (i & 1)));
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(a) * len1, Math.sin(a) * len1);
+      const ax = a + 0.18 * (i & 1 ? 1 : -1);
+      ctx.lineTo(Math.cos(ax) * len2, Math.sin(ax) * len2);
+      ctx.stroke();
+    }
     ctx.shadowBlur = 0;
+    ctx.restore();
+
+    // internal liquid crack across the body
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.strokeStyle = 'rgba(255,80,140,' + (0.50 + 0.25 * pulse).toFixed(3) + ')';
+    ctx.lineWidth = Math.max(0.5, rx * 0.025);
+    ctx.beginPath();
+    ctx.moveTo(-rx * 0.55,  ry * 0.10);
+    ctx.lineTo(-rx * 0.10, -ry * 0.20);
+    ctx.lineTo( rx * 0.20,  ry * 0.05);
+    ctx.lineTo( rx * 0.55,  ry * 0.30);
+    ctx.stroke();
+    ctx.restore();
 
     ctx.globalAlpha = 1;
   }
@@ -1960,7 +1984,123 @@
     ctx.globalAlpha = 1;
   }
 
-  function drawBlob(x, y, r, color, opacity, sx, sy, seed, toxic, venom, god){
+  /* per-color identity glyph painted inside the blob:
+     0 lime     → acid crack (jagged Z fracture)
+     1 magenta  → pulse ring (concentric rings)
+     2 cyan     → electric vein (branching bolt)
+     3 violet   → shadow scar (diagonal slash)
+     Optional acid yellow accent reserved for toxic ring tint, not as a base color glyph. */
+  function drawColorGlyph(colorIdx, x, y, rx, ry, color, tt, seed){
+    const idx = ((colorIdx | 0) % NUM_COLORS + NUM_COLORS) % NUM_COLORS;
+    const pulse = 0.55 + 0.45 * Math.abs(Math.sin(tt * 1.8 + seed * 1.2));
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    if (idx === 0){
+      // ACID CRACK — short jagged Z fracture, bright acid line
+      ctx.strokeStyle = TOXIC_TINT;
+      ctx.shadowColor = TOXIC_TINT;
+      ctx.shadowBlur = 6 + 3 * pulse;
+      ctx.lineWidth = Math.max(1.0, rx * 0.07);
+      const w = rx * 0.40, h = ry * 0.40;
+      const sw = Math.sin(tt * 0.6 + seed) * 0.15;
+      ctx.beginPath();
+      ctx.moveTo(-w * 0.95, -h * 0.55);
+      ctx.lineTo( w * 0.10, -h * 0.10 + sw * h);
+      ctx.lineTo(-w * 0.20,  h * 0.30);
+      ctx.lineTo( w * 0.95,  h * 0.65);
+      ctx.stroke();
+    } else if (idx === 1){
+      // PULSE RING — two concentric arcs, opacity pulses with time
+      ctx.shadowColor = color;
+      ctx.shadowBlur = 6 + 4 * pulse;
+      ctx.strokeStyle = 'rgba(255,255,255,' + (0.50 + 0.45 * pulse).toFixed(3) + ')';
+      ctx.lineWidth = Math.max(1.0, rx * 0.075);
+      ctx.beginPath();
+      ctx.arc(0, 0, rx * 0.34, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.strokeStyle = 'rgba(255,255,255,' + (0.20 + 0.30 * pulse).toFixed(3) + ')';
+      ctx.lineWidth = Math.max(0.6, rx * 0.04);
+      ctx.beginPath();
+      ctx.arc(0, 0, rx * 0.55, 0, Math.PI * 2);
+      ctx.stroke();
+    } else if (idx === 2){
+      // ELECTRIC VEIN — branching bolt rendered with shadow blur
+      ctx.shadowColor = '#ffffff';
+      ctx.shadowBlur = 8 + 4 * pulse;
+      ctx.strokeStyle = 'rgba(255,255,255,' + (0.65 + 0.30 * pulse).toFixed(3) + ')';
+      ctx.lineWidth = Math.max(1.0, rx * 0.06);
+      ctx.beginPath();
+      ctx.moveTo(-rx * 0.45, -ry * 0.50);
+      ctx.lineTo( rx * 0.05, -ry * 0.10);
+      ctx.lineTo(-rx * 0.10,  ry * 0.05);
+      ctx.lineTo( rx * 0.40,  ry * 0.55);
+      ctx.stroke();
+      // small branch
+      ctx.lineWidth = Math.max(0.7, rx * 0.04);
+      ctx.beginPath();
+      ctx.moveTo( rx * 0.05, -ry * 0.10);
+      ctx.lineTo( rx * 0.30, -ry * 0.30);
+      ctx.stroke();
+    } else if (idx === 3){
+      // SHADOW SCAR — diagonal dark slash with thin highlight ridge
+      ctx.shadowColor = '#000000';
+      ctx.shadowBlur = 4;
+      ctx.strokeStyle = 'rgba(10,0,30,.85)';
+      ctx.lineWidth = Math.max(1.2, rx * 0.10);
+      ctx.beginPath();
+      ctx.moveTo(-rx * 0.55, ry * 0.40);
+      ctx.lineTo( rx * 0.55, -ry * 0.40);
+      ctx.stroke();
+      // thin highlight on the upper edge
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = 'rgba(255,255,255,' + (0.18 + 0.18 * pulse).toFixed(3) + ')';
+      ctx.lineWidth = Math.max(0.5, rx * 0.025);
+      ctx.beginPath();
+      ctx.moveTo(-rx * 0.50, ry * 0.30);
+      ctx.lineTo( rx * 0.50, -ry * 0.50);
+      ctx.stroke();
+    }
+    ctx.shadowBlur = 0;
+    ctx.restore();
+  }
+
+  /* organic interior — subtle dark veins + a thin liquid crack arc */
+  function drawInteriorVeins(x, y, rx, ry, color, tt, seed){
+    ctx.save();
+    ctx.translate(x, y);
+    // dark capillary vein
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = shade(color, -.55) + 'cc';
+    ctx.lineWidth = Math.max(0.5, rx * 0.025);
+    const veinPhase = tt * 0.5 + seed * 1.1;
+    ctx.beginPath();
+    ctx.moveTo(-rx * 0.55, -ry * 0.05 + Math.sin(veinPhase) * ry * 0.08);
+    ctx.bezierCurveTo(
+      -rx * 0.20,  ry * 0.12 + Math.cos(veinPhase) * ry * 0.10,
+       rx * 0.18, -ry * 0.18 + Math.sin(veinPhase * 1.4) * ry * 0.10,
+       rx * 0.55,  ry * 0.05 + Math.cos(veinPhase * 0.8) * ry * 0.08
+    );
+    ctx.stroke();
+    // tiny side branch
+    ctx.lineWidth = Math.max(0.3, rx * 0.014);
+    ctx.beginPath();
+    ctx.moveTo(-rx * 0.05, ry * 0.04);
+    ctx.lineTo( rx * 0.20, ry * 0.30);
+    ctx.stroke();
+    // liquid crack — thin bright hairline
+    ctx.strokeStyle = 'rgba(255,255,255,.18)';
+    ctx.lineWidth = Math.max(0.4, rx * 0.018);
+    ctx.beginPath();
+    ctx.moveTo( rx * 0.55,  ry * 0.20);
+    ctx.lineTo( rx * 0.10, -ry * 0.10);
+    ctx.lineTo( rx * 0.30, -ry * 0.40);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawBlob(x, y, r, color, opacity, sx, sy, seed, toxic, venom, god, colorIdx){
     if (opacity <= 0) return;
     sx = sx == null ? 1 : sx;
     sy = sy == null ? 1 : sy;
@@ -2007,22 +2147,29 @@
     ctx.fillStyle = g0;
     ctx.beginPath(); ctx.arc(x, y, r * 1.65, 0, Math.PI*2); ctx.fill();
 
-    // body — toxic jelly gradient: bright core + dark venom rim
-    const hlOffX = -rx*0.32 + Math.sin(tt * 1.15 + seed) * rx*0.06;
-    const hlOffY = -ry*0.42 + Math.cos(tt * 0.95 + seed * 1.3) * ry*0.05;
-    const g1 = ctx.createRadialGradient(x + hlOffX, y + hlOffY, 0, x, y, Math.max(rx, ry));
-    g1.addColorStop(0,    '#ffffff');
-    g1.addColorStop(0.14, color);
-    g1.addColorStop(0.55, color);
-    g1.addColorStop(0.92, shade(color, -.45));
-    g1.addColorStop(1,    shade(color, -.65));
+    // body — translucent jelly membrane: deep colored rim, brighter glowing core
+    const hlOffX = -rx*0.30 + Math.sin(tt * 1.15 + seed) * rx*0.05;
+    const hlOffY = -ry*0.40 + Math.cos(tt * 0.95 + seed * 1.3) * ry*0.05;
+    const g1 = ctx.createRadialGradient(x + hlOffX*0.35, y + hlOffY*0.35, 0, x, y, Math.max(rx, ry));
+    g1.addColorStop(0,    shade(color, +.55) + 'ff'); // bright glowing nucleus
+    g1.addColorStop(0.30, color);
+    g1.addColorStop(0.78, color);
+    g1.addColorStop(0.94, shade(color, -.35));
+    g1.addColorStop(1,    shade(color, -.55));
     ctx.fillStyle = g1;
-    // gooey shape: render asymmetric ellipse, then a small drip below
+    // asymmetric organic silhouette
     ctx.beginPath(); ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI*2); ctx.fill();
-    // melting drip illusion
-    const drop = Math.abs(Math.sin(tt * 0.9 + seed * 2.1)) * 0.35 + 0.15;
+    // soft membrane wash — translucent overlay tilted with breathing
+    const memAlpha = 0.10 + 0.06 * Math.abs(Math.sin(tt * 0.8 + seed));
+    ctx.fillStyle = 'rgba(255,255,255,' + memAlpha.toFixed(3) + ')';
     ctx.beginPath();
-    ctx.ellipse(x + Math.sin(seed)*rx*0.18, y + ry * (0.55 + drop * 0.25), rx*0.32, ry*0.22*drop, 0, 0, Math.PI*2);
+    ctx.ellipse(x - rx*0.08, y - ry*0.10, rx*0.78, ry*0.55, -0.35, 0, Math.PI*2);
+    ctx.fill();
+    // gentle sweat drip (bottom-side, organic)
+    const drop = Math.abs(Math.sin(tt * 0.9 + seed * 2.1)) * 0.30 + 0.10;
+    ctx.fillStyle = shade(color, -.10) + 'cc';
+    ctx.beginPath();
+    ctx.ellipse(x + Math.sin(seed)*rx*0.18, y + ry * (0.58 + drop * 0.18), rx*0.26, ry*0.16*drop, 0, 0, Math.PI*2);
     ctx.fill();
 
     // inner rim glow (subtle white edge)
@@ -2047,16 +2194,25 @@
     ctx.ellipse(x + rx*0.32, y + ry*0.20 + Math.sin(tt*1.6+seed)*ry*0.03, rx*0.10, ry*0.06, 0.4, 0, Math.PI*2);
     ctx.fill();
 
-    // poisonous core — tiny inner glow showing through
-    const gCore = ctx.createRadialGradient(x, y + ry*0.05, 0, x, y + ry*0.05, rx*0.5);
-    gCore.addColorStop(0, 'rgba(255,255,255,.35)');
-    gCore.addColorStop(0.6, color + '00');
+    // organic interior — capillary veins + a thin liquid crack hairline
+    drawInteriorVeins(x, y, rx, ry, color, tt, seed);
+
+    // poisonous core — pulsing nucleus, color-tinted (pulses with breathing)
+    const corePulse = 0.55 + 0.45 * Math.abs(Math.sin(tt * 1.6 + seed * 1.8));
+    const coreR = rx * (0.30 + 0.04 * corePulse);
+    const gCore = ctx.createRadialGradient(x, y, 0, x, y, coreR);
+    gCore.addColorStop(0,   'rgba(255,255,255,' + (0.78 * corePulse).toFixed(3) + ')');
+    gCore.addColorStop(0.40, shade(color, +.45) + 'cc');
+    gCore.addColorStop(1,    color + '00');
     ctx.fillStyle = gCore;
     ctx.beginPath();
-    ctx.ellipse(x, y + ry*0.05, rx*0.5, ry*0.45, 0, 0, Math.PI*2);
+    ctx.ellipse(x, y, coreR, coreR * 0.92, 0, 0, Math.PI*2);
     ctx.fill();
 
-    // toxic blob ring + extra glow + small drip mark
+    // per-color identity glyph (replaces face/eyes)
+    drawColorGlyph(colorIdx, x, y, rx, ry, color, tt, seed);
+
+    // toxic blob ring + extra glow + small drip mark (kept; visually layered on top of glyph)
     if (toxic){
       const pulse = 0.8 + Math.sin(tt * 4 + seed) * 0.2;
       ctx.lineWidth = Math.max(1.4, rx * 0.10);
@@ -2072,25 +2228,6 @@
       ctx.beginPath();
       ctx.arc(x + rx*0.08, y - ry*0.55, rx * 0.10, 0, Math.PI*2);
       ctx.fill();
-    }
-
-    // eyes with subtle blink
-    const blinkPhase = (tt * 0.55 + seed * 1.7) % 1;
-    const blinkScale = blinkPhase > 0.96 ? Math.max(0.10, 1 - (blinkPhase - 0.96) * 24) : 1;
-    ctx.fillStyle = 'rgba(20,8,40,.78)';
-    ctx.beginPath();
-    ctx.ellipse(x - rx*0.22, y - ry*0.04, rx*0.085, ry*0.115 * blinkScale, 0, 0, Math.PI*2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.ellipse(x + rx*0.22, y - ry*0.04, rx*0.085, ry*0.115 * blinkScale, 0, 0, Math.PI*2);
-    ctx.fill();
-    // eye shine (only when not mid-blink)
-    if (blinkScale > 0.5){
-      ctx.fillStyle = 'rgba(255,255,255,.95)';
-      ctx.beginPath();
-      ctx.arc(x - rx*0.20, y - ry*0.07, Math.max(0.6, rx*0.030), 0, Math.PI*2); ctx.fill();
-      ctx.beginPath();
-      ctx.arc(x + rx*0.24, y - ry*0.07, Math.max(0.6, rx*0.030), 0, Math.PI*2); ctx.fill();
     }
 
     ctx.globalAlpha = 1;
@@ -2150,7 +2287,7 @@
         }
         const x = c * CELL + CELL/2;
         const y = r * CELL + CELL/2 + offY;
-        drawBlob(x, y, baseR * scale, COLORS[cell.color], opacity, sx, sy, seed, !!cell.toxic, !!cell.venom, !!cell.god);
+        drawBlob(x, y, baseR * scale, COLORS[cell.color], opacity, sx, sy, seed, !!cell.toxic, !!cell.venom, !!cell.god, cell.color);
       }
     }
 
@@ -2164,8 +2301,8 @@
       const wsy = (1 + wob) * stretch;
       const psd = (pivot.r * 7 + pivot.c * 13) * 0.41;
       const qsd = (partner.r * 7 + partner.c * 13) * 0.41;
-      drawBlob(pivot.c   * CELL + CELL/2, pivot.r   * CELL + CELL/2, baseR, COLORS[pivot.color],   1, wsx, wsy, psd, !!pivot.toxic,   !!pivot.venom,   !!pivot.god);
-      drawBlob(partner.c * CELL + CELL/2, partner.r * CELL + CELL/2, baseR, COLORS[partner.color], 1, wsx, wsy, qsd, !!partner.toxic, !!partner.venom, !!partner.god);
+      drawBlob(pivot.c   * CELL + CELL/2, pivot.r   * CELL + CELL/2, baseR, COLORS[pivot.color],   1, wsx, wsy, psd, !!pivot.toxic,   !!pivot.venom,   !!pivot.god,   pivot.color);
+      drawBlob(partner.c * CELL + CELL/2, partner.r * CELL + CELL/2, baseR, COLORS[partner.color], 1, wsx, wsy, qsd, !!partner.toxic, !!partner.venom, !!partner.god, partner.color);
     }
 
     // particles
