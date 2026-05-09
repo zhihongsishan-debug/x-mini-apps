@@ -948,16 +948,24 @@
   window.addEventListener('orientationchange', fitCanvas);
 
   /* ============== DRAWING ============== */
-  function drawBlob(x, y, r, color, opacity, sx, sy){
+  function drawBlob(x, y, r, color, opacity, sx, sy, seed){
     if (opacity <= 0) return;
     sx = sx == null ? 1 : sx;
     sy = sy == null ? 1 : sy;
+    seed = seed == null ? 0 : seed;
     ctx.globalAlpha = opacity;
+
+    // moving liquid highlight + asymmetric per-blob ovality
+    const tt = performance.now() * 0.001;
+    const ovalSx = 1 + Math.sin(seed * 1.7) * 0.035;
+    const ovalSy = 1 + Math.cos(seed * 2.3) * 0.035;
+    const rx = r * sx * ovalSx;
+    const ry = r * sy * ovalSy;
 
     // drop shadow under blob
     ctx.fillStyle = 'rgba(0,0,0,.40)';
     ctx.beginPath();
-    ctx.ellipse(x + r*0.06, y + r*0.62, r*0.72*sx, r*0.18*sy, 0, 0, Math.PI*2);
+    ctx.ellipse(x + r*0.06, y + r*0.62, r*0.72*sx, r*0.18, 0, 0, Math.PI*2);
     ctx.fill();
 
     // outer color halo
@@ -968,9 +976,10 @@
     ctx.fillStyle = g0;
     ctx.beginPath(); ctx.arc(x, y, r * 1.65, 0, Math.PI*2); ctx.fill();
 
-    // body — jelly gradient
-    const rx = r * sx, ry = r * sy;
-    const g1 = ctx.createRadialGradient(x - rx*0.32, y - ry*0.42, 0, x, y, Math.max(rx, ry));
+    // body — jelly gradient (highlight position drifts with time)
+    const hlOffX = -rx*0.32 + Math.sin(tt * 1.15 + seed) * rx*0.05;
+    const hlOffY = -ry*0.42 + Math.cos(tt * 0.95 + seed * 1.3) * ry*0.04;
+    const g1 = ctx.createRadialGradient(x + hlOffX, y + hlOffY, 0, x, y, Math.max(rx, ry));
     g1.addColorStop(0,    '#ffffff');
     g1.addColorStop(0.18, color);
     g1.addColorStop(0.85, color);
@@ -986,32 +995,38 @@
     ctx.fillStyle = g2;
     ctx.beginPath(); ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI*2); ctx.fill();
 
-    // primary highlight (top-left bright)
+    // primary highlight — moves with the liquid feel
+    const hpx = -rx*0.30 + Math.sin(tt * 1.4 + seed * 0.8) * rx*0.06;
+    const hpy = -ry*0.46 + Math.cos(tt * 1.1 + seed * 1.7) * ry*0.04;
     ctx.fillStyle = 'rgba(255,255,255,.78)';
     ctx.beginPath();
-    ctx.ellipse(x - rx*0.30, y - ry*0.46, rx*0.22, ry*0.13, -0.30, 0, Math.PI*2);
+    ctx.ellipse(x + hpx, y + hpy, rx*0.22, ry*0.13, -0.30, 0, Math.PI*2);
     ctx.fill();
 
-    // small secondary highlight (bottom-right tiny shine)
+    // tiny moving sub-highlight (bottom-right shine)
     ctx.fillStyle = 'rgba(255,255,255,.30)';
     ctx.beginPath();
-    ctx.ellipse(x + rx*0.32, y + ry*0.20, rx*0.10, ry*0.06, 0.4, 0, Math.PI*2);
+    ctx.ellipse(x + rx*0.32, y + ry*0.20 + Math.sin(tt*1.6+seed)*ry*0.03, rx*0.10, ry*0.06, 0.4, 0, Math.PI*2);
     ctx.fill();
 
-    // eyes — gives each blob a "character" face
+    // eyes with subtle blink
+    const blinkPhase = (tt * 0.55 + seed * 1.7) % 1;
+    const blinkScale = blinkPhase > 0.96 ? Math.max(0.10, 1 - (blinkPhase - 0.96) * 24) : 1;
     ctx.fillStyle = 'rgba(20,8,40,.78)';
     ctx.beginPath();
-    ctx.ellipse(x - rx*0.22, y - ry*0.04, rx*0.085, ry*0.115, 0, 0, Math.PI*2);
+    ctx.ellipse(x - rx*0.22, y - ry*0.04, rx*0.085, ry*0.115 * blinkScale, 0, 0, Math.PI*2);
     ctx.fill();
     ctx.beginPath();
-    ctx.ellipse(x + rx*0.22, y - ry*0.04, rx*0.085, ry*0.115, 0, 0, Math.PI*2);
+    ctx.ellipse(x + rx*0.22, y - ry*0.04, rx*0.085, ry*0.115 * blinkScale, 0, 0, Math.PI*2);
     ctx.fill();
-    // eye shine
-    ctx.fillStyle = 'rgba(255,255,255,.95)';
-    ctx.beginPath();
-    ctx.arc(x - rx*0.20, y - ry*0.07, Math.max(0.6, rx*0.030), 0, Math.PI*2); ctx.fill();
-    ctx.beginPath();
-    ctx.arc(x + rx*0.24, y - ry*0.07, Math.max(0.6, rx*0.030), 0, Math.PI*2); ctx.fill();
+    // eye shine (only when not mid-blink)
+    if (blinkScale > 0.5){
+      ctx.fillStyle = 'rgba(255,255,255,.95)';
+      ctx.beginPath();
+      ctx.arc(x - rx*0.20, y - ry*0.07, Math.max(0.6, rx*0.030), 0, Math.PI*2); ctx.fill();
+      ctx.beginPath();
+      ctx.arc(x + rx*0.24, y - ry*0.07, Math.max(0.6, rx*0.030), 0, Math.PI*2); ctx.fill();
+    }
 
     ctx.globalAlpha = 1;
   }
@@ -1032,40 +1047,60 @@
       ctx.beginPath(); ctx.moveTo(c*CELL, 0); ctx.lineTo(c*CELL, CAN_H); ctx.stroke();
     }
 
-    // landed blobs
+    // landed blobs — stronger jelly deformation
     const baseR = CELL * 0.36;
+    const tNow = performance.now() * 0.001;
     for (let r = 0; r < ROWS; r++){
       for (let c = 0; c < COLS; c++){
         const cell = state.board[r][c];
         if (cell === null) continue;
         let scale = 1, opacity = 1, offY = 0;
         let sx = 1, sy = 1;
+        const seed = (r * 7 + c * 13) * 0.41;
         if (cell.anim === 'wobble'){
-          // jelly squash on land: tall→wide
+          // damped bouncy oscillation: wide squash → recovery → settle
           const k = cell.t;
-          const env = Math.sin(k * Math.PI);
-          sy = 1 - env * 0.18;
-          sx = 1 + env * 0.12;
+          const damp = Math.exp(-k * 3.2);
+          const wave = Math.sin(k * Math.PI * 4) * damp;
+          sy = 1 - wave * 0.30;
+          sx = 1 + wave * 0.22;
+          // tiny upward bounce on initial squash
+          offY = -Math.exp(-k * 5) * Math.sin(k * Math.PI * 3) * baseR * 0.08;
         } else if (cell.anim === 'pull'){
-          scale = 1 + Math.sin(cell.t * Math.PI) * 0.24;
+          // bend inward with vertical stretch before burst
+          const p = Math.sin(cell.t * Math.PI);
+          scale = 1 + p * 0.28;
+          sx = 1 - p * 0.14;
+          sy = 1 + p * 0.20;
         } else if (cell.anim === 'burst'){
-          scale = 1 + cell.t * 0.72;
+          scale = 1 + cell.t * 0.85;
           opacity = Math.pow(1 - cell.t, 1.4);
+          const wob = Math.sin(cell.t * Math.PI * 6) * 0.06;
+          sx = 1 + wob; sy = 1 - wob;
+        } else {
+          // idle breathing — asymmetric per-cell phase
+          const breathe = Math.sin(tNow * 1.4 + seed);
+          sx = 1 + breathe * 0.024;
+          sy = 1 - breathe * 0.022;
         }
         const x = c * CELL + CELL/2;
         const y = r * CELL + CELL/2 + offY;
-        drawBlob(x, y, baseR * scale, COLORS[cell.color], opacity, sx, sy);
+        drawBlob(x, y, baseR * scale, COLORS[cell.color], opacity, sx, sy, seed);
       }
     }
 
-    // falling pair — gentle alive wobble while falling
+    // falling pair — vertical stretch (fall) + lively wobble + per-blob seed for unique highlights
     if (state.pair && !state.isAnimating && !state.isGameOver){
       const { pivot, partner } = state.pair;
       const t = performance.now() * 0.001;
-      const wsx = 1 + Math.sin(t * 4.0) * 0.045;
-      const wsy = 1 + Math.sin(t * 4.0 + Math.PI) * 0.045;
-      drawBlob(pivot.c * CELL + CELL/2,   pivot.r * CELL + CELL/2,   baseR, COLORS[pivot.color],   1, wsx, wsy);
-      drawBlob(partner.c * CELL + CELL/2, partner.r * CELL + CELL/2, baseR, COLORS[partner.color], 1, wsx, wsy);
+      const stretch = 1.05; // gentle vertical elongation while airborne
+      const wob = Math.sin(t * 4.6) * 0.05;
+      const wsx = (1 - wob) / stretch;
+      const wsy = (1 + wob) * stretch;
+      const psd = (pivot.r * 7 + pivot.c * 13) * 0.41;
+      const qsd = (partner.r * 7 + partner.c * 13) * 0.41;
+      drawBlob(pivot.c   * CELL + CELL/2, pivot.r   * CELL + CELL/2, baseR, COLORS[pivot.color],   1, wsx, wsy, psd);
+      drawBlob(partner.c * CELL + CELL/2, partner.r * CELL + CELL/2, baseR, COLORS[partner.color], 1, wsx, wsy, qsd);
     }
 
     // particles
@@ -1382,10 +1417,12 @@
         }
       }
 
-      // gravity
-      const moved = applyGravity();
+      // gravity — repeat until stable (defensive: column compaction is single-pass per call,
+      // but we re-run to guarantee the no-floating invariant before the next chain check)
+      let moved = applyGravity();
+      let safetyN = 0;
+      while (applyGravity() && ++safetyN < ROWS) { /* compact again if any moved */ }
       if (moved){
-        // small settle delay so the visual catches up
         await wait(160);
       }
     }
@@ -1670,6 +1707,62 @@
   bindCtrl($('btnRotate'), rotate,    false);
   bindCtrl($('btnDrop'),   hardDrop,  false);
 
+  /* ----- board-area gesture controls (swipe / tap) ----- */
+  let bg = null; // active gesture
+  const BG_STEP = 28;       // px per horizontal step
+  const BG_TAP_DIST = 12;   // max move for tap
+  const BG_TAP_TIME = 320;  // max ms for tap
+  function bgDown(e){
+    if (state.isAnimating || state.isGameOver || !state.started) return;
+    if (e.target.closest('button, .next-widget, .danger-tag')) return;
+    bg = { sx: e.clientX, sy: e.clientY, t: performance.now(),
+           accumX: 0, axis: null, pid: e.pointerId };
+    if (e.cancelable) e.preventDefault();
+    if (boardWrap.setPointerCapture && e.pointerId != null){
+      try { boardWrap.setPointerCapture(e.pointerId); } catch(_){}
+    }
+  }
+  function bgMove(e){
+    if (!bg) return;
+    if (e.cancelable) e.preventDefault();
+    const dx = e.clientX - bg.sx;
+    const dy = e.clientY - bg.sy;
+    if (!bg.axis){
+      if (Math.abs(dx) > 14 || Math.abs(dy) > 14){
+        bg.axis = Math.abs(dx) > Math.abs(dy) ? 'h' : 'v';
+      }
+    }
+    if (bg.axis === 'h'){
+      while (dx - bg.accumX >= BG_STEP){ moveRight(); bg.accumX += BG_STEP; }
+      while (bg.accumX - dx >= BG_STEP){ moveLeft();  bg.accumX -= BG_STEP; }
+    }
+  }
+  function bgUp(e){
+    if (!bg) return;
+    if (e.cancelable) e.preventDefault();
+    const dx = e.clientX - bg.sx;
+    const dy = e.clientY - bg.sy;
+    const ax = Math.abs(dx), ay = Math.abs(dy);
+    const dt = performance.now() - bg.t;
+    if (bg.axis === 'v'){
+      if (dy > BG_STEP * 1.4) hardDrop();
+      else if (dy < -BG_STEP * 0.8) rotate();
+    } else if (bg.axis == null && ax < BG_TAP_DIST && ay < BG_TAP_DIST && dt < BG_TAP_TIME){
+      // tap = rotate
+      rotate();
+    }
+    if (boardWrap.releasePointerCapture && bg.pid != null){
+      try { boardWrap.releasePointerCapture(bg.pid); } catch(_){}
+    }
+    bg = null;
+  }
+  function bgCancel(){ bg = null; }
+  boardWrap.addEventListener('pointerdown',   bgDown);
+  boardWrap.addEventListener('pointermove',   bgMove);
+  boardWrap.addEventListener('pointerup',     bgUp);
+  boardWrap.addEventListener('pointercancel', bgCancel);
+  boardWrap.addEventListener('pointerleave',  bgCancel);
+
   // first-tap audio init (also starts BGM)
   function firstTapInit(){
     initAudio();
@@ -1835,6 +1928,30 @@
       let n = 0;
       for (let i = 3; i < d.length; i += 4) if (d[i] > 0) n++;
       return n;
+    },
+    /* gravity invariant: scanning bottom→top in every column, no non-null cell
+       may appear AFTER a null cell. Returns {ok:true} on success or {col,row,error}. */
+    verifyNoFloating: () => {
+      for (let c = 0; c < COLS; c++){
+        let seenNull = false;
+        for (let r = ROWS - 1; r >= 0; r--){
+          if (state.board[r][c] === null) seenNull = true;
+          else if (seenNull) return { ok:false, col:c, row:r, error:'non-null above null' };
+        }
+      }
+      return { ok: true };
+    },
+    runGravity: () => applyGravity(),
+    setupFloatingTest: () => {
+      // floating fixture: gaps below blobs in multiple columns
+      state.board = Array.from({length:ROWS}, () => Array(COLS).fill(null));
+      state.board[5][0]  = { color:0, anim:null, t:0 };
+      state.board[7][0]  = { color:1, anim:null, t:0 };
+      state.board[2][3]  = { color:2, anim:null, t:0 };
+      state.board[8][3]  = { color:3, anim:null, t:0 };
+      state.board[1][5]  = { color:0, anim:null, t:0 };
+      state.board[6][5]  = { color:1, anim:null, t:0 };
+      state.board[10][5] = { color:2, anim:null, t:0 };
     },
   };
 })();
