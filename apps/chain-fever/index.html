@@ -161,9 +161,181 @@
     font-feature-settings:"tnum";margin-top:2px;
   }
   .hud-val.accent{
-    background:linear-gradient(90deg,var(--cyan),var(--pink));
+    background:linear-gradient(90deg,var(--lime),var(--pink));
     -webkit-background-clip:text;background-clip:text;color:transparent;
-    text-shadow:0 0 10px rgba(255,62,181,.4);
+    text-shadow:0 0 10px var(--toxic-glow);
+  }
+
+  /* ===== FEVER GAUGE ===== */
+  .fever-bar{
+    position:relative;
+    flex:0 0 auto;
+    height:14px;border-radius:99px;
+    background:rgba(255,255,255,.05);
+    border:1px solid rgba(182,255,26,.18);
+    overflow:hidden;
+    box-shadow:inset 0 0 12px rgba(0,0,0,.55);
+  }
+  .fever-fill{
+    position:absolute;left:0;top:0;bottom:0;
+    width:0%;
+    background:linear-gradient(90deg, var(--lime) 0%, var(--acid) 30%, var(--pink) 70%, var(--violet) 100%);
+    box-shadow:0 0 12px var(--toxic-glow), 0 0 20px var(--venom);
+    transition:width .25s ease-out;
+  }
+  .fever-fill.charging{animation:feverFillPulse .9s ease-in-out infinite;}
+  @keyframes feverFillPulse{
+    0%,100%{filter:brightness(1) saturate(1.05);}
+    50%{filter:brightness(1.25) saturate(1.3);}
+  }
+  .fever-lbl{
+    position:absolute;left:0;right:0;top:0;bottom:0;
+    display:flex;align-items:center;justify-content:center;
+    font-size:9px;font-weight:900;letter-spacing:.4em;color:#0a0010;
+    text-shadow:0 0 4px rgba(255,255,255,.45);
+    pointer-events:none;mix-blend-mode:difference;
+  }
+  .mult-badge{
+    position:absolute;top:-1px;right:6px;
+    padding:1px 6px;height:14px;line-height:12px;
+    font-size:9px;font-weight:900;letter-spacing:.18em;
+    color:#0a0010;border-radius:99px;
+    background:linear-gradient(90deg,var(--lime),var(--pink));
+    box-shadow:0 0 10px var(--toxic-glow);
+    transform:scale(.85);transform-origin:right center;
+    transition:transform .2s ease, opacity .2s ease;
+    opacity:0;
+  }
+  .mult-badge.on{opacity:1;transform:scale(1);}
+
+  /* FEVER MODE active stylings */
+  body.fever{
+    --line:rgba(255,43,181,.30);
+  }
+  body.fever .fever-bar{
+    border-color:rgba(255,43,181,.55);
+    box-shadow:inset 0 0 14px rgba(0,0,0,.65),0 0 20px var(--venom);
+    animation:feverBarShake .25s linear infinite;
+  }
+  @keyframes feverBarShake{
+    0%,100%{transform:translateX(0);}
+    50%{transform:translateX(.5px);}
+  }
+  body.fever .hud-val{
+    text-shadow:0 0 18px var(--toxic-glow),0 0 26px var(--venom);
+  }
+  body.fever canvas#board{
+    box-shadow:
+      0 0 0 2px var(--lime),
+      0 0 24px var(--toxic-glow),
+      0 0 48px var(--venom),
+      inset 0 0 50px rgba(40,0,40,.6),
+      inset 0 1px 0 rgba(255,255,255,.18);
+  }
+
+  /* FEVER ENTRY full-screen banner */
+  .fever-entry{
+    position:fixed;inset:0;z-index:90;pointer-events:none;
+    display:flex;align-items:center;justify-content:center;
+    opacity:0;
+  }
+  .fever-entry .fe-bg{
+    position:absolute;inset:0;
+    background:
+      radial-gradient(60% 50% at 50% 50%, rgba(232,255,58,.55), transparent 70%),
+      radial-gradient(80% 70% at 50% 50%, rgba(255,43,181,.45), transparent 75%),
+      radial-gradient(100% 100% at 50% 50%, rgba(28,244,255,.30), transparent 80%);
+  }
+  .fever-entry .fe-text{
+    position:relative;
+    font-size:clamp(38px,16vmin,108px);font-weight:900;letter-spacing:.18em;line-height:1;
+    background:linear-gradient(180deg,#fff 5%,var(--acid) 35%,var(--pink) 70%,var(--violet));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    text-shadow:0 0 36px var(--toxic-glow),0 0 60px var(--venom);
+    transform:scale(.6);
+  }
+  .fever-entry .fe-sub{
+    position:absolute;left:0;right:0;bottom:32%;
+    text-align:center;
+    font-size:12px;font-weight:900;letter-spacing:.6em;
+    color:var(--lime);
+    text-shadow:0 0 14px var(--toxic-glow);
+    opacity:0;
+  }
+  .fever-entry.on{animation:feverEntryShow 1.05s cubic-bezier(.2,1.4,.4,1) forwards;}
+  .fever-entry.on .fe-text{animation:feverTextPop 1.05s cubic-bezier(.2,1.4,.4,1) forwards;}
+  .fever-entry.on .fe-sub{animation:feverSubFade 1.05s ease-out forwards;}
+  @keyframes feverEntryShow{
+    0%  {opacity:0;}
+    18% {opacity:1;}
+    65% {opacity:1;}
+    100%{opacity:0;}
+  }
+  @keyframes feverTextPop{
+    0%  {transform:scale(.4) rotate(-6deg);filter:blur(8px);}
+    25% {transform:scale(1.25) rotate(2deg);filter:blur(0);}
+    55% {transform:scale(1) rotate(0);}
+    100%{transform:scale(1.05) rotate(0);}
+  }
+  @keyframes feverSubFade{
+    0%  {opacity:0;transform:translateY(8px);}
+    35% {opacity:.95;transform:translateY(0);}
+    100%{opacity:0;transform:translateY(-6px);}
+  }
+
+  /* FEVER ambient overlay during active mode (kept lightweight to avoid stalling weak renderers) */
+  .fever-ambient{
+    position:fixed;inset:0;z-index:1;pointer-events:none;opacity:0;
+    background:
+      radial-gradient(45% 35% at 18% 14%, rgba(232,255,58,.18), transparent 68%),
+      radial-gradient(50% 40% at 82% 88%, rgba(255,43,181,.20), transparent 70%);
+    transition:opacity .45s ease;
+  }
+  body.fever .fever-ambient{opacity:.85;}
+
+  /* premium score burst pop */
+  .score-popup.score-burst{
+    font-size:20px;
+    text-shadow:0 0 14px var(--toxic-glow),0 0 24px var(--venom),0 0 40px rgba(232,255,58,.6);
+    animation:popUpBig 1.05s ease-out forwards;
+  }
+  @keyframes popUpBig{
+    0%{opacity:0;transform:translate(-50%,-50%) scale(.4);}
+    18%{opacity:1;transform:translate(-50%,-58%) scale(1.35);}
+    35%{transform:translate(-50%,-65%) scale(1.1);}
+    100%{opacity:0;transform:translate(-50%,-160%) scale(1);}
+  }
+
+  /* BLACK VENOM full-screen reward flash */
+  .venom-flash{
+    position:fixed;inset:0;z-index:65;pointer-events:none;opacity:0;
+    background:
+      radial-gradient(60% 50% at 50% 50%, rgba(140,0,80,.85), transparent 75%),
+      radial-gradient(100% 80% at 50% 50%, rgba(0,0,0,.70), transparent 80%),
+      radial-gradient(80% 60% at 50% 50%, rgba(255,43,181,.40), transparent 80%);
+  }
+  .venom-flash.on{animation:venomFlash 1.2s cubic-bezier(.2,.7,.2,1);}
+  @keyframes venomFlash{
+    0%  {opacity:0;}
+    8%  {opacity:1;}
+    35% {opacity:.7;}
+    100%{opacity:0;}
+  }
+  .venom-text{
+    position:fixed;left:0;right:0;top:38%;z-index:66;
+    text-align:center;pointer-events:none;
+    font-size:clamp(28px,10vmin,72px);font-weight:900;letter-spacing:.16em;
+    background:linear-gradient(180deg,#fff,var(--acid) 30%,var(--pink) 70%,#3a0026);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    text-shadow:0 0 40px var(--venom),0 0 60px rgba(0,0,0,.85);
+    opacity:0;transform:scale(.5);
+  }
+  .venom-text.on{animation:venomTextPop 1.2s cubic-bezier(.2,1.4,.4,1) forwards;}
+  @keyframes venomTextPop{
+    0%  {opacity:0;transform:scale(.5);}
+    18% {opacity:1;transform:scale(1.18);}
+    50% {opacity:1;transform:scale(1);}
+    100%{opacity:0;transform:scale(1.05);}
   }
 
   /* ===== STAGE ===== */
@@ -632,6 +804,12 @@
     </div>
   </div>
 
+  <div class="fever-bar" aria-label="TOXIC FEVER">
+    <div class="fever-fill" id="feverFill"></div>
+    <div class="fever-lbl" id="feverLbl">TOXIC FEVER</div>
+    <div class="mult-badge" id="multBadge">×2</div>
+  </div>
+
   <section class="stage">
     <div class="board-wrap" id="boardWrap">
       <canvas id="board" width="240" height="480"></canvas>
@@ -681,6 +859,14 @@
 </div>
 
 <div class="leg-flash" id="legFlash" aria-hidden="true"></div>
+<div class="fever-ambient" id="feverAmbient" aria-hidden="true"></div>
+<div class="fever-entry" id="feverEntry" aria-hidden="true">
+  <div class="fe-bg"></div>
+  <div class="fe-text">TOXIC FEVER</div>
+  <div class="fe-sub">UNHOLY MOMENTUM</div>
+</div>
+<div class="venom-flash" id="venomFlash" aria-hidden="true"></div>
+<div class="venom-text" id="venomText" aria-hidden="true">BLACK VENOM</div>
 
 <script>
 (() => {
@@ -696,6 +882,10 @@
   const NUM_COLORS = COLORS.length;
   const FALL_INIT_MS = 700;
   const TOXIC_SPAWN_RATE = 0.03; // 3% chance per blob
+  const VENOM_SPAWN_RATE = 0.01; // 1% chance per blob (BLACK VENOM rare event)
+  const FEVER_GOAL = 100;        // gauge max
+  const FEVER_DURATION_MS = 12000; // 12s fever window
+  const FEVER_MULT = 3;          // x3 score during fever
 
   /* ============== STATE ============== */
   let bestScore = 0;
@@ -725,6 +915,15 @@
     /* v3 dopamine patch */
     started: false,
     spokenThresholds: new Set(),
+    /* v6 FEVER + BLACK VENOM */
+    feverGauge: 0,        // 0..FEVER_GOAL
+    feverActive: false,
+    feverEndsAt: 0,
+    feverCount: 0,        // total fever activations this run
+    feverSpoken: false,
+    venomCleared: 0,
+    nextAVenom: false,
+    nextBVenom: false,
   };
 
   /* ============== AUDIO ============== */
@@ -732,6 +931,7 @@
   let bgmGain = null, bgmStarted = false, bgmInterval = null;
   let bgmBassGain = null, bgmLfo = null, bgmFilter = null;
   let bgmIntensity = 0; // 0 calm / 1 mid / 2 high
+  let bgmFeverMode = false; // v6 fever BGM layer flag
   function initAudio(){
     if (audioCtx) return;
     try{
@@ -876,44 +1076,86 @@
     const t0 = audioCtx.currentTime;
     bgmGain.gain.linearRampToValueAtTime(0.55, t0 + 1.2);
 
-    // arpeggio + hat scheduler (every 250ms ~ 240 ticks/min, but dense pattern)
+    // arpeggio + hat scheduler — interval restarts on fever toggle (250ms normal / 160ms fever)
     let beat = 0;
-    const arpNotes = [220, 277, 330, 277, 220, 277, 330, 440];
-    bgmInterval = setInterval(() => {
+    const arpNormal = [220, 277, 330, 277, 220, 277, 330, 440];
+    const arpFever  = [330, 415, 494, 587, 494, 415, 330, 277, 330, 415, 494, 740];
+    function bgmTick(){
       if (!audioCtx || !bgmStarted) return;
       const tNow = audioCtx.currentTime;
+      const fever = bgmFeverMode;
       // hat
       const ns = audioCtx.createBufferSource(); ns.buffer = noiseBuf;
       const nf = audioCtx.createBiquadFilter(); nf.type='highpass';
-      nf.frequency.value = bgmIntensity >= 2 ? 5000 : 6500;
+      nf.frequency.value = fever ? 4200 : (bgmIntensity >= 2 ? 5000 : 6500);
       const ng = audioCtx.createGain(); ng.gain.value = 0;
       ns.connect(nf); nf.connect(ng); ng.connect(bgmGain);
-      const hatVol = bgmIntensity >= 2 ? 0.06 : (bgmIntensity === 1 ? 0.045 : 0.035);
+      const hatVol = fever ? 0.085 : (bgmIntensity >= 2 ? 0.06 : (bgmIntensity === 1 ? 0.045 : 0.035));
       ng.gain.linearRampToValueAtTime(hatVol, tNow + 0.005);
       ng.gain.exponentialRampToValueAtTime(0.001, tNow + 0.05);
       ns.start(tNow); ns.stop(tNow + 0.06);
 
-      // arp tick on certain beats; more frequent at high intensity
-      const arpEvery = bgmIntensity >= 2 ? 2 : (bgmIntensity === 1 ? 3 : 4);
+      // arp tick — denser in fever
+      const arpEvery = fever ? 1 : (bgmIntensity >= 2 ? 2 : (bgmIntensity === 1 ? 3 : 4));
+      const arr = fever ? arpFever : arpNormal;
       if (beat % arpEvery === 0){
-        const o = audioCtx.createOscillator(); o.type='square';
-        o.frequency.value = arpNotes[Math.floor(beat / 2) % arpNotes.length];
+        const o = audioCtx.createOscillator(); o.type = fever ? 'sawtooth' : 'square';
+        o.frequency.value = arr[Math.floor(beat / 2) % arr.length];
         const f = audioCtx.createBiquadFilter(); f.type='lowpass';
-        f.frequency.value = bgmIntensity >= 2 ? 2400 : 1500;
+        f.frequency.value = fever ? 3200 : (bgmIntensity >= 2 ? 2400 : 1500);
         const g = audioCtx.createGain(); g.gain.value = 0;
         o.connect(f); f.connect(g); g.connect(bgmGain);
-        const arpVol = bgmIntensity >= 2 ? 0.07 : (bgmIntensity === 1 ? 0.05 : 0.038);
+        const arpVol = fever ? 0.10 : (bgmIntensity >= 2 ? 0.07 : (bgmIntensity === 1 ? 0.05 : 0.038));
         g.gain.linearRampToValueAtTime(arpVol, tNow + 0.005);
         g.gain.exponentialRampToValueAtTime(0.001, tNow + 0.18);
         o.start(tNow); o.stop(tNow + 0.20);
       }
+      // fever-only kick on every 4th beat
+      if (fever && (beat % 4 === 0)){
+        const o = audioCtx.createOscillator(); o.type='sine';
+        o.frequency.setValueAtTime(110, tNow);
+        o.frequency.exponentialRampToValueAtTime(48, tNow + 0.18);
+        const g = audioCtx.createGain(); g.gain.value = 0;
+        o.connect(g); g.connect(bgmGain);
+        g.gain.linearRampToValueAtTime(0.22, tNow + 0.005);
+        g.gain.exponentialRampToValueAtTime(0.001, tNow + 0.20);
+        o.start(tNow); o.stop(tNow + 0.22);
+      }
       beat++;
-    }, 250);
+    }
+    function scheduleBgm(){
+      if (bgmInterval) clearInterval(bgmInterval);
+      bgmInterval = setInterval(bgmTick, bgmFeverMode ? 160 : 250);
+    }
+    bgmReschedule = scheduleBgm;
+    scheduleBgm();
+  }
+  let bgmReschedule = null;
+  function setBgmFever(on){
+    bgmFeverMode = !!on;
+    if (audioCtx && bgmStarted && bgmGain){
+      const t = audioCtx.currentTime;
+      bgmGain.gain.cancelScheduledValues(t);
+      // gentle ramp so the volume change isn't a click
+      bgmGain.gain.linearRampToValueAtTime(state.soundOn ? (on ? 0.78 : 0.55) : 0, t + 0.35);
+    }
+    if (bgmFilter && audioCtx){
+      const t = audioCtx.currentTime;
+      bgmFilter.frequency.cancelScheduledValues(t);
+      bgmFilter.frequency.linearRampToValueAtTime(on ? 1100 : 320, t + 0.35);
+    }
+    if (bgmLfo && audioCtx){
+      const t = audioCtx.currentTime;
+      bgmLfo.frequency.cancelScheduledValues(t);
+      bgmLfo.frequency.linearRampToValueAtTime(on ? 4.8 : 1.6, t + 0.35);
+    }
+    if (bgmReschedule) bgmReschedule();
   }
 
   function setBgmIntensity(level){
     bgmIntensity = level;
     if (!audioCtx || !bgmLfo) return;
+    if (bgmFeverMode) return; // fever owns the BGM tone while active
     const t = audioCtx.currentTime;
     const lfoFreq = level === 0 ? 1.6 : level === 1 ? 2.4 : 3.6;
     const filtFreq = level === 0 ? 320 : level === 1 ? 460 : 700;
@@ -1003,8 +1245,104 @@
     o.start(t); o.stop(t + 0.6);
   }
 
+  /* ----- v6 FEVER stingers + BLACK VENOM stinger ----- */
+  function playFeverEntry(){
+    if (!audioCtx) return;
+    const t = audioCtx.currentTime;
+    // rising filter sweep with bass impact
+    const o1 = audioCtx.createOscillator(); o1.type='sawtooth';
+    o1.frequency.setValueAtTime(120, t);
+    o1.frequency.exponentialRampToValueAtTime(880, t + 0.55);
+    const f = audioCtx.createBiquadFilter(); f.type='lowpass';
+    f.frequency.setValueAtTime(400, t);
+    f.frequency.exponentialRampToValueAtTime(4500, t + 0.55);
+    f.Q.value = 4;
+    const g = audioCtx.createGain(); g.gain.value = 0;
+    o1.connect(f); f.connect(g); g.connect(masterGain);
+    g.gain.linearRampToValueAtTime(0.32, t + 0.05);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.8);
+    o1.start(t); o1.stop(t + 0.85);
+    // sub bass impact
+    const o2 = audioCtx.createOscillator(); o2.type='sine';
+    o2.frequency.setValueAtTime(60, t);
+    o2.frequency.exponentialRampToValueAtTime(36, t + 0.6);
+    const g2 = audioCtx.createGain(); g2.gain.value = 0;
+    o2.connect(g2); g2.connect(masterGain);
+    g2.gain.linearRampToValueAtTime(0.50, t + 0.01);
+    g2.gain.exponentialRampToValueAtTime(0.001, t + 0.7);
+    o2.start(t); o2.stop(t + 0.75);
+    // crash noise
+    const ns = audioCtx.createBufferSource(); ns.buffer = noiseBuf;
+    const nf = audioCtx.createBiquadFilter(); nf.type='bandpass';
+    nf.frequency.value = 4000; nf.Q.value = 0.7;
+    const ng = audioCtx.createGain(); ng.gain.value = 0;
+    ns.connect(nf); nf.connect(ng); ng.connect(masterGain);
+    ng.gain.linearRampToValueAtTime(0.30, t + 0.02);
+    ng.gain.exponentialRampToValueAtTime(0.001, t + 0.55);
+    ns.start(t); ns.stop(t + 0.6);
+  }
+  function playFeverExit(){
+    if (!audioCtx) return;
+    const t = audioCtx.currentTime;
+    const o = audioCtx.createOscillator(); o.type='sine';
+    o.frequency.setValueAtTime(440, t);
+    o.frequency.exponentialRampToValueAtTime(110, t + 0.45);
+    const g = audioCtx.createGain(); g.gain.value = 0;
+    o.connect(g); g.connect(masterGain);
+    g.gain.linearRampToValueAtTime(0.22, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+    o.start(t); o.stop(t + 0.55);
+  }
+  function playVenomStinger(){
+    if (!audioCtx) return;
+    const t = audioCtx.currentTime;
+    // dark detuned chord
+    [55, 73, 110, 165].forEach((f, i) => {
+      const o = audioCtx.createOscillator(); o.type = i & 1 ? 'sawtooth' : 'square';
+      o.frequency.value = f;
+      const flt = audioCtx.createBiquadFilter(); flt.type='lowpass'; flt.frequency.value = 900; flt.Q.value=3;
+      const g = audioCtx.createGain(); g.gain.value = 0;
+      o.connect(flt); flt.connect(g); g.connect(masterGain);
+      g.gain.linearRampToValueAtTime(0.18, t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.85);
+      o.start(t); o.stop(t + 0.9);
+    });
+    // shrill detuned upper for menace
+    const o2 = audioCtx.createOscillator(); o2.type='triangle';
+    o2.frequency.setValueAtTime(1480, t);
+    o2.frequency.exponentialRampToValueAtTime(220, t + 0.6);
+    const g2 = audioCtx.createGain(); g2.gain.value = 0;
+    o2.connect(g2); g2.connect(masterGain);
+    g2.gain.linearRampToValueAtTime(0.24, t + 0.01);
+    g2.gain.exponentialRampToValueAtTime(0.001, t + 0.7);
+    o2.start(t); o2.stop(t + 0.75);
+    // heavy noise burst
+    const ns = audioCtx.createBufferSource(); ns.buffer = noiseBuf;
+    const nf = audioCtx.createBiquadFilter(); nf.type='lowpass'; nf.frequency.value = 320;
+    const ng = audioCtx.createGain(); ng.gain.value = 0;
+    ns.connect(nf); nf.connect(ng); ng.connect(masterGain);
+    ng.gain.linearRampToValueAtTime(0.42, t + 0.02);
+    ng.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+    ns.start(t); ns.stop(t + 0.55);
+  }
+  function playRewardStinger(){
+    if (!audioCtx) return;
+    const t = audioCtx.currentTime;
+    [880, 1320, 1980, 2640].forEach((f, i) => {
+      const o = audioCtx.createOscillator(); o.type='triangle';
+      o.frequency.value = f;
+      const g = audioCtx.createGain(); g.gain.value = 0;
+      o.connect(g); g.connect(masterGain);
+      const start = t + i * 0.04;
+      g.gain.linearRampToValueAtTime(0.18, start + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.001, start + 0.45);
+      o.start(start); o.stop(start + 0.5);
+    });
+  }
+
   /* ----- voice praise via Web Speech API ----- */
   const VOICE_LINES = {
+    2: 'Dirty',
     3: 'Toxic',
     4: 'Beautiful damage',
     5: 'Venom chain',
@@ -1013,7 +1351,7 @@
   };
   function speakChain(chain){
     if (!state.soundOn) return;
-    if (chain < 3) return;
+    if (chain < 2) return;
     if (typeof window.speechSynthesis === 'undefined') return;
     let threshold;
     if (chain >= 8) threshold = 8;
@@ -1021,14 +1359,23 @@
     else if (chain === 5) threshold = 5;
     else if (chain === 4) threshold = 4;
     else if (chain === 3) threshold = 3;
+    else if (chain === 2) threshold = 2;
     else return;
     if (state.spokenThresholds.has(threshold)) return;
     state.spokenThresholds.add(threshold);
     const text = VOICE_LINES[threshold];
     if (!text) return;
+    speakLine(text, { rate: 1.05, pitch: 1.05, volume: 0.85 });
+  }
+  function speakLine(text, opts){
+    if (!state.soundOn) return;
+    if (typeof window.speechSynthesis === 'undefined') return;
+    if (!text) return;
     try{
       const u = new SpeechSynthesisUtterance(text);
-      u.rate = 1.05; u.pitch = 1.05; u.volume = 0.85;
+      u.rate = (opts && opts.rate) || 1.0;
+      u.pitch = (opts && opts.pitch) || 1.0;
+      u.volume = (opts && opts.volume) || 0.85;
       u.lang = 'en-US';
       const voices = (speechSynthesis.getVoices && speechSynthesis.getVoices()) || [];
       const v = voices.find(x => /^en/i.test(x.lang)) || voices[0];
@@ -1075,12 +1422,84 @@
     b = Math.max(0, Math.min(255, b|0));
     return '#' + ((1<<24) | (r<<16) | (g<<8) | b).toString(16).slice(1);
   }
-  function drawBlob(x, y, r, color, opacity, sx, sy, seed, toxic){
+  function drawVenomBlob(x, y, r, opacity, sx, sy, seed){
+    // BLACK VENOM: black body, toxic red/purple core, sinister aura
+    const tt = performance.now() * 0.001;
+    const ovalSx = 1 + Math.sin(seed * 1.7) * 0.07;
+    const ovalSy = 1 + Math.cos(seed * 2.3) * 0.07;
+    const rx = r * sx * ovalSx;
+    const ry = r * sy * ovalSy;
+    const pulse = 0.6 + 0.4 * Math.abs(Math.sin(tt * 2.4 + seed));
+    ctx.globalAlpha = opacity;
+
+    // dropped shadow
+    ctx.fillStyle = 'rgba(0,0,0,.7)';
+    ctx.beginPath();
+    ctx.ellipse(x + r*0.06, y + r*0.62, r*0.82*sx, r*0.24, 0, 0, Math.PI*2);
+    ctx.fill();
+
+    // sinister aura (purple→red→black)
+    const gAura = ctx.createRadialGradient(x, y, r*0.30, x, y, r * 2.1);
+    gAura.addColorStop(0, 'rgba(120,0,80,.85)');
+    gAura.addColorStop(0.30, 'rgba(255,30,90,' + (0.45 * pulse).toFixed(3) + ')');
+    gAura.addColorStop(0.65, 'rgba(60,0,40,.30)');
+    gAura.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = gAura;
+    ctx.beginPath(); ctx.arc(x, y, r * 2.1, 0, Math.PI*2); ctx.fill();
+
+    // body — black with darker rim
+    const g1 = ctx.createRadialGradient(x - rx*0.18, y - ry*0.22, 0, x, y, Math.max(rx, ry));
+    g1.addColorStop(0,    '#3a0a25');
+    g1.addColorStop(0.30, '#180010');
+    g1.addColorStop(1,    '#040006');
+    ctx.fillStyle = g1;
+    ctx.beginPath(); ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI*2); ctx.fill();
+
+    // toxic red/purple core glow (inner pulsing)
+    const gCore = ctx.createRadialGradient(x, y + ry*0.05, 0, x, y + ry*0.05, rx * 0.65);
+    gCore.addColorStop(0, 'rgba(255,80,140,' + (0.95 * pulse).toFixed(3) + ')');
+    gCore.addColorStop(0.40, 'rgba(180,0,90,' + (0.55 * pulse).toFixed(3) + ')');
+    gCore.addColorStop(1, 'rgba(60,0,40,0)');
+    ctx.fillStyle = gCore;
+    ctx.beginPath();
+    ctx.ellipse(x, y + ry*0.05, rx*0.6, ry*0.55, 0, 0, Math.PI*2);
+    ctx.fill();
+
+    // outer ring (toxic red, glowing, pulsing)
+    ctx.lineWidth = Math.max(1.6, rx * 0.10);
+    ctx.strokeStyle = 'rgba(255,30,90,' + (0.85 * pulse).toFixed(3) + ')';
+    ctx.shadowColor = '#ff1e5e';
+    ctx.shadowBlur = 16 * pulse;
+    ctx.beginPath();
+    ctx.ellipse(x, y, rx * 0.97, ry * 0.97, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // sinister glowing eyes (red)
+    ctx.fillStyle = '#ff2050';
+    ctx.shadowColor = '#ff2050'; ctx.shadowBlur = 6;
+    ctx.beginPath();
+    ctx.arc(x - rx*0.22, y - ry*0.05, rx*0.08, 0, Math.PI*2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(x + rx*0.22, y - ry*0.05, rx*0.08, 0, Math.PI*2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    ctx.globalAlpha = 1;
+  }
+
+  function drawBlob(x, y, r, color, opacity, sx, sy, seed, toxic, venom){
     if (opacity <= 0) return;
     sx = sx == null ? 1 : sx;
     sy = sy == null ? 1 : sy;
     seed = seed == null ? 0 : seed;
     toxic = !!toxic;
+    venom = !!venom;
+    if (venom){
+      drawVenomBlob(x, y, r, opacity, sx, sy, seed);
+      return;
+    }
     ctx.globalAlpha = opacity;
 
     // moving liquid highlight + asymmetric per-blob ovality (slightly stronger asymmetry)
@@ -1255,7 +1674,7 @@
         }
         const x = c * CELL + CELL/2;
         const y = r * CELL + CELL/2 + offY;
-        drawBlob(x, y, baseR * scale, COLORS[cell.color], opacity, sx, sy, seed, !!cell.toxic);
+        drawBlob(x, y, baseR * scale, COLORS[cell.color], opacity, sx, sy, seed, !!cell.toxic, !!cell.venom);
       }
     }
 
@@ -1269,8 +1688,8 @@
       const wsy = (1 + wob) * stretch;
       const psd = (pivot.r * 7 + pivot.c * 13) * 0.41;
       const qsd = (partner.r * 7 + partner.c * 13) * 0.41;
-      drawBlob(pivot.c   * CELL + CELL/2, pivot.r   * CELL + CELL/2, baseR, COLORS[pivot.color],   1, wsx, wsy, psd, !!pivot.toxic);
-      drawBlob(partner.c * CELL + CELL/2, partner.r * CELL + CELL/2, baseR, COLORS[partner.color], 1, wsx, wsy, qsd, !!partner.toxic);
+      drawBlob(pivot.c   * CELL + CELL/2, pivot.r   * CELL + CELL/2, baseR, COLORS[pivot.color],   1, wsx, wsy, psd, !!pivot.toxic,   !!pivot.venom);
+      drawBlob(partner.c * CELL + CELL/2, partner.r * CELL + CELL/2, baseR, COLORS[partner.color], 1, wsx, wsy, qsd, !!partner.toxic, !!partner.venom);
     }
 
     // particles
@@ -1355,6 +1774,113 @@
     }
   }
 
+  /* ============== FEVER MODE ============== */
+  function addFeverGauge(amount){
+    if (state.isGameOver) return;
+    if (state.feverActive) return; // gauge already locked while active
+    state.feverGauge = Math.min(FEVER_GOAL, state.feverGauge + amount);
+    updateFeverHUD();
+    if (state.feverGauge >= FEVER_GOAL){
+      activateFever();
+    }
+  }
+  function activateFever(){
+    if (state.feverActive || state.isGameOver) return;
+    state.feverActive = true;
+    state.feverGauge = FEVER_GOAL;
+    state.feverEndsAt = performance.now() + FEVER_DURATION_MS;
+    state.feverCount++;
+    state.feverSpoken = false;
+    document.body.classList.add('fever');
+    fireFeverEntry();
+    playFeverEntry();
+    speakLine('Toxic fever', { rate: 1.0, pitch: 1.05, volume: 0.95 });
+    setBgmFever(true);
+    setBgmIntensity(2);
+    vibrate([40, 30, 80]);
+    updateFeverHUD();
+  }
+  function endFever(){
+    if (!state.feverActive) return;
+    state.feverActive = false;
+    state.feverGauge = 0;
+    document.body.classList.remove('fever');
+    setBgmFever(false);
+    playFeverExit();
+    updateFeverHUD();
+  }
+  function fireFeverEntry(){
+    const fe = $('feverEntry');
+    if (!fe) return;
+    fe.classList.remove('on');
+    void fe.offsetWidth;
+    fe.classList.add('on');
+  }
+  function updateFeverHUD(){
+    const fill = $('feverFill');
+    const lbl = $('feverLbl');
+    const badge = $('multBadge');
+    if (fill){
+      const pct = Math.max(0, Math.min(100, (state.feverGauge / FEVER_GOAL) * 100));
+      fill.style.width = pct + '%';
+      fill.classList.toggle('charging', !state.feverActive && pct >= 50);
+    }
+    if (lbl){
+      if (state.feverActive){
+        const remain = Math.max(0, state.feverEndsAt - performance.now());
+        const sec = (remain / 1000).toFixed(1);
+        lbl.textContent = 'TOXIC FEVER  ' + sec + 's';
+      } else {
+        lbl.textContent = state.feverGauge >= FEVER_GOAL ? 'READY' : 'TOXIC FEVER';
+      }
+    }
+    if (badge){
+      if (state.feverActive){
+        badge.textContent = '×' + FEVER_MULT;
+        badge.classList.add('on');
+      } else {
+        badge.classList.remove('on');
+      }
+    }
+  }
+  function currentMultiplier(){ return state.feverActive ? FEVER_MULT : 1; }
+
+  /* ============== BLACK VENOM ============== */
+  function fireVenomFlash(){
+    const f = $('venomFlash'); const t = $('venomText');
+    if (f){ f.classList.remove('on'); void f.offsetWidth; f.classList.add('on'); }
+    if (t){ t.classList.remove('on'); void t.offsetWidth; t.classList.add('on'); }
+  }
+  /* Combo of mild effects: big toxic explosion + fever gauge boost + score bonus.
+     Not a board-clear (that would be too punishing on stack). */
+  function applyVenomReward(boardR, boardC){
+    state.venomCleared++;
+    fireVenomFlash();
+    playVenomStinger();
+    speakLine('Bad idea', { rate: 0.95, pitch: 0.85, volume: 1.0 });
+    vibrate([80, 30, 80, 30, 120]);
+    // big toxic explosion: lots of particles around the venom cell + neighbours
+    for (let dr = -1; dr <= 1; dr++){
+      for (let dc = -1; dc <= 1; dc++){
+        const r = boardR + dr, c = boardC + dc;
+        if (r >= 0 && r < ROWS && c >= 0 && c < COLS){
+          spawnToxicBurst(r, c);
+        }
+      }
+    }
+    spawnToxicVapor(28);
+    // fever gauge BIG boost
+    if (!state.feverActive){
+      addFeverGauge(40);
+    } else {
+      // already in fever — extend a bit
+      state.feverEndsAt += 2500;
+    }
+    // bonus score
+    state.score += 1500 * currentMultiplier();
+    showScorePopup(boardC, boardR, 1500 * currentMultiplier(), true);
+  }
+
   /* ============== GAMEPLAY ============== */
   function isFree(r, c){
     return r >= 0 && r < ROWS && c >= 0 && c < COLS && state.board[r][c] === null;
@@ -1384,13 +1910,18 @@
     const b = (state.nextB ?? Math.floor(Math.random() * NUM_COLORS));
     const aTox = !!state.nextAToxic;
     const bTox = !!state.nextBToxic;
+    const aVen = !!state.nextAVenom;
+    const bVen = !!state.nextBVenom;
     state.nextA = Math.floor(Math.random() * NUM_COLORS);
     state.nextB = Math.floor(Math.random() * NUM_COLORS);
-    state.nextAToxic = Math.random() < TOXIC_SPAWN_RATE;
-    state.nextBToxic = Math.random() < TOXIC_SPAWN_RATE;
+    // venom is rarer than toxic; venom always wins over toxic on the same blob
+    state.nextAVenom = Math.random() < VENOM_SPAWN_RATE;
+    state.nextBVenom = Math.random() < VENOM_SPAWN_RATE;
+    state.nextAToxic = !state.nextAVenom && Math.random() < TOXIC_SPAWN_RATE;
+    state.nextBToxic = !state.nextBVenom && Math.random() < TOXIC_SPAWN_RATE;
     state.pair = {
-      pivot:   { r:1, c:2, color:a, toxic:aTox },
-      partner: { r:0, c:2, color:b, toxic:bTox },
+      pivot:   { r:1, c:2, color:a, toxic:aTox && !aVen, venom:aVen },
+      partner: { r:0, c:2, color:b, toxic:bTox && !bVen, venom:bVen },
       orient: 0,
     };
     state.lastFallAt = performance.now();
@@ -1490,8 +2021,8 @@
   function lockPair(){
     if (!state.pair) return;
     const { pivot, partner } = state.pair;
-    state.board[pivot.r][pivot.c]   = { color: pivot.color,   anim: 'wobble', t: 0, toxic: !!pivot.toxic };
-    state.board[partner.r][partner.c] = { color: partner.color, anim: 'wobble', t: 0, toxic: !!partner.toxic };
+    state.board[pivot.r][pivot.c]     = { color: pivot.color,   anim: 'wobble', t: 0, toxic: !!pivot.toxic,   venom: !!pivot.venom };
+    state.board[partner.r][partner.c] = { color: partner.color, anim: 'wobble', t: 0, toxic: !!partner.toxic, venom: !!partner.venom };
     state.pair = null;
     playPlace();
     vibrate([10]);
@@ -1625,7 +2156,12 @@
       // pull-in (stronger with chain tier)
       for (const g of groups){
         for (const [r, c] of g.cells){
-          state.board[r][c] = { color: g.color, anim: 'pull', t: 0 };
+          const prev = state.board[r][c];
+          state.board[r][c] = {
+            color: g.color, anim: 'pull', t: 0,
+            toxic: !!(prev && prev.toxic),
+            venom: !!(prev && prev.venom),
+          };
         }
       }
       await animatePhase('pull', 200);
@@ -1634,14 +2170,17 @@
       const cleared = groups.reduce((s, g) => s + g.cells.length, 0);
       const partsPerCell = chain >= 8 ? 16 : (chain >= 5 ? 13 : (chain >= 3 ? 11 : 9));
       let toxicCount = 0;
+      const venomCellsToReward = [];
       for (const g of groups){
         for (const [r, c] of g.cells){
-          const wasToxic = !!(state.board[r][c] && state.board[r][c].toxic);
+          const prev = state.board[r][c];
+          const wasToxic = !!(prev && prev.toxic);
+          const wasVenom = !!(prev && prev.venom);
           if (wasToxic) toxicCount++;
-          state.board[r][c] = { color: g.color, anim: 'burst', t: 0, toxic: wasToxic };
+          state.board[r][c] = { color: g.color, anim: 'burst', t: 0, toxic: wasToxic, venom: wasVenom };
           spawnParticles(r, c, g.color, partsPerCell + (wasToxic ? 12 : 0));
-          // extra acid burst for toxic blobs
           if (wasToxic) spawnToxicBurst(r, c);
+          if (wasVenom) venomCellsToReward.push([r, c]);
         }
       }
 
@@ -1675,15 +2214,30 @@
       const chainBonus = Math.pow(2, chain - 1);
       const colorBonus = groups.length;
       const toxicBonus = toxicCount > 0 ? (1 + toxicCount * 0.5) : 1;
-      const points = Math.round(cleared * 10 * chainBonus * colorBonus * toxicBonus);
+      const mult = currentMultiplier();
+      const basePoints = Math.round(cleared * 10 * chainBonus * colorBonus * toxicBonus);
+      const points = basePoints * mult;
       state.score += points;
+
+      // gauge accumulation: per-cell + chain-tier + toxic boost
+      if (!state.feverActive){
+        const gauge = cleared * 1.6 + Math.pow(chain, 1.6) * 1.5 + toxicCount * 6;
+        addFeverGauge(gauge);
+      }
 
       // popup at the cleared group's centroid
       let cx = 0, cy = 0, n = 0;
       for (const g of groups) for (const [r, c] of g.cells){ cx += c; cy += r; n++; }
       cx /= n; cy /= n;
-      showScorePopup(cx, cy, points);
+      const burst = state.feverActive || chain >= 5 || toxicCount > 0;
+      showScorePopup(cx, cy, points, burst);
       showComboBanner(chain);
+      if (chain >= 4) playRewardStinger();
+
+      // BLACK VENOM rewards (fired AFTER scoring to use current multiplier; reward grants its own bonus)
+      for (const [vr, vc] of venomCellsToReward){
+        applyVenomReward(vr, vc);
+      }
 
       // hit-stop / freeze-frame on 3+
       if (chain >= 3){
@@ -1834,17 +2388,17 @@
     void banner.offsetWidth;
     banner.classList.add('on');
   }
-  function showScorePopup(boardC, boardR, points){
+  function showScorePopup(boardC, boardR, points, burst){
     const wrap = boardWrap.getBoundingClientRect();
     const x = (boardC + 0.5) * (wrap.width  / COLS);
     const y = (boardR + 0.5) * (wrap.height / ROWS);
     const p = document.createElement('div');
-    p.className = 'score-popup';
+    p.className = 'score-popup' + (burst ? ' score-burst' : '');
     p.textContent = '+' + points;
     p.style.left = x + 'px';
     p.style.top  = y + 'px';
     $('popups').appendChild(p);
-    setTimeout(() => p.remove(), 950);
+    setTimeout(() => p.remove(), burst ? 1100 : 950);
   }
   function updateHUD(){
     $('scoreVal').textContent = state.score;
@@ -1865,7 +2419,10 @@
     $('goChain').textContent = state.highChain;
     playGameOver();
     vibrate([100, 50, 100, 50, 200]);
-    document.body.classList.remove('danger');
+    state.feverActive = false; state.feverGauge = 0; state.feverEndsAt = 0;
+    document.body.classList.remove('danger','fever');
+    bgmFeverMode = false;
+    updateFeverHUD();
     stopBGM(); bgmStarted = false; bgmGain = null; bgmLfo = null; bgmFilter = null; bgmBassGain = null;
     try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch(_){}
     $('gameOver').classList.add('on');
@@ -1888,10 +2445,20 @@
     state.pairCount = 0;
     state.nextA = Math.floor(Math.random() * NUM_COLORS);
     state.nextB = Math.floor(Math.random() * NUM_COLORS);
-    state.nextAToxic = Math.random() < TOXIC_SPAWN_RATE;
-    state.nextBToxic = Math.random() < TOXIC_SPAWN_RATE;
+    state.nextAVenom = Math.random() < VENOM_SPAWN_RATE;
+    state.nextBVenom = Math.random() < VENOM_SPAWN_RATE;
+    state.nextAToxic = !state.nextAVenom && Math.random() < TOXIC_SPAWN_RATE;
+    state.nextBToxic = !state.nextBVenom && Math.random() < TOXIC_SPAWN_RATE;
     state.spokenThresholds.clear();
-    document.body.classList.remove('danger');
+    state.feverGauge = 0;
+    state.feverActive = false;
+    state.feverEndsAt = 0;
+    state.feverCount = 0;
+    state.feverSpoken = false;
+    state.venomCleared = 0;
+    document.body.classList.remove('danger','fever');
+    setBgmFever(false);
+    updateFeverHUD();
     try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch(_){}
     particles = [];
     $('gameOver').classList.remove('on');
@@ -1940,7 +2507,16 @@
     if (state.recoveryUntil && t < state.recoveryUntil) fallMult *= 1.45; // ease-up after clear
     fallMult *= (1 + Math.sin(t * 0.00045) * 0.18);                       // gentle sine variation ±18%
     if (state.danger) fallMult *= 0.92;                                   // pressure when stack is high
+    if (state.feverActive) fallMult *= 0.92;                              // slight speed-up during fever (balanced)
     state.fallMs = Math.max(120, baseFall * fallMult);
+
+    // FEVER expiration + HUD timer update
+    if (state.feverActive && t >= state.feverEndsAt){
+      endFever();
+    }
+    if ((stackTick & 7) === 0){
+      updateFeverHUD();
+    }
 
     // gravity tick for pair
     if (state.pair && !state.isAnimating && !state.isGameOver){
@@ -2320,6 +2896,28 @@
       }
       return violations;
     },
+    /* ---- v6 fever / venom test helpers ---- */
+    feverState: () => ({
+      gauge: state.feverGauge,
+      active: state.feverActive,
+      endsAt: state.feverEndsAt,
+      mult: state.feverActive ? FEVER_MULT : 1,
+      count: state.feverCount,
+      bgmFever: bgmFeverMode,
+    }),
+    addFeverGauge: (n) => addFeverGauge(n),
+    activateFeverNow: () => activateFever(),
+    endFeverNow: () => endFever(),
+    placeVenomFixture: () => {
+      // Build a deterministic 4-cell same-color group with one venom cell;
+      // when chains process and clear it, the venom reward should fire.
+      state.board = Array.from({length:ROWS}, () => Array(COLS).fill(null));
+      state.board[11][0] = { color:0, anim:null, t:0, toxic:false, venom:false };
+      state.board[11][1] = { color:0, anim:null, t:0, toxic:false, venom:false };
+      state.board[11][2] = { color:0, anim:null, t:0, toxic:false, venom:false };
+      state.board[11][3] = { color:0, anim:null, t:0, toxic:false, venom:true  };
+    },
+    triggerProcessChains: () => processChains(),
   };
 })();
 </script>
