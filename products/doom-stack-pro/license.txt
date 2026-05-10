@@ -1,0 +1,70 @@
+DOOM STACK PRO — License
+========================
+
+Personal-use license, plain language.
+
+GRANT
+-----
+Upon purchase, you ("Licensee") receive a non-exclusive, non-
+transferable license to use DOOM STACK PRO for personal productivity
+on devices you personally control.
+
+PERMITTED USE
+-------------
+- Run the application on your own devices for your own use.
+- Make personal backups of the application files for archival
+  purposes.
+- Adapt the application files for your own personal use, provided
+  the adapted files remain on devices you personally control.
+
+NOT PERMITTED WITHOUT EXPANDED LICENSE
+--------------------------------------
+- Resale, redistribution, public hosting, or sublicensing of the
+  application files in whole or in part.
+- Commercial use as part of a paid service or product offered to
+  third parties (including white-labeling, embedding inside a
+  larger paid product, or charging customers for access to a hosted
+  copy).
+- Removing or replacing license / disclaimer text in distributed
+  copies.
+
+If you need any of the above, contact the seller via the channel
+where you purchased this product to discuss an expanded license.
+
+OWNERSHIP
+---------
+The application files (HTML, CSS, JavaScript, accompanying docs)
+remain the intellectual property of the seller. This license grants
+permission to use; it does not transfer ownership.
+
+DATA OWNERSHIP
+--------------
+Your task data, exports, and backups are yours. The application does
+not transmit data over the network. See backup-guide.txt for export /
+import details.
+
+DURATION
+--------
+The license is granted for the lifetime of the purchased copy. If you
+later receive a paid major upgrade (e.g., a future Phase / version),
+the upgrade may be governed by its own license terms supplied with
+that release.
+
+UPDATES
+-------
+Bug-fix updates within the same major version may be provided at the
+seller's discretion. Major upgrades may be offered at a separate
+price. There is no obligation to provide updates beyond the version
+shipped at purchase.
+
+SEVERABILITY
+------------
+If any clause of this license is held unenforceable, the remaining
+clauses remain in effect.
+
+CONTACT
+-------
+For license questions, expanded licensing, or transfer requests,
+contact the seller via the channel where you purchased this product.
+
+END OF LICENSE.

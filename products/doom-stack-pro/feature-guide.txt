@@ -1,0 +1,226 @@
+DOOM STACK PRO — Feature Guide
+==============================
+
+Full reference. Read top-to-bottom or jump to a section.
+
+CONTENTS
+--------
+1. Tasks
+2. Priority & Category
+3. Due dates & Repeat
+4. Notes & Subtasks
+5. Filters
+6. Mental Load
+7. Stack Tower
+8. Stats Strip (Today / Week / Month / Streak)
+9. Doom Analysis
+10. Backup (Export / Import)
+11. Onboarding
+12. Keyboard
+13. Mobile
+
+------------------------------------------------------------
+1. TASKS
+------------------------------------------------------------
+- Add: type → pick priority → Add (or Enter).
+- Complete: tap the round checkbox on the left of a task.
+- Incomplete (revert): tap the checkbox again.
+- Undo: a toast at the bottom appears for 6 seconds after delete or
+  complete actions. Tap "Undo" to reverse.
+- Edit: tap the ✎ pencil → bottom-sheet form. Title, priority,
+  category, due date, repeat, notes — all editable.
+- Delete: tap the × icon on the task. Use the toast to undo.
+- Expand: tap the ▾ chevron to show notes and subtasks inline.
+
+------------------------------------------------------------
+2. PRIORITY & CATEGORY
+------------------------------------------------------------
+Priority weights:
+- HIGH = 3 (red accent)
+- MID  = 2 (warm amber)
+- LOW  = 1 (soft slate)
+
+These weights drive:
+- Mental Load percentage
+- Sort order (HIGH bubbles up within the same date group)
+- Stack tower block height (HIGH 14px, MID 10px, LOW 7px)
+- Pressure score
+- Procrastination flag "High idle" (only HIGH)
+
+Categories:
+WORK · LIFE · HEALTH · IDEA · ERRAND · DEADLINE
+Each gets a tiny color dot. DEADLINE has a slightly stronger border
+to nudge attention.
+
+------------------------------------------------------------
+3. DUE DATES & REPEAT
+------------------------------------------------------------
+Due date is optional. Set via the date input in the edit sheet.
+Display labels:
+- TODAY     : highlighted with surface fill
+- TOMORROW  : plain pill
+- past date : marked OVERDUE in red
+- other     : YYYY-MM-DD pill
+
+Repeat values:
+- NONE
+- DAILY    : next instance is +1 day on completion
+- WEEKDAYS : next non-weekend day on completion
+- WEEKLY   : +7 days
+- MONTHLY  : +1 month
+- CUSTOM   : placeholder field — saves the value but does not
+             auto-schedule. Manual planning supported.
+
+When you complete a recurring task, a new instance with the same
+title / priority / category / notes / subtasks (cleared) is created
+automatically with the next due date.
+
+------------------------------------------------------------
+4. NOTES & SUBTASKS
+------------------------------------------------------------
+Notes:
+- Free-form text, max 2000 chars.
+- Saved on the task; shown in the expanded body.
+- Empty state reads "No notes" in a muted line.
+
+Subtasks:
+- Inline list inside the expanded body.
+- Add via the inline input + Enter or the + button.
+- Toggle complete by tapping the round subtask checkbox.
+- Delete with the × icon on the row.
+- Subtask completion does NOT auto-complete the parent. The parent
+  shows a "SUB n/m" chip in its meta row.
+
+------------------------------------------------------------
+5. FILTERS
+------------------------------------------------------------
+Top chip row controls which tasks render:
+- Today      : due === today OR (no due AND not completed) — i.e.
+               anything that isn't scheduled for the future.
+- Tomorrow   : due === tomorrow.
+- This week  : due within Mon..Sun of the current week.
+- Next week  : due within Mon..Sun of next week.
+- All        : every incomplete task.
+- Done       : completed tasks only.
+- Date picker: filters to a specific YYYY-MM-DD.
+
+Filter state persists across reloads.
+
+------------------------------------------------------------
+6. MENTAL LOAD
+------------------------------------------------------------
+Definition:
+ML = round(sum(priority_weight) / capacity * 100), capped at 100.
+Capacity = 30 (= 10 HIGH-equivalents). Only incomplete tasks count.
+
+Tier ladder:
+- LIGHT : 0–24%
+- BUSY  : 25–49%
+- HEAVY : 50–74%
+- DOOM  : 75–100% (red, emphasized)
+
+Display: top-right percentage + small tier badge. Thin gradient bar
+under the header.
+
+------------------------------------------------------------
+7. STACK TOWER
+------------------------------------------------------------
+A vertical mass visualization above the filters.
+- Heaviest blocks at the bottom (column-reverse).
+- Block height by priority: HIGH 14px / MID 10px / LOW 7px.
+- Subtle priority-tinted fill, 1px border.
+- Caps at 18 visible blocks; the count badge ("N · w<weight>")
+  always shows true totals at bottom-right.
+- "Empty stack" placeholder when the current filter has no incomplete
+  tasks.
+
+------------------------------------------------------------
+8. STATS STRIP
+------------------------------------------------------------
+4 cells under the ML bar — always visible.
+- Today  : done/total + percent of tasks scoped to today.
+- Week   : done/total + percent for the current Mon..Sun.
+- Month  : done/total + percent for the current calendar month.
+- Streak : consecutive days with at least 1 completion. Today has a
+           grace period until end of day. Counter goes amber when
+           today already has at least one completion.
+
+------------------------------------------------------------
+9. DOOM ANALYSIS
+------------------------------------------------------------
+Collapsible panel below the stats strip.
+
+Pressure score:
+- Weighted unfinished burden, 0–100.
+- Each incomplete task contributes priority_weight × age factor.
+- Age factor = 1 + min(ageDays * 0.07, 1.0) (caps at 2x).
+- +0.5 if overdue.
+- A thin gradient bar fills proportionally.
+
+Procrastination flags:
+- 3+d        : count of incomplete tasks aged ≥3 days.
+- 7+d        : count of incomplete tasks aged ≥7 days.
+- High idle  : HIGH-priority incomplete tasks aged ≥1 day.
+Each flag pill highlights when count > 0; "High idle" turns red.
+
+Time tendency:
+- Bins all createdAt + completedAt timestamps into Morning (5–11),
+  Daytime (12–17), Evening (18–23), Night (0–4).
+- Reports the dominant slot, or "Balanced" if no slot reaches 40%
+  share.
+- "—" until ≥ 4 events.
+
+Category tendency:
+- Top 3 categories by task count, with percent share.
+
+Mental load · last 14 days:
+- SVG sparkline of daily ML snapshots (line + faint area + last-point
+  dot).
+- Days with no snapshot create breaks in the line.
+- "NO DATA YET" before the first snapshot.
+
+This week:
+- One-line summary: "X done · Y left · Z added · top: CAT · peak ML
+  N%". Peak ML pulled from the local history.
+
+------------------------------------------------------------
+10. BACKUP
+------------------------------------------------------------
+Inside the Doom analysis panel.
+
+Export JSON:
+- Downloads doom-stack-YYYY-MM-DD.json containing
+  { product, version, exportedAt, tasks, history, ui }.
+
+Import JSON:
+- Opens a file picker. Validates shape (object, tasks array, valid
+  priority / category / repeat values). Replaces tasks + history on
+  success.
+- Bad files are rejected with an inline red feedback message.
+- Files larger than 5MB are rejected.
+
+Feedback toast appears next to the buttons for ~2.4s.
+
+------------------------------------------------------------
+11. ONBOARDING
+------------------------------------------------------------
+Shows once on first run (3 steps). Skippable. The flag stays in
+localStorage 'doomStackPro:onboarded:v1' so it never reappears.
+
+To replay manually (debug):
+- localStorage.removeItem('doomStackPro:onboarded:v1') and reload.
+
+------------------------------------------------------------
+12. KEYBOARD
+------------------------------------------------------------
+- Add input  : Enter = add task.
+- Subtask input (inside expanded task) : Enter = add subtask.
+- Esc on modal: not bound (use Cancel or the backdrop tap).
+
+------------------------------------------------------------
+13. MOBILE
+------------------------------------------------------------
+- 375x812 (iPhone) and 430x932 (Android XL) verified clean.
+- No pinch zoom, no document scroll, double-tap zoom guard.
+- Bottom-sheet edit modal on phones; centered card on ≥600px width.
+- Tap targets ≥ 28px.

@@ -1,50 +1,67 @@
 DOOM STACK PRO — Quick Start
 ============================
 
-1. ADD A TASK
+60 seconds. Open the app. Do these in order.
+
+1. WELCOME
+   On first run a 3-step welcome appears.
+   - Step 1: how to add a task.
+   - Step 2: how the weight meter works.
+   - Step 3: where to back up.
+   Tap "Skip" or walk through. Either is fine — the app is self-
+   explanatory.
+
+2. ADD YOUR FIRST TASK
    - Type in the bottom input.
-   - Tap HIGH / MID / LOW.
-   - Tap ADD (or press Enter).
+   - Pick a priority pill: HIGH / MID / LOW.
+   - Tap "Add" (or press Enter).
+   The task lands on the stack and the Mental Load percentage rises.
 
-2. COMPLETE / UNDO
-   - Tap the checkbox on the left of a task to mark complete.
-   - 削除 / 完了 actions show a toast — tap "元に戻す" within 6 seconds
-     to undo.
+3. WATCH THE STACK
+   The vertical tower above the filters shows your incomplete tasks
+   as physical mass. HIGH blocks are thicker and sit at the bottom.
+   The badge at bottom-right shows count and total weight (w).
 
-3. EDIT
-   - Tap the ✎ pencil on a task → opens the edit sheet.
-   - Set: title, priority, category, due date, repeat, notes.
-   - SAVE / CANCEL.
+4. COMPLETE A TASK
+   Tap the round checkbox on the left of any task. The task fades and
+   gets a strike-through. The undo toast at the bottom lets you
+   reverse the action within 6 seconds.
 
-4. NOTES + SUBTASKS
-   - Tap ▾ on a task to expand.
-   - Notes display below.
+5. EDIT DETAILS
+   Tap the ✎ pencil on a task to open the edit sheet.
+   - Title, priority, category, due date, repeat, notes — all here.
+   - Tap "Save" to write changes.
+   - Tap "Cancel" or the backdrop to dismiss.
+
+6. NOTES + SUBTASKS
+   Tap the ▾ chevron on a task to expand.
+   - Notes display below the meta row.
    - Add subtasks from the inline input. Tap to toggle complete.
 
-5. FILTERS
-   - Top chip row: TODAY / TOMORROW / THIS WEEK / NEXT WEEK / ALL / DONE.
-   - Tap the date pill on the right to filter by a specific date.
+7. FILTER YOUR VIEW
+   Top chip row: Today / Tomorrow / This week / Next week / All / Done.
+   Tap the date pill on the right to filter by a specific date.
 
-6. MENTAL LOAD
-   - Top-right percentage + tier (LIGHT / BUSY / HEAVY / DOOM).
-   - HIGH counts 3, MID counts 2, LOW counts 1. Capacity = 30.
-   - Only incomplete tasks count.
+8. CHECK YOUR LOAD
+   Top-right shows: percentage + tier (LIGHT / BUSY / HEAVY / DOOM).
+   Below the meter: 4 cells — Today, Week, Month, Streak.
 
-7. RECURRING
-   - Set a due date + repeat (DAILY / WEEKDAYS / WEEKLY / MONTHLY) on
-     a task. When you complete it, a new instance is created on the
-     next due date automatically.
+9. OPEN DOOM ANALYSIS
+   Tap "Doom analysis ▾" between the stats strip and the stack tower.
+   Inside:
+   - Pressure (weighted unfinished burden, 0–100)
+   - Procrastination flags (3+d, 7+d, High idle)
+   - Time tendency (morning / day / evening / night / balanced)
+   - Top categories
+   - 14-day mental-load sparkline
+   - This-week summary
+   - Export JSON / Import JSON buttons
 
-8. PERSISTENCE
-   - All data lives in your browser via localStorage. Reload anytime —
-     your tasks, filter, and selected date are restored.
-   - Clearing site data wipes the state. Export/sync arrives in a
-     later phase.
-
-CAVEATS
--------
-- CUSTOM repeat is a placeholder field — no auto-schedule yet.
-- No backend, no API, no account. Single device.
+10. BACK UP YOUR WORK
+    Open Doom analysis → Export JSON. A file named
+    doom-stack-YYYY-MM-DD.json downloads. Store it anywhere safe.
+    To restore: Doom analysis → Import JSON → pick the file.
 
 THAT'S IT.
 - 追加 → 整える → 完了 → 重さが軽くなる
+- Add → arrange → complete → the stack lightens.

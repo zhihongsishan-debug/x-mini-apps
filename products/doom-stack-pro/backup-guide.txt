@@ -1,0 +1,100 @@
+DOOM STACK PRO — Backup & Data Guide
+====================================
+
+Where your data lives, how to back it up, how to recover.
+
+------------------------------------------------------------
+WHERE THE DATA LIVES
+------------------------------------------------------------
+DOOM STACK PRO stores everything in your browser's localStorage on
+the device where you run it. Three keys:
+
+  doomStackPro:v1            tasks + UI state
+  doomStackPro:history:v1    daily mental-load snapshots
+  doomStackPro:onboarded:v1  the "skip welcome" flag
+
+There is no server, no account, and no cloud. If you clear site data,
+uninstall the browser, or move to a new device, your workspace will
+not follow you unless you explicitly export and import.
+
+------------------------------------------------------------
+EXPORTING (BACK UP)
+------------------------------------------------------------
+1. Tap "Doom analysis ▾" in the app.
+2. Scroll to the bottom of the panel.
+3. Tap "Export JSON".
+4. Your browser downloads a file named
+     doom-stack-YYYY-MM-DD.json
+5. Save it somewhere safe (cloud drive, password manager attachment,
+   external drive, encrypted vault — your call).
+
+The JSON file contains:
+  {
+    "product":   "doom-stack-pro",
+    "version":   1,
+    "exportedAt":"<ISO timestamp>",
+    "tasks":     [ ...complete task objects... ],
+    "history":   { "YYYY-MM-DD": { ml, ts }, ... },
+    "ui":        { "activeFilter", "selectedDate" }
+  }
+
+The file is plain JSON — readable in any text editor.
+
+------------------------------------------------------------
+IMPORTING (RESTORE)
+------------------------------------------------------------
+1. Open Doom analysis.
+2. Tap "Import JSON".
+3. Pick a file you exported earlier.
+
+On success: your task list and history are replaced with the file's
+contents and the inline feedback shows "Imported · N tasks".
+
+On failure: the import is rejected with a descriptive error such as
+"Missing tasks array", "Invalid priority", "Invalid category", or
+"File too large". Your existing data is not modified on failure.
+
+Validation rules (rejected files do NOT replace your data):
+- Top-level must be a JSON object.
+- "tasks" must be an array.
+- Each task must have: id (string), title (string), priority in
+  {HIGH, MID, LOW}, category in {WORK, LIFE, HEALTH, IDEA, ERRAND,
+  DEADLINE}.
+- Optional repeat in {NONE, DAILY, WEEKDAYS, WEEKLY, MONTHLY, CUSTOM}.
+- Optional subtasks must be an array.
+- File size limit: 5MB.
+
+------------------------------------------------------------
+RECOMMENDED BACKUP HABIT
+------------------------------------------------------------
+- Once a week, or after major task additions: Export JSON.
+- Keep the last 3 backups, rotate older ones out.
+- For team/contractor handoffs, send the JSON file directly. No
+  account login is needed to use it.
+
+------------------------------------------------------------
+WHAT BREAKS YOUR LOCAL DATA
+------------------------------------------------------------
+- Clearing site data / cookies for the browser host.
+- Browser "private / incognito" mode (data is wiped on session end).
+- Reinstalling the browser without exporting first.
+- localStorage quota errors (very rare; quota is typically 5–10MB
+  per origin and the app is well under that).
+
+------------------------------------------------------------
+PORTING BETWEEN DEVICES
+------------------------------------------------------------
+1. On the source device: Export JSON.
+2. Transfer the file (cloud drive, AirDrop, USB, anything).
+3. On the target device: open index.html in a browser.
+4. Wait through (or skip) onboarding.
+5. Open Doom analysis → Import JSON → pick the file.
+
+The target device now has your full workspace.
+
+------------------------------------------------------------
+DATA OWNERSHIP
+------------------------------------------------------------
+You own your data. The app does not transmit, sync, or share anything
+across the network. JSON exports are the single source of portable
+truth — please back up regularly.

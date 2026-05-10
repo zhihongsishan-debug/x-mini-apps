@@ -1,0 +1,94 @@
+DOOM STACK PRO — Disclaimer
+===========================
+
+Plain-language risk and limitation notice.
+
+NATURE OF THE PRODUCT
+---------------------
+DOOM STACK PRO is a personal productivity tool. It is software that
+runs in your browser. It is not a medical, mental-health, legal,
+financial, or coaching service. Nothing it displays — including
+"Mental Load", "Pressure", "Procrastination flags", or "DOOM" tier
+labels — is medical or psychological advice.
+
+NO WARRANTY
+-----------
+The product is provided "AS IS" and "AS AVAILABLE", without warranty
+of any kind, express or implied. The seller specifically disclaims
+implied warranties of merchantability, fitness for a particular
+purpose, accuracy, completeness, and non-infringement.
+
+NO GUARANTEE OF OUTCOMES
+------------------------
+Using DOOM STACK PRO does not guarantee improved productivity,
+reduced stress, completed tasks, or any other outcome. Outcomes
+depend on the user's behavior. The product is a tool; results vary.
+
+DATA STORAGE LIMITATIONS
+------------------------
+The product stores all data locally in the browser's localStorage.
+It does NOT sync, back up to any server, or transmit data over the
+network. Browser data can be lost in many ordinary scenarios,
+including but not limited to:
+- Clearing site data, cookies, or "browsing history" for the host.
+- Using private / incognito browsing mode.
+- Browser updates that reset profile data.
+- Reinstalling the operating system.
+- Hardware failure or device loss.
+- localStorage quota exhaustion (rare for this app).
+
+USER RESPONSIBLE FOR BACKUPS
+----------------------------
+The user is solely responsible for backing up their data using the
+Export JSON feature documented in backup-guide.txt. The seller is not
+responsible for data loss from any cause. Regular exports are
+strongly recommended.
+
+NO LIABILITY FOR DATA LOSS OR DAMAGES
+-------------------------------------
+To the maximum extent permitted by law, the seller's total liability
+arising from or related to the product (including data loss, lost
+productivity, missed deadlines, or any direct, indirect, incidental,
+special, consequential, or punitive damages) is limited to the
+amount paid by the user for the product.
+
+UPDATE POLICY
+-------------
+Bug-fix updates within the purchased major version may be provided
+at the seller's discretion. Major upgrades may be offered at separate
+pricing. The seller is not obligated to provide ongoing updates,
+support, or compatibility with future browser versions.
+
+REFUNDS
+-------
+Refund availability is determined by the platform from which the
+product was purchased (e.g., the seller's chosen storefront) and the
+seller's published refund policy at the time of purchase. Where no
+explicit policy is provided, refund requests will be considered case-
+by-case at the seller's discretion within a reasonable window of the
+purchase date. Contact the seller via the channel where you purchased
+the product to request a refund.
+
+PERSONAL USE
+------------
+The license grants personal use only unless an expanded license is
+arranged with the seller. See license.txt for full terms.
+
+THIRD-PARTY FONTS / ASSETS
+--------------------------
+The product ships only the system font stack and inline CSS / JS. It
+does not load fonts, images, scripts, or analytics from any third
+party at runtime.
+
+JURISDICTION
+------------
+Any dispute arising from the purchase or use of the product shall be
+governed by the laws of the seller's jurisdiction, with venue in the
+seller's primary place of business.
+
+CONTACT
+-------
+For warranty, refund, or liability questions, contact the seller via
+the channel where you purchased the product.
+
+END OF DISCLAIMER.

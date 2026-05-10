@@ -748,12 +748,132 @@
   }
   .toast .t-undo:hover{background:var(--surface-3);}
 
+  /* ===== ONBOARDING (Phase 3) ===== */
+  .onboard{
+    position:fixed;inset:0;z-index:80;
+    display:none;align-items:center;justify-content:center;
+    padding:18px;
+    background:rgba(8,8,10,.82);
+    backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  }
+  .onboard.on{display:flex;animation:obFade .25s ease both;}
+  @keyframes obFade{from{opacity:0;}to{opacity:1;}}
+  .ob-card{
+    position:relative;
+    width:100%;max-width:420px;
+    border-radius:16px;
+    padding:24px 22px 18px;
+    background:linear-gradient(180deg, #18181d 0%, #131318 100%);
+    border:1px solid var(--line-2);
+    box-shadow:0 16px 60px rgba(0,0,0,.55), 0 0 0 1px rgba(0,0,0,.4);
+    display:flex;flex-direction:column;gap:14px;
+    animation:obSlide .28s cubic-bezier(.2,.9,.2,1);
+  }
+  @keyframes obSlide{from{transform:translateY(20px);opacity:.6;} to{transform:translateY(0);opacity:1;}}
+  .ob-eyebrow{
+    font-size:10px;letter-spacing:.20em;font-weight:600;color:var(--sub);
+    text-transform:uppercase;
+  }
+  .ob-title{
+    font-size:20px;font-weight:600;color:var(--ink);letter-spacing:-0.01em;line-height:1.25;
+    margin:0;
+  }
+  .ob-body{
+    font-size:13.5px;line-height:1.6;color:var(--ink-2);
+    letter-spacing:-0.005em;font-weight:400;
+  }
+  .ob-body b{color:var(--ink);font-weight:600;}
+  .ob-illu{
+    height:80px;border-radius:10px;
+    background:var(--surface-1);
+    border:1px solid var(--line);
+    display:flex;align-items:flex-end;justify-content:center;padding:10px;gap:3px;
+  }
+  .ob-illu .b{
+    width:140px;border-radius:2px;border:1px solid var(--line-2);
+    background:var(--surface-2);
+  }
+  .ob-illu .b.h{height:14px;background:rgba(227,83,75,.18);border-color:rgba(227,83,75,.35);}
+  .ob-illu .b.m{height:10px;background:rgba(202,166,111,.16);border-color:rgba(202,166,111,.32);}
+  .ob-illu .b.l{height:7px; background:rgba(127,138,153,.14);border-color:rgba(127,138,153,.30);}
+  .ob-illu.tower{flex-direction:column-reverse;align-items:center;}
+  .ob-illu.metric{align-items:center;justify-content:flex-start;gap:14px;padding:14px;}
+  .ob-illu.metric .num{
+    font-size:28px;font-weight:500;color:var(--ink);letter-spacing:-0.01em;
+    font-feature-settings:"tnum";line-height:1;
+  }
+  .ob-illu.metric .lbl{
+    font-size:9px;letter-spacing:.18em;font-weight:600;color:var(--sub);
+    text-transform:uppercase;
+  }
+  .ob-illu.metric .bar{
+    flex:1 1 auto;height:3px;border-radius:99px;background:var(--surface-3);overflow:hidden;
+  }
+  .ob-illu.metric .bar > span{
+    display:block;height:100%;width:38%;
+    background:linear-gradient(90deg, var(--sub), var(--mid) 55%, var(--warn) 80%, var(--hi));
+  }
+  .ob-illu.backup{align-items:center;justify-content:center;flex-direction:column;gap:6px;}
+  .ob-illu.backup .file{
+    width:42px;height:54px;border-radius:4px;
+    background:var(--surface-2);border:1px solid var(--line-2);
+    position:relative;
+  }
+  .ob-illu.backup .file::before{
+    content:"";position:absolute;top:0;right:0;width:14px;height:14px;
+    background:var(--bg-1);border-left:1px solid var(--line-2);border-bottom:1px solid var(--line-2);
+  }
+  .ob-illu.backup .label-x{
+    font-size:9px;letter-spacing:.18em;font-weight:600;color:var(--sub);
+  }
+  .ob-progress{
+    display:flex;justify-content:center;gap:6px;
+    margin-top:2px;
+  }
+  .ob-dot{
+    width:6px;height:6px;border-radius:50%;
+    background:var(--line-2);
+    transition:all .2s ease;
+  }
+  .ob-dot.on{background:var(--ink-2);width:18px;border-radius:99px;}
+  .ob-actions{
+    display:flex;gap:8px;margin-top:4px;padding-top:14px;border-top:1px solid var(--line);
+    align-items:center;
+  }
+  .ob-skip{
+    appearance:none;border:0;cursor:pointer;background:transparent;
+    color:var(--mute);font:inherit;font-size:11px;font-weight:500;letter-spacing:.04em;
+    padding:8px 4px;
+    transition:color .15s ease;
+  }
+  .ob-skip:hover{color:var(--sub);}
+  .ob-spacer{flex:1 1 auto;}
+  .ob-back{
+    appearance:none;border:1px solid var(--line-2);cursor:pointer;
+    padding:10px 14px;border-radius:8px;
+    font:inherit;font-size:12px;font-weight:500;letter-spacing:.02em;color:var(--sub);
+    background:transparent;
+    transition:all .15s ease;
+  }
+  .ob-back:hover{color:var(--ink);border-color:var(--ink-2);}
+  .ob-next{
+    appearance:none;border:1px solid var(--accent);cursor:pointer;
+    padding:10px 18px;border-radius:8px;
+    font:inherit;font-weight:600;font-size:12px;letter-spacing:.04em;
+    color:var(--accent-on);
+    background:var(--accent);
+    transition:opacity .15s ease;
+  }
+  .ob-next:hover{opacity:.92;}
+  .ob-next:active{opacity:.85;}
+
   @media (max-height:700px){
     .brand-name{font-size:16px;}
     .brand-tag{font-size:10px;}
     .top-stat .ts-pct{font-size:18px;}
     input#addInput{padding:11px 12px 32px 14px;}
     .stack-preview{height:24px;}
+    .ob-illu{height:60px;}
   }
   @media (max-width:380px){
     .app{padding-left:12px;padding-right:12px;}
@@ -864,7 +984,8 @@
   <section class="list-wrap" id="listWrap">
     <div class="list-empty" id="listEmpty">
       <b>Nothing on the stack</b>
-      下から追加して、<br/>頭の重さを管理する。
+      Add a task below and pick a priority.<br/>
+      Heavier work sits lower — that's the stack.
     </div>
     <div id="taskList"></div>
   </section>
@@ -942,6 +1063,27 @@
 <div class="toast" id="undoToast" role="status">
   <span id="undoText">削除しました</span>
   <button class="t-undo" id="undoBtn" type="button">Undo</button>
+</div>
+
+<!-- First-run onboarding -->
+<div class="onboard" id="onboard" aria-hidden="true">
+  <div class="ob-card" role="dialog" aria-modal="true" aria-label="Welcome">
+    <div class="ob-eyebrow" id="obEyebrow">STEP 1 OF 3</div>
+    <h2 class="ob-title" id="obTitle">Add your first task</h2>
+    <div class="ob-illu" id="obIllu" aria-hidden="true">
+      <span class="b h"></span><span class="b m"></span><span class="b l"></span>
+    </div>
+    <p class="ob-body" id="obBody">Type a task at the bottom, pick a priority — <b>HIGH</b>, <b>MID</b>, or <b>LOW</b> — and tap Add. Heavier priorities sit lower in the stack.</p>
+    <div class="ob-progress" id="obProgress">
+      <span class="ob-dot on"></span><span class="ob-dot"></span><span class="ob-dot"></span>
+    </div>
+    <div class="ob-actions">
+      <button class="ob-skip" id="obSkip" type="button">Skip</button>
+      <span class="ob-spacer"></span>
+      <button class="ob-back" id="obBack" type="button" hidden>Back</button>
+      <button class="ob-next" id="obNext" type="button">Next</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -1647,6 +1789,87 @@
     fb._t = setTimeout(() => fb.classList.remove('on'), 2400);
   }
   /* Wire up controls */
+  /* ============== ONBOARDING (Phase 3) ============== */
+  const ONBOARD_KEY = 'doomStackPro:onboarded:v1';
+  const OB_STEPS = [
+    {
+      title: 'Add your first task',
+      body: 'Type a task at the bottom, pick a priority — <b>HIGH</b>, <b>MID</b>, or <b>LOW</b> — and tap Add. Heavier priorities sit lower in the stack.',
+      illuClass: 'ob-illu',
+      illuHtml: '<span class="b h"></span><span class="b m"></span><span class="b l"></span>',
+    },
+    {
+      title: 'Understand your weight',
+      body: 'The meter at the top shows total <b>Mental Load</b>. The vertical stack visualises your unfinished work as physical mass. Open <b>Doom analysis</b> for pressure, procrastination, and trends.',
+      illuClass: 'ob-illu metric',
+      illuHtml: '<span class="num">62%</span><span class="lbl">Mental Load</span><span class="bar"><span></span></span>',
+    },
+    {
+      title: 'Own your data',
+      body: 'Everything stays in this browser. Use <b>Export JSON</b> in the analysis panel to keep a backup, and <b>Import JSON</b> to restore. No account, no cloud, no tracking.',
+      illuClass: 'ob-illu backup',
+      illuHtml: '<span class="file"></span><span class="label-x">JSON · LOCAL</span>',
+    },
+  ];
+  let obStepIdx = 0;
+  function isOnboarded(){
+    try { return localStorage.getItem(ONBOARD_KEY) === '1'; } catch(_) { return false; }
+  }
+  function markOnboarded(){
+    try { localStorage.setItem(ONBOARD_KEY, '1'); } catch(_) {}
+  }
+  function showOnboarding(){
+    obStepIdx = 0;
+    paintOnboardStep();
+    const ob = $('onboard');
+    ob.classList.add('on');
+    ob.setAttribute('aria-hidden', 'false');
+  }
+  function hideOnboarding(persist){
+    const ob = $('onboard');
+    ob.classList.remove('on');
+    ob.setAttribute('aria-hidden', 'true');
+    if (persist) markOnboarded();
+  }
+  function paintOnboardStep(){
+    const step = OB_STEPS[obStepIdx];
+    if (!step) return;
+    $('obEyebrow').textContent = 'STEP ' + (obStepIdx + 1) + ' OF ' + OB_STEPS.length;
+    $('obTitle').textContent = step.title;
+    $('obBody').innerHTML = step.body;
+    const illu = $('obIllu');
+    illu.className = step.illuClass;
+    illu.innerHTML = step.illuHtml;
+    // dots
+    const dots = document.querySelectorAll('#obProgress .ob-dot');
+    dots.forEach((d, i) => d.classList.toggle('on', i === obStepIdx));
+    // back button visibility
+    $('obBack').hidden = obStepIdx === 0;
+    // next button label on last step
+    $('obNext').textContent = obStepIdx === OB_STEPS.length - 1 ? 'Get started' : 'Next';
+  }
+  function maybeShowOnboarding(){
+    if (!isOnboarded()) showOnboarding();
+  }
+  function bindOnboarding(){
+    $('obSkip').addEventListener('click', () => hideOnboarding(true));
+    $('obBack').addEventListener('click', () => {
+      if (obStepIdx > 0){ obStepIdx--; paintOnboardStep(); }
+    });
+    $('obNext').addEventListener('click', () => {
+      if (obStepIdx < OB_STEPS.length - 1){
+        obStepIdx++;
+        paintOnboardStep();
+      } else {
+        hideOnboarding(true);
+      }
+    });
+    // backdrop dismiss = skip but persist
+    $('onboard').addEventListener('click', (e) => {
+      if (e.target === $('onboard')) hideOnboarding(true);
+    });
+  }
+
   function bindAnalyticsControls(){
     const tg = $('analysisToggle');
     const panel = $('analysisPanel');
@@ -1865,8 +2088,10 @@
     }
     document.querySelectorAll('.add-pri .pri').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.pri === state.selectedPri)));
     bindAnalyticsControls();
+    bindOnboarding();
     snapshotMl();
     render();
+    maybeShowOnboarding();
   }
   init();
 
@@ -1917,7 +2142,13 @@
       externalDeps: !document.querySelector('link[href^="http"]') && !document.querySelector('script[src]'),
       analyticsReady: typeof pressureScore === 'function' && typeof streakDays === 'function' && !!document.getElementById('apChart'),
       backupReady:    typeof exportJson === 'function' && typeof importJson === 'function',
+      onboardReady:   typeof showOnboarding === 'function' && !!document.getElementById('onboard'),
     }),
+    /* Phase 3: onboarding test surface */
+    showOnboarding,
+    hideOnboarding,
+    isOnboarded,
+    onboardKey: () => ONBOARD_KEY,
   };
 })();
 </script>
