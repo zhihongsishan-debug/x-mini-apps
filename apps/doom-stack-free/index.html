@@ -301,6 +301,209 @@
     border:1px solid var(--line);
   }
 
+  /* ===== DOOM CHECK button (top-right of brand row) ===== */
+  .doom-check{
+    appearance:none;border:0;cursor:pointer;
+    padding:9px 16px;border-radius:99px;
+    font-family:inherit;font-weight:900;font-size:11px;letter-spacing:.32em;
+    color:#06020f;
+    background:linear-gradient(135deg,var(--cyan),var(--violet) 50%,var(--pink));
+    box-shadow:0 6px 20px var(--glow-pink), 0 0 14px var(--glow-cyan), inset 0 1px 0 rgba(255,255,255,.4);
+    flex:0 0 auto;
+    transition:transform .08s ease, box-shadow .15s ease;
+    animation:doomCheckPulse 2.6s ease-in-out infinite;
+  }
+  .doom-check:active{transform:translateY(1px);}
+  @keyframes doomCheckPulse{
+    0%,100%{box-shadow:0 6px 20px var(--glow-pink), 0 0 14px var(--glow-cyan), inset 0 1px 0 rgba(255,255,255,.4);}
+    50%    {box-shadow:0 8px 28px var(--glow-pink), 0 0 24px var(--glow-cyan), 0 0 38px rgba(163,113,255,.45), inset 0 1px 0 rgba(255,255,255,.4);}
+  }
+
+  /* ===== DAILY DOOM strip ===== */
+  .daily-strip{
+    flex:0 0 auto;
+    padding:6px 12px;border-radius:99px;
+    background:
+      radial-gradient(120% 100% at 50% 0%, rgba(163,113,255,.16), transparent 60%),
+      linear-gradient(180deg, rgba(0,0,0,.45), rgba(0,0,0,.30));
+    border:1px solid rgba(163,113,255,.30);
+    display:flex;align-items:center;gap:10px;
+    font-size:10px;letter-spacing:.16em;color:var(--ink);font-weight:700;
+    line-height:1;
+  }
+  .daily-strip .ds-lbl{
+    font-size:9px;letter-spacing:.36em;font-weight:900;
+    color:var(--cyan);text-shadow:0 0 8px var(--glow-cyan);
+  }
+  .daily-strip .ds-msg{
+    flex:1 1 auto;color:var(--ink);
+    text-shadow:0 0 6px rgba(176,124,255,.45);
+  }
+
+  /* ===== TUTORIAL micro line ===== */
+  .tutorial-micro{
+    flex:0 0 auto;
+    text-align:center;
+    font-size:10px;letter-spacing:.34em;font-weight:700;
+    color:var(--mute);
+    padding:0 0 2px 0;
+  }
+  .tutorial-micro b{
+    color:var(--cyan);font-weight:900;letter-spacing:.36em;
+    text-shadow:0 0 8px var(--glow-cyan);
+  }
+
+  /* ===== RESULT CARD ===== */
+  .result-modal{
+    position:fixed;inset:0;z-index:60;
+    display:none;align-items:center;justify-content:center;
+    padding:18px;
+    background:radial-gradient(70% 60% at 50% 50%, rgba(10,4,32,.55), rgba(6,3,15,.96));
+    backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  }
+  .result-modal.on{display:flex;animation:rmFade .35s ease both;}
+  @keyframes rmFade{from{opacity:0;}to{opacity:1;}}
+  .rc-card{
+    position:relative;
+    width:100%;max-width:340px;
+    border-radius:24px;padding:24px 22px 18px;
+    background:
+      radial-gradient(120% 100% at 50% 0%, rgba(255,62,181,.12), transparent 55%),
+      radial-gradient(120% 100% at 50% 100%, rgba(61,240,255,.10), transparent 60%),
+      linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.02));
+    border:1px solid var(--line);
+    text-align:center;
+    box-shadow:0 0 60px var(--glow-pink), 0 0 100px rgba(163,113,255,.18);
+    overflow:hidden;
+  }
+  .rc-card::before{
+    content:"";position:absolute;inset:-1px;border-radius:inherit;padding:1.4px;
+    background:linear-gradient(135deg, var(--cyan), var(--violet) 35%, var(--pink) 65%, #ffce4d);
+    -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor;mask-composite:exclude;
+    pointer-events:none;
+    animation:rcBorder 5s linear infinite;
+  }
+  @keyframes rcBorder{from{filter:hue-rotate(0deg);} to{filter:hue-rotate(360deg);}}
+  .rc-card::after{
+    content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+    background:repeating-linear-gradient(0deg, rgba(255,255,255,.03) 0 1px, transparent 1px 4px);
+    mix-blend-mode:overlay;opacity:.6;
+  }
+  .rc-eyebrow{
+    margin:0 0 4px;
+    font-size:10px;letter-spacing:.5em;color:var(--cyan);font-weight:900;
+    text-shadow:0 0 8px var(--glow-cyan);
+    position:relative;
+  }
+  .rc-title{
+    margin:0 0 14px;
+    font-size:clamp(28px, 9vmin, 42px);font-weight:900;letter-spacing:.18em;line-height:1.05;
+    background:linear-gradient(180deg,#fff 5%,#ffce4d 32%,var(--pink) 68%,var(--violet));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    text-shadow:0 0 28px var(--glow-pink),0 0 48px rgba(163,113,255,.35);
+    -webkit-text-stroke:0.4px rgba(255,255,255,.18);
+    animation:rcTitleGlow 2.4s ease-in-out infinite;
+    position:relative;
+  }
+  @keyframes rcTitleGlow{
+    0%,100%{filter:brightness(1) saturate(1.1);}
+    50%{filter:brightness(1.25) saturate(1.4);}
+  }
+  .rc-title[data-tier="DOOM"]{
+    animation:rcDoom 1.4s ease-in-out infinite;
+  }
+  @keyframes rcDoom{
+    0%,100%{filter:brightness(1.1) saturate(1.3) drop-shadow(0 0 8px var(--glow-pink));}
+    50%    {filter:brightness(1.55) saturate(1.7) drop-shadow(0 0 18px rgba(255,58,77,.7));}
+  }
+  .rc-score{
+    margin:0 0 14px;
+    display:flex;align-items:baseline;justify-content:center;gap:8px;
+    position:relative;
+  }
+  .rc-score .rc-num{
+    font-size:48px;font-weight:900;letter-spacing:.02em;line-height:1;
+    font-feature-settings:"tnum";
+    background:linear-gradient(180deg,#fff,var(--pink));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    text-shadow:0 0 28px var(--glow-pink);
+  }
+  .rc-score .rc-pct{
+    font-size:18px;font-weight:900;color:var(--sub);letter-spacing:.2em;
+  }
+  .rc-row{
+    display:flex;justify-content:space-between;align-items:baseline;
+    font-size:11px;letter-spacing:.25em;color:var(--sub);
+    padding:9px 0;
+    border-bottom:1px dashed var(--line);
+    position:relative;
+  }
+  .rc-row .val{
+    font-size:18px;color:#fff;font-weight:800;
+    font-feature-settings:"tnum";letter-spacing:0;
+  }
+  .rc-cta{
+    margin:14px 0 6px;
+    padding:8px 12px;border-radius:12px;
+    background:linear-gradient(90deg,rgba(255,43,181,.10),rgba(232,255,58,.10),rgba(255,43,181,.10));
+    border:1px solid rgba(255,43,181,.35);
+    font-size:12px;letter-spacing:.18em;font-weight:800;color:#fff;
+    text-shadow:0 0 8px var(--glow-pink);
+    position:relative;
+  }
+  .rc-cta::before{
+    content:"⚠";margin-right:8px;color:#ffce4d;
+    text-shadow:0 0 8px rgba(255,206,77,.6);
+  }
+  .rc-actions{
+    display:flex;flex-direction:column;gap:8px;margin-top:8px;
+    position:relative;
+  }
+  .rc-share{
+    appearance:none;border:0;cursor:pointer;
+    width:100%;padding:14px;border-radius:12px;
+    font:inherit;font-weight:900;font-size:13px;letter-spacing:.32em;
+    color:#06020f;
+    background:linear-gradient(135deg,var(--cyan),var(--violet) 50%,var(--pink));
+    box-shadow:0 8px 26px var(--glow-pink), inset 0 1px 0 rgba(255,255,255,.4);
+  }
+  .rc-share:active{transform:translateY(1px);}
+  .rc-close{
+    appearance:none;border:1px solid var(--line);cursor:pointer;
+    width:100%;padding:11px;border-radius:12px;
+    font:inherit;font-weight:800;font-size:11px;letter-spacing:.36em;
+    color:var(--sub);
+    background:linear-gradient(180deg,rgba(0,0,0,.55),rgba(0,0,0,.35));
+    transition:all .15s ease;
+  }
+  .rc-close:hover{border-color:var(--cyan);color:#fff;}
+  .rc-feedback{
+    margin:6px 0 0;font-size:11px;letter-spacing:.3em;color:var(--cyan);
+    opacity:0;transition:opacity .25s ease;height:14px;
+  }
+  .rc-feedback.on{opacity:1;}
+
+  /* ===== IMPACT FLASH (full board) on action ===== */
+  .impact-flash{
+    position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+    background:radial-gradient(closest-side, rgba(255,255,255,.6), rgba(255,206,77,.35) 40%, transparent 80%);
+    opacity:0;
+  }
+  .impact-flash.on{animation:impactOnce .55s ease-out;}
+  @keyframes impactOnce{
+    0%{opacity:0;} 12%{opacity:1;} 100%{opacity:0;}
+  }
+  /* board chromatic kick */
+  .stage.kick{animation:stageKick .5s cubic-bezier(.2,1.4,.4,1);}
+  @keyframes stageKick{
+    0%{transform:translate(0,0);}
+    18%{transform:translate(-5px,3px);}
+    36%{transform:translate(4px,-2px);}
+    62%{transform:translate(-3px,1px);}
+    100%{transform:translate(0,0);}
+  }
+
   /* small viewport tightening */
   @media (max-height:700px){
     .brand-name{font-size:15px;letter-spacing:.26em;}
@@ -308,6 +511,8 @@
     .ml{padding:8px 10px;}
     .act{padding:10px 4px;font-size:10px;letter-spacing:.24em;}
     input#taskInput{padding:10px 10px 30px 12px;}
+    .doom-check{padding:7px 12px;font-size:10px;letter-spacing:.26em;}
+    .rc-score .rc-num{font-size:40px;}
   }
 </style>
 </head>
@@ -320,7 +525,13 @@
       <div class="brand-tag">YOUR TASKS HAVE WEIGHT</div>
       <div class="brand-free"><b>FREE</b> — TODAY ONLY</div>
     </div>
+    <button class="doom-check" id="doomCheckBtn" type="button" aria-label="DOOM 診断">DOOM CHECK</button>
   </header>
+
+  <div class="daily-strip" id="dailyStrip">
+    <span class="ds-lbl">今日のDOOM診断</span>
+    <span class="ds-msg" id="dsMsg">まだ余裕</span>
+  </div>
 
   <div class="ml" aria-label="MENTAL LOAD">
     <div class="ml-row">
@@ -331,8 +542,9 @@
     <div class="ml-bar"><div class="ml-fill" id="mlFill"></div></div>
   </div>
 
-  <section class="stage">
+  <section class="stage" id="stage">
     <canvas id="stack"></canvas>
+    <div class="impact-flash" id="impactFlash" aria-hidden="true"></div>
     <div class="empty-hint" id="emptyHint">
       <div>
         <b>STACK IS EMPTY</b>
@@ -340,6 +552,8 @@
       </div>
     </div>
   </section>
+
+  <p class="tutorial-micro"><b>追加</b>して<b>壊し</b>て<b>戻す</b></p>
 
   <section class="actions" aria-label="アクション">
     <button class="act" data-act="SMASH"   type="button">SMASH</button>
@@ -367,6 +581,27 @@
     <p class="pro-text"><b>PRO版</b>で 保存・分析・繰り返し・履歴</p>
     <span class="pro-soon">SOON</span>
   </section>
+</div>
+
+<!-- DOOM result modal -->
+<div class="result-modal" id="resultModal" aria-hidden="true">
+  <div class="rc-card">
+    <p class="rc-eyebrow">DOOM CHECK</p>
+    <h2 class="rc-title" id="rcTitle" data-tier="CALM">CALM</h2>
+    <div class="rc-score">
+      <span class="rc-num" id="rcNum">0</span>
+      <span class="rc-pct">%</span>
+    </div>
+    <div class="rc-row"><span>TASKS</span><span class="val" id="rcTasks">0</span></div>
+    <div class="rc-row"><span>MENTAL LOAD</span><span class="val" id="rcMl">0%</span></div>
+    <div class="rc-row" style="border-bottom:0;"><span>STATE</span><span class="val" id="rcState">CALM</span></div>
+    <p class="rc-cta">この重さ、共感する？</p>
+    <div class="rc-actions">
+      <button class="rc-share" id="rcShareBtn" type="button">Xに重さを投げる</button>
+      <button class="rc-close" id="rcCloseBtn" type="button">閉じる</button>
+    </div>
+    <p class="rc-feedback" id="rcFeedback">コピーしました</p>
+  </div>
 </div>
 
 <script>
@@ -760,12 +995,134 @@
        {boxShadow:'0 0 0 0 rgba(255,255,255,.0), 0 0 0 1px rgba(255,255,255,.06), 0 0 24px rgba(176,124,255,.18)'}],
       { duration: 480, easing: 'ease-out' }
     );
+    // SS-grade kick: full-board flash + brief shake on heavy actions
+    const flash = $('impactFlash');
+    if (flash){ flash.classList.remove('on'); void flash.offsetWidth; flash.classList.add('on'); }
+    if (name === 'SMASH' || name === 'PURGE'){
+      stage.classList.remove('kick'); void stage.offsetWidth; stage.classList.add('kick');
+      try { if (navigator.vibrate) navigator.vibrate([60, 30, 60]); } catch(_){}
+    } else if (name === 'SHAKE'){
+      try { if (navigator.vibrate) navigator.vibrate([30, 20, 30]); } catch(_){}
+    }
+    playAction(name);
   }
   function actionTint(name){
     return name === 'SMASH'  ? 'rgba(255,58,77,.55)' :
            name === 'SHAKE'  ? 'rgba(255,206,77,.55)' :
            name === 'PURGE'  ? 'rgba(163,113,255,.55)' :
                                'rgba(125,240,211,.55)';
+  }
+
+  /* ============== AUDIO (Web Audio only) ============== */
+  let audioCtx = null, masterGain = null, noiseBuf = null, audioReady = false;
+  function initAudio(){
+    if (audioReady) return;
+    try{
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      audioCtx = new AC();
+      masterGain = audioCtx.createGain();
+      masterGain.gain.value = 0.85;
+      masterGain.connect(audioCtx.destination);
+      const len = audioCtx.sampleRate;
+      noiseBuf = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
+      const d = noiseBuf.getChannelData(0);
+      for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+      audioReady = true;
+    }catch(_){ audioCtx = null; }
+  }
+  function ac(){ if (!audioReady) initAudio(); if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); return audioCtx; }
+  function tone(freq, end, dur, vol, type, now){
+    const c = ac(); if (!c) return;
+    const t = now != null ? now : c.currentTime;
+    const o = c.createOscillator(); o.type = type || 'sine';
+    o.frequency.setValueAtTime(freq, t);
+    o.frequency.exponentialRampToValueAtTime(Math.max(20, end), t + dur);
+    const g = c.createGain(); g.gain.value = 0;
+    o.connect(g); g.connect(masterGain);
+    g.gain.linearRampToValueAtTime(vol || 0.18, t + 0.005);
+    g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    o.start(t); o.stop(t + dur + 0.02);
+  }
+  function noiseBurst(filterFreq, dur, vol, hp, now){
+    const c = ac(); if (!c || !noiseBuf) return;
+    const t = now != null ? now : c.currentTime;
+    const ns = c.createBufferSource(); ns.buffer = noiseBuf;
+    const f = c.createBiquadFilter(); f.type = hp ? 'highpass' : 'lowpass';
+    f.frequency.value = filterFreq;
+    const g = c.createGain(); g.gain.value = 0;
+    ns.connect(f); f.connect(g); g.connect(masterGain);
+    g.gain.linearRampToValueAtTime(vol || 0.20, t + 0.005);
+    g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    ns.start(t); ns.stop(t + dur + 0.02);
+  }
+  function playAdd(){     tone(380, 220, 0.10, 0.16, 'triangle'); tone(720, 540, 0.08, 0.10, 'sine'); }
+  function playSmash(){
+    const c = ac(); if (!c) return;
+    const t = c.currentTime;
+    tone(180, 60, 0.45, 0.34, 'sawtooth', t);
+    noiseBurst(220, 0.30, 0.45, false, t);
+    noiseBurst(5500, 0.18, 0.16, true, t + 0.02);
+    tone(70, 36, 0.55, 0.42, 'sine', t + 0.01);
+  }
+  function playShake(){
+    const c = ac(); if (!c) return;
+    const t = c.currentTime;
+    for (let i = 0; i < 4; i++) noiseBurst(2200, 0.06, 0.10, true, t + i * 0.05);
+    tone(120, 80, 0.20, 0.16, 'square', t);
+  }
+  function playPurge(){
+    const c = ac(); if (!c) return;
+    const t = c.currentTime;
+    tone(900, 90, 0.40, 0.22, 'sawtooth', t);
+    noiseBurst(800, 0.45, 0.28, false, t);
+    tone(60, 32, 0.55, 0.32, 'sine', t + 0.02);
+  }
+  function playRestore(){
+    const c = ac(); if (!c) return;
+    const t = c.currentTime;
+    [392, 523, 659, 880].forEach((f, i) => tone(f, f * 0.95, 0.30, 0.14, 'triangle', t + i * 0.05));
+  }
+  function playAction(name){
+    if      (name === 'SMASH')   playSmash();
+    else if (name === 'SHAKE')   playShake();
+    else if (name === 'PURGE')   playPurge();
+    else if (name === 'RESTORE') playRestore();
+  }
+
+  /* ============== DOOM TITLE + DAILY MESSAGE ============== */
+  const DOOM_TITLES = [
+    { min: 0,  name: 'CALM'        },
+    { min: 21, name: 'BUSY'        },
+    { min: 41, name: 'STRESSED'    },
+    { min: 61, name: 'OVERLOADED'  },
+    { min: 81, name: 'DOOM'        },
+  ];
+  function doomTitleFor(pct){
+    let cur = DOOM_TITLES[0];
+    for (const t of DOOM_TITLES) if (pct >= t.min) cur = t;
+    return cur.name;
+  }
+  const DAILY_MESSAGES = [
+    'まだ余裕',
+    '今日は抱えすぎ',
+    '危険',
+    '深呼吸して落とそう',
+    '頭の中がうるさい日',
+    '一つ片付ければ軽くなる',
+    '今日は壊して整える日',
+  ];
+  function todayKey(){
+    const d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  }
+  function hashStr(s){
+    let h = 5381 >>> 0;
+    for (let i = 0; i < s.length; i++) h = ((h * 33) ^ s.charCodeAt(i)) >>> 0;
+    return h;
+  }
+  function dailyMessage(){
+    return DAILY_MESSAGES[hashStr(todayKey()) % DAILY_MESSAGES.length];
   }
 
   /* ============== MENTAL LOAD ============== */
@@ -806,15 +1163,17 @@
     if (addTask(t, state.selectedPri)){
       taskInput.value = '';
       taskInput.blur();
+      playAdd();
     }
   }
-  addBtn.addEventListener('click', onAdd);
+  addBtn.addEventListener('click', () => { initAudio(); onAdd(); });
   taskInput.addEventListener('keydown', e => {
-    if (e.key === 'Enter'){ e.preventDefault(); onAdd(); }
+    if (e.key === 'Enter'){ e.preventDefault(); initAudio(); onAdd(); }
   });
 
   document.querySelectorAll('.act').forEach(btn => {
     btn.addEventListener('click', () => {
+      initAudio();
       const a = btn.dataset.act;
       if      (a === 'SMASH')   smash();
       else if (a === 'SHAKE')   shake();
@@ -822,6 +1181,84 @@
       else if (a === 'RESTORE') restore();
     });
   });
+
+  /* ============== DOOM CHECK / RESULT MODAL / SHARE ============== */
+  function currentDoomScore(){
+    const ml = $('mlPct').textContent || '0';
+    return parseInt(ml.replace('%',''), 10) || 0;
+  }
+  function openResult(){
+    initAudio();
+    const score = currentDoomScore();
+    const title = doomTitleFor(score);
+    $('rcNum').textContent   = String(score);
+    $('rcTitle').textContent = title;
+    $('rcTitle').setAttribute('data-tier', title);
+    $('rcTasks').textContent = String(state.tasks.length);
+    $('rcMl').textContent    = score + '%';
+    $('rcState').textContent = title;
+    const fb = $('rcFeedback'); if (fb) fb.classList.remove('on');
+    const m = $('resultModal');
+    m.classList.add('on');
+    m.setAttribute('aria-hidden', 'false');
+    // small confirmatory tone
+    tone(660, 880, 0.18, 0.16, 'triangle');
+  }
+  function closeResult(){
+    const m = $('resultModal');
+    m.classList.remove('on');
+    m.setAttribute('aria-hidden', 'true');
+  }
+  function buildShareText(){
+    const score = currentDoomScore();
+    const title = doomTitleFor(score);
+    const url = location.href;
+    return 'DOOM STACK' +
+      '\nDOOM SCORE: ' + score +
+      '\nTASKS: ' + state.tasks.length +
+      '\nSTATE: ' + title +
+      '\n\nやることの重さ、可視化したらこうなった\n' + url;
+  }
+  function showShareFeedback(msg){
+    const fb = $('rcFeedback');
+    if (!fb) return;
+    fb.textContent = msg;
+    fb.classList.remove('on'); void fb.offsetWidth; fb.classList.add('on');
+    setTimeout(() => fb.classList.remove('on'), 2200);
+  }
+  async function shareResult(){
+    const text = buildShareText();
+    const url  = location.href;
+    if (navigator.share){
+      try { await navigator.share({ text, url }); showShareFeedback('共有しました'); return; } catch(_){}
+    }
+    let copied = false;
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      try { await navigator.clipboard.writeText(text); copied = true; } catch(_){}
+    }
+    if (!copied){
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = text; ta.style.position='fixed'; ta.style.left='-9999px';
+        document.body.appendChild(ta); ta.focus(); ta.select();
+        copied = document.execCommand && document.execCommand('copy');
+        document.body.removeChild(ta);
+      } catch(_){}
+    }
+    showShareFeedback(copied ? 'コピーしました' : 'コピーできませんでした');
+  }
+  $('doomCheckBtn').addEventListener('click', openResult);
+  $('rcCloseBtn').addEventListener('click', closeResult);
+  $('rcShareBtn').addEventListener('click', shareResult);
+  $('resultModal').addEventListener('click', (e) => {
+    if (e.target === $('resultModal')) closeResult();
+  });
+
+  // populate daily DOOM message synchronously at script load
+  (function paintDaily(){
+    const el = $('dsMsg');
+    if (el) el.textContent = dailyMessage();
+  })();
 
   /* ============== MAIN LOOP ============== */
   let lastT = performance.now();
@@ -873,6 +1310,21 @@
     mentalLoad: () => ({
       pct: parseInt(($('mlPct').textContent || '0').replace('%',''), 10),
       tier: $('mlState').textContent,
+    }),
+    /* SS additions */
+    doomScore:    () => currentDoomScore(),
+    doomTitleFor: (s) => doomTitleFor(s),
+    dailyMessage: () => dailyMessage(),
+    todayKey:     () => todayKey(),
+    openResult, closeResult,
+    buildShareText: () => buildShareText(),
+    audit: () => ({
+      gravityOk:    state.width > 0 && state.height > 0 && state.floor > 0,
+      externalDeps: !document.querySelector('link[href^="http"]') && !document.querySelector('script[src]'),
+      shareReady:   typeof buildShareText === 'function' && buildShareText().indexOf('DOOM STACK') >= 0,
+      dailyReady:   !!document.getElementById('dsMsg')?.textContent,
+      mobileReady:  document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1 &&
+                    document.documentElement.scrollHeight <= document.documentElement.clientHeight + 1,
     }),
   };
 })();
