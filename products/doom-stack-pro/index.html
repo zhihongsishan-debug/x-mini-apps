@@ -119,27 +119,214 @@
     transition:width .45s cubic-bezier(.2,.8,.2,1);
   }
 
-  /* ===== STACK PREVIEW (calm monochrome) ===== */
+  /* ===== STACK TOWER (Phase 2 — weighted mass visualization) ===== */
   .stack-preview{
     flex:0 0 auto;
-    display:flex;align-items:flex-end;gap:3px;
-    height:30px;padding:0 2px;
+    position:relative;
+    height:78px;padding:0;
+    display:flex;align-items:flex-end;justify-content:center;
+    border-bottom:1px solid var(--line);
+  }
+  .st-tower{
+    position:relative;
+    width:min(220px, 60%);
+    display:flex;flex-direction:column-reverse; /* heavier at bottom */
+    align-items:stretch;justify-content:flex-start;
+    gap:1px;
+    max-height:100%;overflow:hidden;
+  }
+  .st-block{
+    flex:0 0 auto;
+    width:100%;
+    border:1px solid var(--line-2);
+    border-radius:2px;
+    background:var(--surface-2);
+    transition:opacity .25s ease, transform .25s ease;
+  }
+  .st-block[data-pri="HIGH"]{
+    height:14px;
+    background:rgba(227,83,75,.20);
+    border-color:rgba(227,83,75,.45);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.04);
+  }
+  .st-block[data-pri="MID"]{
+    height:10px;
+    background:rgba(202,166,111,.16);
+    border-color:rgba(202,166,111,.38);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.03);
+  }
+  .st-block[data-pri="LOW"]{
+    height:7px;
+    background:rgba(127,138,153,.14);
+    border-color:rgba(127,138,153,.36);
+  }
+  .st-block[data-completed="true"]{opacity:.20;transform:scale(.96);}
+  .stack-preview.empty .st-empty{
+    position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);
+    text-align:center;font-size:10px;color:var(--mute);
+    letter-spacing:.20em;text-transform:uppercase;
+  }
+  .stack-preview .st-tag{
+    position:absolute;left:0;bottom:6px;
+    font-size:9px;font-weight:600;letter-spacing:.18em;color:var(--mute);
+    text-transform:uppercase;
+  }
+  .stack-preview .st-count{
+    position:absolute;right:0;bottom:6px;
+    font-size:11px;font-weight:500;color:var(--sub);
+    font-feature-settings:"tnum";
+  }
+
+  /* ===== STATS STRIP (Phase 2) ===== */
+  .stats-strip{
+    flex:0 0 auto;
+    display:grid;grid-template-columns:repeat(4,1fr);gap:6px;
+  }
+  .stat-cell{
+    padding:8px 10px;border-radius:10px;
+    background:var(--surface-1);border:1px solid var(--line);
+    display:flex;flex-direction:column;gap:3px;
+    line-height:1.1;
+    transition:background .15s ease, border-color .15s ease;
+  }
+  .stat-cell:hover{background:var(--surface-2);border-color:var(--line-2);}
+  .stat-cell .sc-lbl{
+    font-size:9px;letter-spacing:.18em;font-weight:500;color:var(--sub);
+    text-transform:uppercase;
+  }
+  .stat-cell .sc-val{
+    font-size:14px;font-weight:600;color:var(--ink);letter-spacing:-0.005em;
+    font-feature-settings:"tnum";
+  }
+  .stat-cell .sc-val .sc-sep{color:var(--mute);font-weight:400;margin:0 1px;}
+  .stat-cell .sc-pct{
+    font-size:10px;font-weight:500;color:var(--sub);
+    font-feature-settings:"tnum";
+  }
+  .stat-cell.streak .sc-val{font-size:18px;}
+  .stat-cell.streak[data-active="true"] .sc-val{color:var(--mid);}
+  .stat-cell.streak[data-active="false"] .sc-val{color:var(--sub);}
+
+  /* ===== ANALYSIS PANEL (Phase 2) ===== */
+  .analysis-toggle{
+    flex:0 0 auto;
+    appearance:none;border:1px solid var(--line);cursor:pointer;
+    padding:8px 12px;border-radius:8px;
+    font:inherit;font-size:11px;font-weight:500;letter-spacing:.04em;color:var(--sub);
+    background:transparent;
+    text-align:left;
+    display:flex;align-items:center;justify-content:space-between;gap:8px;
+    transition:all .15s ease;
+  }
+  .analysis-toggle:hover{color:var(--ink-2);border-color:var(--line-2);background:var(--surface-1);}
+  .analysis-toggle .at-chev{
+    font-size:10px;color:var(--mute);transition:transform .2s ease;
+  }
+  .analysis-toggle[aria-expanded="true"] .at-chev{transform:rotate(180deg);}
+  .analysis-panel{
+    flex:0 0 auto;
     overflow:hidden;
+    border-radius:10px;border:1px solid var(--line);
+    background:var(--surface-1);
+    padding:12px;
+    display:flex;flex-direction:column;gap:10px;
   }
-  .sp-bar{
-    flex:1 1 0;min-width:2px;
-    border-radius:1.5px;
-    background:rgba(255,255,255,.10);
-    transition:height .35s cubic-bezier(.2,.8,.2,1), background .25s ease, opacity .25s ease;
+  .ap-row{
+    display:grid;grid-template-columns:repeat(2,1fr);gap:8px;
   }
-  .sp-bar[data-pri="HIGH"]{background:rgba(227,83,75,.78);}
-  .sp-bar[data-pri="MID"] {background:rgba(202,166,111,.62);}
-  .sp-bar[data-pri="LOW"] {background:rgba(127,138,153,.50);}
-  .sp-bar[data-completed="true"]{opacity:.18;}
-  .stack-preview.empty .sp-empty{
-    flex:1 1 auto;font-size:10px;color:var(--mute);letter-spacing:.18em;
-    text-transform:uppercase;display:flex;align-items:flex-end;
+  .ap-card{
+    padding:10px 12px;border-radius:8px;
+    background:rgba(255,255,255,.025);
+    border:1px solid var(--line);
+    display:flex;flex-direction:column;gap:6px;
   }
+  .ap-card.wide{grid-column:1/-1;}
+  .ap-lbl{
+    font-size:9px;letter-spacing:.20em;font-weight:600;color:var(--sub);
+    text-transform:uppercase;
+  }
+  .ap-val{
+    font-size:22px;font-weight:500;color:var(--ink);letter-spacing:-0.01em;line-height:1;
+    font-feature-settings:"tnum";
+  }
+  .ap-val.sm{font-size:13px;font-weight:500;letter-spacing:0;}
+  .ap-bar{
+    height:3px;border-radius:99px;overflow:hidden;
+    background:var(--surface-3);
+  }
+  .ap-bar-fill{
+    height:100%;width:0%;
+    background:linear-gradient(90deg, var(--sub), var(--mid) 55%, var(--warn) 80%, var(--hi));
+    transition:width .45s cubic-bezier(.2,.8,.2,1);
+  }
+  .ap-flags{display:flex;flex-wrap:wrap;gap:4px;}
+  .ap-flag{
+    padding:3px 8px;border-radius:4px;
+    font-size:10px;letter-spacing:.04em;font-weight:500;color:var(--sub);
+    background:transparent;border:1px solid var(--line);
+    display:inline-flex;align-items:center;gap:5px;
+  }
+  .ap-flag b{color:var(--ink-2);font-weight:600;}
+  .ap-flag[data-on="true"]{
+    color:var(--mid);border-color:var(--mid-line);background:var(--mid-bg);
+  }
+  .ap-flag.warn[data-on="true"]{
+    color:var(--hi);border-color:var(--hi-line);background:var(--hi-bg);
+  }
+  .ap-flag.warn[data-on="true"] b{color:var(--hi);}
+  .ap-cats{display:flex;flex-direction:column;gap:4px;}
+  .ap-cat{
+    display:flex;align-items:center;justify-content:space-between;gap:8px;
+    font-size:11px;color:var(--ink-2);
+  }
+  .ap-cat::before{
+    content:"";width:6px;height:6px;border-radius:50%;
+    background:currentColor;opacity:.85;flex:0 0 auto;
+  }
+  .ap-cat .ac-name{flex:1 1 auto;text-transform:uppercase;letter-spacing:.04em;font-weight:500;}
+  .ap-cat .ac-pct{font-size:11px;color:var(--sub);font-feature-settings:"tnum";font-weight:500;}
+  .ap-cat[data-cat="WORK"]    {color:var(--cat-work);}
+  .ap-cat[data-cat="LIFE"]    {color:var(--cat-life);}
+  .ap-cat[data-cat="HEALTH"]  {color:var(--cat-health);}
+  .ap-cat[data-cat="IDEA"]    {color:var(--cat-idea);}
+  .ap-cat[data-cat="ERRAND"]  {color:var(--cat-errand);}
+  .ap-cat[data-cat="DEADLINE"]{color:var(--cat-deadline);}
+  .ap-chart{
+    width:100%;height:54px;
+    display:block;
+  }
+  .ap-chart-line{fill:none;stroke:var(--ink-2);stroke-width:1.5;}
+  .ap-chart-area{fill:rgba(255,255,255,.06);stroke:none;}
+  .ap-chart-grid{stroke:var(--line);stroke-width:.6;}
+  .ap-chart-empty{
+    text-align:center;font-size:10px;color:var(--mute);
+    letter-spacing:.18em;text-transform:uppercase;padding:18px 0;
+  }
+  .ap-review{
+    font-size:12.5px;line-height:1.6;color:var(--ink-2);
+    letter-spacing:-0.005em;
+  }
+  .ap-review b{color:var(--ink);font-weight:600;font-feature-settings:"tnum";}
+  .ap-review .ar-divider{color:var(--mute);margin:0 6px;}
+  .ap-actions{
+    display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+    padding-top:10px;border-top:1px solid var(--line);
+  }
+  .ap-btn{
+    appearance:none;border:1px solid var(--line-2);cursor:pointer;
+    padding:7px 14px;border-radius:8px;
+    font:inherit;font-size:12px;font-weight:500;letter-spacing:.02em;color:var(--ink);
+    background:transparent;
+    transition:all .15s ease;
+  }
+  .ap-btn:hover{background:var(--surface-2);border-color:var(--ink-2);}
+  .ap-feedback{
+    flex:1 1 auto;text-align:right;
+    font-size:11px;color:var(--sub);letter-spacing:0;
+    opacity:0;transition:opacity .25s ease;
+  }
+  .ap-feedback.on{opacity:1;}
+  .ap-feedback.error{color:var(--hi);}
 
   /* ===== FILTER CHIPS ===== */
   .filters{
@@ -591,6 +778,75 @@
 
   <div class="ml-bar"><div class="ml-fill" id="mlFill"></div></div>
 
+  <section class="stats-strip" aria-label="Stats">
+    <div class="stat-cell" data-range="today">
+      <div class="sc-lbl">Today</div>
+      <div class="sc-val"><span id="stTodayDone">0</span><span class="sc-sep">/</span><span id="stTodayTotal">0</span></div>
+      <div class="sc-pct" id="stTodayPct">0%</div>
+    </div>
+    <div class="stat-cell" data-range="week">
+      <div class="sc-lbl">Week</div>
+      <div class="sc-val"><span id="stWeekDone">0</span><span class="sc-sep">/</span><span id="stWeekTotal">0</span></div>
+      <div class="sc-pct" id="stWeekPct">0%</div>
+    </div>
+    <div class="stat-cell" data-range="month">
+      <div class="sc-lbl">Month</div>
+      <div class="sc-val"><span id="stMonthDone">0</span><span class="sc-sep">/</span><span id="stMonthTotal">0</span></div>
+      <div class="sc-pct" id="stMonthPct">0%</div>
+    </div>
+    <div class="stat-cell streak" id="stStreakCell" data-active="false">
+      <div class="sc-lbl">Streak</div>
+      <div class="sc-val"><span id="stStreak">0</span></div>
+      <div class="sc-pct">days</div>
+    </div>
+  </section>
+
+  <button class="analysis-toggle" id="analysisToggle" type="button" aria-expanded="false">
+    <span>Doom analysis</span>
+    <span class="at-chev">▾</span>
+  </button>
+  <section class="analysis-panel" id="analysisPanel" hidden>
+    <div class="ap-row">
+      <div class="ap-card">
+        <div class="ap-lbl">Pressure</div>
+        <div class="ap-val" id="apPressure">0</div>
+        <div class="ap-bar"><div class="ap-bar-fill" id="apPressureBar"></div></div>
+      </div>
+      <div class="ap-card">
+        <div class="ap-lbl">Procrastination</div>
+        <div class="ap-flags">
+          <span class="ap-flag" id="apOld3" data-on="false">3+d <b>0</b></span>
+          <span class="ap-flag" id="apOld7" data-on="false">7+d <b>0</b></span>
+          <span class="ap-flag warn" id="apIgnoredHigh" data-on="false">High idle <b>0</b></span>
+        </div>
+      </div>
+    </div>
+    <div class="ap-row">
+      <div class="ap-card">
+        <div class="ap-lbl">Time tendency</div>
+        <div class="ap-val sm" id="apTime">—</div>
+      </div>
+      <div class="ap-card">
+        <div class="ap-lbl">Category</div>
+        <div class="ap-cats" id="apCats"><div class="ap-chart-empty">—</div></div>
+      </div>
+    </div>
+    <div class="ap-card wide">
+      <div class="ap-lbl">Mental load · last 14 days</div>
+      <svg class="ap-chart" id="apChart" viewBox="0 0 280 54" preserveAspectRatio="none" aria-hidden="true"></svg>
+    </div>
+    <div class="ap-card wide">
+      <div class="ap-lbl">This week</div>
+      <div class="ap-review" id="apReview">—</div>
+    </div>
+    <div class="ap-actions">
+      <button class="ap-btn" id="exportBtn" type="button">Export JSON</button>
+      <button class="ap-btn" id="importBtn" type="button">Import JSON</button>
+      <input type="file" id="importFile" accept="application/json,.json" hidden />
+      <span class="ap-feedback" id="apFeedback"></span>
+    </div>
+  </section>
+
   <div class="stack-preview" id="stackPreview" aria-label="Visual weight"></div>
 
   <section class="filters" id="filters" aria-label="フィルタ">
@@ -706,6 +962,9 @@
       const data = { version: 1, tasks: state.tasks, ui: { activeFilter: state.activeFilter, selectedDate: state.selectedDate } };
       localStorage.setItem(LS_KEY, JSON.stringify(data));
     } catch(_) {}
+    /* Phase 2: keep today's ML snapshot fresh on every mutation. snapshotMl is
+       defined later in the script — guard for that ordering. */
+    try { if (typeof snapshotMl === 'function') snapshotMl(); } catch(_){}
   }
 
   /* ============== STATE ============== */
@@ -966,27 +1225,456 @@
       bindTaskEvents();
     }
     recomputeML();
-    renderStackPreview(list);
+    renderStackTower(list);
+    renderAnalytics();
   }
-  function renderStackPreview(list){
+  /* Phase 2: stronger weighted-mass stack tower (premium minimal). */
+  function renderStackTower(list){
     const sp = $('stackPreview');
     if (!sp) return;
-    if (!list || list.length === 0){
+    sp.classList.remove('empty');
+    const incomplete = (list || []).filter(t => !t.completed);
+    if (incomplete.length === 0){
       sp.classList.add('empty');
-      sp.innerHTML = '<span class="sp-empty">empty</span>';
+      sp.innerHTML = '<span class="st-empty">Empty stack</span><span class="st-tag">Stack</span>';
       return;
     }
-    sp.classList.remove('empty');
-    // Heaviest at the front; shows up to 24 bars to keep the preview calm
-    const priWeight = { HIGH: 1.00, MID: 0.62, LOW: 0.38 };
-    const sorted = list.slice().sort((a, b) => (priWeight[b.priority]||.5) - (priWeight[a.priority]||.5));
-    const bars = sorted.slice(0, 24).map(t => {
-      const w = priWeight[t.priority] || 0.5;
-      const pct = Math.round(w * 100);
-      const completed = t.completed ? 'true' : 'false';
-      return '<span class="sp-bar" data-pri="'+ t.priority +'" data-completed="'+ completed +'" style="height:'+ pct +'%"></span>';
-    }).join('');
-    sp.innerHTML = bars;
+    // Sort by priority weight desc → heaviest at the bottom (column-reverse flex order)
+    const priWeight = { HIGH: 3, MID: 2, LOW: 1 };
+    const sorted = incomplete.slice().sort((a, b) => (priWeight[b.priority]||0) - (priWeight[a.priority]||0));
+    // Cap visible blocks; show count badge if more
+    const cap = 18;
+    const visible = sorted.slice(0, cap);
+    const blocks = visible.map(t => (
+      '<span class="st-block" data-pri="'+ t.priority +'" data-completed="false"></span>'
+    )).join('');
+    const totalWeight = sorted.reduce((s, t) => s + (priWeight[t.priority] || 0), 0);
+    sp.innerHTML =
+      '<div class="st-tower">' + blocks + '</div>' +
+      '<span class="st-tag">Stack</span>' +
+      '<span class="st-count">' + incomplete.length + ' · w' + totalWeight + '</span>';
+  }
+
+  /* ============== PHASE 2 — INTELLIGENCE LAYER ============== */
+  const HIST_KEY = 'doomStackPro:history:v1';
+  function loadHistory(){
+    try { return JSON.parse(localStorage.getItem(HIST_KEY) || '{}') || {}; } catch(_){ return {}; }
+  }
+  function saveHistoryObj(h){
+    try { localStorage.setItem(HIST_KEY, JSON.stringify(h)); } catch(_){}
+  }
+  function snapshotMl(){
+    let weight = 0;
+    for (const t of state.tasks){
+      if (t.completed) continue;
+      weight += t.priority === 'HIGH' ? 3 : t.priority === 'LOW' ? 1 : 2;
+    }
+    const pct = Math.min(100, Math.round((weight / 30) * 100));
+    const h = loadHistory();
+    h[todayKey()] = { ml: pct, ts: Date.now() };
+    saveHistoryObj(h);
+    return pct;
+  }
+
+  /* Stat ranges */
+  function weekRange(){
+    const d = new Date();
+    const day = d.getDay();
+    const diffToMonday = (day === 0 ? -6 : 1 - day);
+    const start = new Date(d); start.setDate(d.getDate() + diffToMonday); start.setHours(0,0,0,0);
+    const end = new Date(start); end.setDate(start.getDate() + 6); end.setHours(23,59,59,999);
+    return { startKey: ymd(start), endKey: ymd(end) };
+  }
+  function monthRange(){
+    const d = new Date();
+    return { startKey: ymd(new Date(d.getFullYear(), d.getMonth(), 1)), endKey: ymd(new Date(d.getFullYear(), d.getMonth() + 1, 0)) };
+  }
+  function inRange(dateStr, r){ return dateStr && dateStr >= r.startKey && dateStr <= r.endKey; }
+
+  function rangeStats(matcher){
+    let done = 0, total = 0;
+    for (const t of state.tasks){
+      if (matcher(t)){
+        total++;
+        if (t.completed) done++;
+      }
+    }
+    const remaining = total - done;
+    const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+    return { done, total, remaining, pct };
+  }
+  function todayStats(){
+    const tk = todayKey();
+    return rangeStats(t => (t.due === tk) || (t.completedAt && t.completedAt.slice(0,10) === tk));
+  }
+  function weekStats(){
+    const r = weekRange();
+    return rangeStats(t => inRange(t.due, r) || inRange(t.completedAt && t.completedAt.slice(0,10), r));
+  }
+  function monthStats(){
+    const r = monthRange();
+    return rangeStats(t => inRange(t.due, r) || inRange(t.completedAt && t.completedAt.slice(0,10), r));
+  }
+
+  /* Daily streak — consecutive days with at least one completion ending today or yesterday */
+  function streakDays(){
+    const set = new Set();
+    for (const t of state.tasks){
+      if (t.completedAt) set.add(t.completedAt.slice(0,10));
+    }
+    if (set.size === 0) return 0;
+    const d = new Date();
+    let key = ymd(d);
+    if (!set.has(key)){
+      d.setDate(d.getDate() - 1);
+      key = ymd(d);
+      if (!set.has(key)) return 0;
+    }
+    let count = 0;
+    while (set.has(key)){
+      count++;
+      d.setDate(d.getDate() - 1);
+      key = ymd(d);
+    }
+    return count;
+  }
+  function streakActiveToday(){
+    const tk = todayKey();
+    return state.tasks.some(t => t.completedAt && t.completedAt.slice(0,10) === tk);
+  }
+
+  /* Pressure score */
+  function pressureScore(){
+    const now = Date.now();
+    let p = 0;
+    for (const t of state.tasks){
+      if (t.completed) continue;
+      const w = t.priority === 'HIGH' ? 3 : t.priority === 'LOW' ? 1 : 2;
+      let ageDays = 0;
+      if (t.createdAt){
+        ageDays = Math.max(0, (now - new Date(t.createdAt).getTime()) / 86400000);
+      }
+      let factor = 1 + Math.min(ageDays * 0.07, 1.0);
+      if (t.due && t.due < todayKey()) factor += 0.5;
+      p += w * factor;
+    }
+    return Math.min(100, Math.round(p * 1.66));
+  }
+
+  /* Procrastination */
+  function procrastinationFlags(){
+    const now = Date.now();
+    let old3 = 0, old7 = 0, ignoredHigh = 0;
+    for (const t of state.tasks){
+      if (t.completed) continue;
+      const ageDays = t.createdAt ? Math.max(0, (now - new Date(t.createdAt).getTime()) / 86400000) : 0;
+      if (ageDays >= 3) old3++;
+      if (ageDays >= 7) old7++;
+      if (t.priority === 'HIGH' && ageDays >= 1) ignoredHigh++;
+    }
+    return { old3, old7, ignoredHigh };
+  }
+
+  /* Time tendency */
+  function timeTendency(){
+    let morning = 0, day = 0, evening = 0, night = 0, total = 0;
+    for (const t of state.tasks){
+      for (const ts of [t.createdAt, t.completedAt]){
+        if (!ts) continue;
+        const h = new Date(ts).getHours();
+        if (h >= 5 && h < 12) morning++;
+        else if (h >= 12 && h < 18) day++;
+        else if (h >= 18 && h < 24) evening++;
+        else night++;
+        total++;
+      }
+    }
+    if (total < 4) return { tag: '—', detail: 'Need more data' };
+    const pairs = [['Morning heavy', morning], ['Daytime', day], ['Evening', evening], ['Night heavy', night]];
+    pairs.sort((a, b) => b[1] - a[1]);
+    const ratio = pairs[0][1] / total;
+    if (ratio < 0.40) return { tag: 'Balanced', detail: 'No dominant slot' };
+    return { tag: pairs[0][0], detail: Math.round(ratio * 100) + '% of activity' };
+  }
+
+  /* Category tendency — top 3 with percent share */
+  function categoryTendency(){
+    const counts = {};
+    let total = 0;
+    for (const t of state.tasks){
+      counts[t.category] = (counts[t.category] || 0) + 1;
+      total++;
+    }
+    return Object.entries(counts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([cat, n]) => ({ cat, n, pct: total > 0 ? Math.round((n / total) * 100) : 0 }));
+  }
+
+  /* Weekly review */
+  function weeklyReview(){
+    const r = weekRange();
+    let done = 0, added = 0, dueLeft = 0;
+    const catCounts = {};
+    let peakDate = null, peakMl = -1;
+    const h = loadHistory();
+    for (const t of state.tasks){
+      if (t.completed && inRange(t.completedAt && t.completedAt.slice(0,10), r)) done++;
+      if (inRange(t.createdAt && t.createdAt.slice(0,10), r)){
+        added++;
+        catCounts[t.category] = (catCounts[t.category] || 0) + 1;
+      }
+      if (!t.completed && t.due && inRange(t.due, r)) dueLeft++;
+    }
+    for (const k of Object.keys(h)){
+      if (k >= r.startKey && k <= r.endKey){
+        const v = h[k] && h[k].ml;
+        if (typeof v === 'number' && v > peakMl){ peakMl = v; peakDate = k; }
+      }
+    }
+    const topCat = Object.entries(catCounts).sort((a,b) => b[1] - a[1])[0];
+    return { done, added, dueLeft, topCategory: topCat ? topCat[0] : null, peakDate, peakMl };
+  }
+
+  /* Sparkline render — 14 days */
+  function renderSparkline(){
+    const svg = $('apChart');
+    if (!svg) return;
+    const days = 14;
+    const h = loadHistory();
+    const series = [];
+    for (let i = days - 1; i >= 0; i--){
+      const k = addDaysKey(-i);
+      series.push({ k, v: h[k] ? h[k].ml : null });
+    }
+    const hasData = series.some(p => p.v !== null);
+    if (!hasData){
+      svg.innerHTML = '<text x="140" y="32" text-anchor="middle" fill="rgba(255,255,255,.30)" font-size="10" font-family="inherit" letter-spacing="2">NO DATA YET</text>';
+      return;
+    }
+    const W = 280, H = 54, P = 4;
+    const innerW = W - P * 2, innerH = H - P * 2;
+    const xStep = innerW / Math.max(1, days - 1);
+    const ptsArr = series.map((p, i) => {
+      const x = P + i * xStep;
+      const y = p.v == null ? null : P + innerH - (p.v / 100) * innerH;
+      return { x, y, v: p.v };
+    });
+    // Build line with breaks where v is null
+    let pathD = '';
+    let inLine = false;
+    for (const pt of ptsArr){
+      if (pt.y == null){ inLine = false; continue; }
+      pathD += (inLine ? ' L ' : 'M ') + pt.x.toFixed(1) + ' ' + pt.y.toFixed(1);
+      inLine = true;
+    }
+    // Area fill from line down to baseline (only contiguous segments)
+    let areaD = '';
+    let segStart = null;
+    for (let i = 0; i < ptsArr.length; i++){
+      const pt = ptsArr[i];
+      if (pt.y == null){
+        if (segStart !== null){
+          // close previous segment
+          const prev = ptsArr[i - 1];
+          areaD += ' L ' + prev.x.toFixed(1) + ' ' + (P + innerH).toFixed(1) +
+                   ' L ' + segStart.x.toFixed(1) + ' ' + (P + innerH).toFixed(1) + ' Z';
+          segStart = null;
+        }
+        continue;
+      }
+      if (segStart === null){
+        segStart = pt;
+        areaD += 'M ' + pt.x.toFixed(1) + ' ' + pt.y.toFixed(1);
+      } else {
+        areaD += ' L ' + pt.x.toFixed(1) + ' ' + pt.y.toFixed(1);
+      }
+      if (i === ptsArr.length - 1){
+        areaD += ' L ' + pt.x.toFixed(1) + ' ' + (P + innerH).toFixed(1) +
+                 ' L ' + segStart.x.toFixed(1) + ' ' + (P + innerH).toFixed(1) + ' Z';
+      }
+    }
+    // Last point dot
+    let lastDot = '';
+    for (let i = ptsArr.length - 1; i >= 0; i--){
+      if (ptsArr[i].y != null){
+        lastDot = '<circle cx="' + ptsArr[i].x.toFixed(1) + '" cy="' + ptsArr[i].y.toFixed(1) + '" r="2" fill="var(--ink)" />';
+        break;
+      }
+    }
+    svg.innerHTML =
+      '<line class="ap-chart-grid" x1="' + P + '" y1="' + (P + innerH) + '" x2="' + (W - P) + '" y2="' + (P + innerH) + '" />' +
+      '<path class="ap-chart-area" d="' + areaD + '" />' +
+      '<path class="ap-chart-line" d="' + pathD + '" />' +
+      lastDot;
+  }
+
+  /* Render the full analytics panel */
+  function renderAnalytics(){
+    // Stats
+    const sT = todayStats();
+    $('stTodayDone').textContent  = String(sT.done);
+    $('stTodayTotal').textContent = String(sT.total);
+    $('stTodayPct').textContent   = sT.pct + '%';
+    const sW = weekStats();
+    $('stWeekDone').textContent  = String(sW.done);
+    $('stWeekTotal').textContent = String(sW.total);
+    $('stWeekPct').textContent   = sW.pct + '%';
+    const sM = monthStats();
+    $('stMonthDone').textContent  = String(sM.done);
+    $('stMonthTotal').textContent = String(sM.total);
+    $('stMonthPct').textContent   = sM.pct + '%';
+    // Streak
+    const streak = streakDays();
+    $('stStreak').textContent = String(streak);
+    $('stStreakCell').setAttribute('data-active', String(streakActiveToday()));
+    // Pressure
+    const pressure = pressureScore();
+    $('apPressure').textContent = String(pressure);
+    $('apPressureBar').style.width = pressure + '%';
+    // Procrastination
+    const f = procrastinationFlags();
+    const set = (id, n) => {
+      const el = $(id);
+      if (!el) return;
+      el.querySelector('b').textContent = String(n);
+      el.setAttribute('data-on', String(n > 0));
+    };
+    set('apOld3', f.old3);
+    set('apOld7', f.old7);
+    set('apIgnoredHigh', f.ignoredHigh);
+    // Time tendency
+    const tt = timeTendency();
+    $('apTime').textContent = tt.tag;
+    $('apTime').setAttribute('title', tt.detail || '');
+    // Categories
+    const cats = categoryTendency();
+    const apCats = $('apCats');
+    if (cats.length === 0){
+      apCats.innerHTML = '<div class="ap-chart-empty">—</div>';
+    } else {
+      apCats.innerHTML = cats.map(c =>
+        '<div class="ap-cat" data-cat="' + c.cat + '">' +
+          '<span class="ac-name">' + c.cat + '</span>' +
+          '<span class="ac-pct">' + c.pct + '%</span>' +
+        '</div>'
+      ).join('');
+    }
+    // Weekly review
+    const wr = weeklyReview();
+    let review = '';
+    if (wr.added === 0 && wr.done === 0 && wr.dueLeft === 0){
+      review = 'No activity this week yet.';
+    } else {
+      review = '<b>' + wr.done + '</b> done<span class="ar-divider">·</span>' +
+               '<b>' + wr.dueLeft + '</b> left<span class="ar-divider">·</span>' +
+               '<b>' + wr.added + '</b> added';
+      if (wr.topCategory){
+        review += '<span class="ar-divider">·</span>top: <b>' + wr.topCategory + '</b>';
+      }
+      if (wr.peakDate && wr.peakMl >= 0){
+        review += '<span class="ar-divider">·</span>peak ML <b>' + wr.peakMl + '%</b>';
+      }
+    }
+    $('apReview').innerHTML = review;
+    // Sparkline
+    renderSparkline();
+  }
+
+  /* ============== EXPORT / IMPORT ============== */
+  function exportJson(){
+    const data = {
+      product: 'doom-stack-pro',
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      tasks: state.tasks,
+      history: loadHistory(),
+      ui: { activeFilter: state.activeFilter, selectedDate: state.selectedDate },
+    };
+    const json = JSON.stringify(data, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'doom-stack-' + todayKey() + '.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1500);
+    showApFeedback('Exported');
+  }
+  function importJson(file){
+    return new Promise((resolve, reject) => {
+      if (!file) return reject(new Error('No file'));
+      if (file.size > 5 * 1024 * 1024) return reject(new Error('File too large'));
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const data = JSON.parse(reader.result);
+          if (!data || typeof data !== 'object') throw new Error('Invalid JSON');
+          if (!Array.isArray(data.tasks)) throw new Error('Missing tasks array');
+          const validPri = new Set(['HIGH','MID','LOW']);
+          const validCat = new Set(['WORK','LIFE','HEALTH','IDEA','ERRAND','DEADLINE']);
+          const validRep = new Set(['NONE','DAILY','WEEKDAYS','WEEKLY','MONTHLY','CUSTOM']);
+          for (const t of data.tasks){
+            if (typeof t.id !== 'string' || typeof t.title !== 'string') throw new Error('Invalid task shape');
+            if (!validPri.has(t.priority)) throw new Error('Invalid priority');
+            if (!validCat.has(t.category)) throw new Error('Invalid category');
+            if (t.repeat && !validRep.has(t.repeat)) throw new Error('Invalid repeat');
+            if (t.subtasks && !Array.isArray(t.subtasks)) throw new Error('Invalid subtasks');
+          }
+          state.tasks = data.tasks.map(t => Object.assign(makeTask(), t));
+          if (data.history && typeof data.history === 'object') saveHistoryObj(data.history);
+          if (data.ui && typeof data.ui === 'object'){
+            if (typeof data.ui.activeFilter === 'string') state.activeFilter = data.ui.activeFilter;
+            if (typeof data.ui.selectedDate === 'string' || data.ui.selectedDate === null) state.selectedDate = data.ui.selectedDate;
+          }
+          save(); render();
+          resolve(state.tasks.length);
+        } catch(e){ reject(e); }
+      };
+      reader.onerror = () => reject(new Error('File read error'));
+      reader.readAsText(file);
+    });
+  }
+  function showApFeedback(msg, isError){
+    const fb = $('apFeedback');
+    if (!fb) return;
+    fb.textContent = msg;
+    fb.classList.toggle('error', !!isError);
+    fb.classList.add('on');
+    clearTimeout(fb._t);
+    fb._t = setTimeout(() => fb.classList.remove('on'), 2400);
+  }
+  /* Wire up controls */
+  function bindAnalyticsControls(){
+    const tg = $('analysisToggle');
+    const panel = $('analysisPanel');
+    if (tg && panel){
+      tg.addEventListener('click', () => {
+        const open = tg.getAttribute('aria-expanded') === 'true';
+        tg.setAttribute('aria-expanded', String(!open));
+        panel.hidden = open;
+        if (!open) renderAnalytics();
+      });
+    }
+    const ex = $('exportBtn'); if (ex) ex.addEventListener('click', exportJson);
+    const im = $('importBtn'); const file = $('importFile');
+    if (im && file){
+      im.addEventListener('click', () => file.click());
+      file.addEventListener('change', async () => {
+        const f = file.files && file.files[0];
+        if (!f) return;
+        try {
+          const n = await importJson(f);
+          showApFeedback('Imported · ' + n + ' tasks');
+        } catch(e){
+          showApFeedback('Import failed: ' + (e.message || 'invalid'), true);
+        } finally {
+          file.value = '';
+        }
+      });
+    }
   }
   function taskHtml(t){
     const due = t.due ? dueLabel(t.due) : null;
@@ -1176,6 +1864,8 @@
       }
     }
     document.querySelectorAll('.add-pri .pri').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.pri === state.selectedPri)));
+    bindAnalyticsControls();
+    snapshotMl();
     render();
   }
   init();
@@ -1207,12 +1897,26 @@
     nextDueDate,
     save, load,
     storageKey: () => LS_KEY,
+    /* Phase 2 test surface */
+    todayStats, weekStats, monthStats,
+    streakDays,
+    pressureScore,
+    procrastinationFlags,
+    timeTendency,
+    categoryTendency,
+    weeklyReview,
+    snapshotMl, loadHistory, saveHistoryObj,
+    historyKey: () => HIST_KEY,
+    exportJson, importJson,
+    renderAnalytics,
     audit: () => ({
       storageOk:    !!window.localStorage,
       hasState:     Array.isArray(state.tasks),
       filterReady:  ['TODAY','TOMORROW','THIS_WEEK','NEXT_WEEK','ALL','DONE','DATE'].includes(state.activeFilter),
       mobileReady:  document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1,
       externalDeps: !document.querySelector('link[href^="http"]') && !document.querySelector('script[src]'),
+      analyticsReady: typeof pressureScore === 'function' && typeof streakDays === 'function' && !!document.getElementById('apChart'),
+      backupReady:    typeof exportJson === 'function' && typeof importJson === 'function',
     }),
   };
 })();
