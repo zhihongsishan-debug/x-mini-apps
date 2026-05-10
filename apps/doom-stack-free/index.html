@@ -1,0 +1,881 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no,maximum-scale=1" />
+<meta name="theme-color" content="#06020f" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<title>DOOM STACK — Your tasks have weight.</title>
+<style>
+  :root{
+    --bg-0:#06020f;
+    --bg-1:#0b0420;
+    --bg-2:#15082c;
+    --ink:#f0e9ff;
+    --sub:#8a94c7;
+    --mute:#5a6191;
+    --line:rgba(255,255,255,.08);
+    --cyan:#3df0ff;
+    --pink:#ff3eb5;
+    --violet:#a371ff;
+    --lime:#aaff5e;
+    --hi:#ff5b6e;
+    --mid:#ffce4d;
+    --lo:#7df0d3;
+    --glow-pink:rgba(255,62,181,.55);
+    --glow-cyan:rgba(61,240,255,.55);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;touch-action:manipulation;}
+  html,body{margin:0;padding:0;height:100%;overscroll-behavior:none;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Sans","Noto Sans JP","Yu Gothic UI",system-ui,sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(50% 35% at 18% 12%, rgba(255,62,181,.22), transparent 65%),
+      radial-gradient(45% 32% at 88% 18%, rgba(61,240,255,.20), transparent 65%),
+      radial-gradient(60% 50% at 50% 110%, rgba(163,113,255,.28), transparent 65%),
+      linear-gradient(180deg, var(--bg-0) 0%, var(--bg-1) 50%, var(--bg-2) 100%);
+    background-attachment:fixed;
+    height:100dvh;width:100%;
+    overflow:hidden;
+    position:fixed;
+  }
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+    background-image:
+      linear-gradient(rgba(255,255,255,.020) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.020) 1px, transparent 1px);
+    background-size:48px 48px, 48px 48px;
+    -webkit-mask-image:radial-gradient(ellipse 95% 85% at 50% 50%, #000 35%, rgba(0,0,0,.4) 88%, transparent 100%);
+            mask-image:radial-gradient(ellipse 95% 85% at 50% 50%, #000 35%, rgba(0,0,0,.4) 88%, transparent 100%);
+  }
+
+  .app{
+    position:relative;z-index:1;
+    height:100dvh;
+    display:flex;flex-direction:column;
+    padding:max(8px,env(safe-area-inset-top)) 12px max(10px,env(safe-area-inset-bottom));
+    gap:8px;
+  }
+
+  /* ===== TOP BAR ===== */
+  .topbar{
+    flex:0 0 auto;
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+  }
+  .brand{
+    display:flex;flex-direction:column;line-height:1;
+  }
+  .brand-name{
+    font-size:18px;font-weight:900;letter-spacing:.32em;
+    background:linear-gradient(90deg,var(--cyan),#fff 50%,var(--pink));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    text-shadow:0 0 14px var(--glow-pink);
+  }
+  .brand-tag{
+    margin-top:3px;
+    font-size:9px;letter-spacing:.36em;font-weight:800;color:var(--cyan);
+    text-shadow:0 0 8px var(--glow-cyan);
+  }
+  .brand-free{
+    margin-top:4px;font-size:8px;letter-spacing:.28em;color:var(--mute);
+  }
+  .brand-free b{color:var(--lime);font-weight:900;letter-spacing:.32em;}
+
+  /* ===== MENTAL LOAD METER ===== */
+  .ml{
+    flex:0 0 auto;
+    padding:10px 12px;border-radius:16px;
+    background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+    border:1px solid var(--line);
+    box-shadow:inset 0 0 16px rgba(0,0,0,.4);
+    position:relative;
+  }
+  .ml::before{
+    content:"";position:absolute;inset:-1px;border-radius:inherit;padding:1px;
+    background:linear-gradient(135deg, rgba(61,240,255,.45), rgba(163,113,255,.30), rgba(255,62,181,.45));
+    -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor;mask-composite:exclude;
+    pointer-events:none;
+  }
+  .ml-row{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    margin-bottom:6px;
+  }
+  .ml-lbl{font-size:9px;letter-spacing:.4em;font-weight:800;color:var(--sub);}
+  .ml-pct{
+    font-size:14px;font-weight:900;font-feature-settings:"tnum";letter-spacing:.04em;color:#fff;
+    text-shadow:0 0 8px var(--glow-pink);
+  }
+  .ml-state{
+    font-size:10px;font-weight:900;letter-spacing:.4em;
+    padding:2px 10px;border-radius:99px;
+    background:rgba(0,0,0,.4);border:1px solid var(--line);
+  }
+  .ml-state[data-tier="LIGHT"] {color:#7df0d3;border-color:rgba(125,240,211,.4);text-shadow:0 0 8px rgba(125,240,211,.6);}
+  .ml-state[data-tier="BUSY"]  {color:#ffce4d;border-color:rgba(255,206,77,.4);text-shadow:0 0 8px rgba(255,206,77,.6);}
+  .ml-state[data-tier="HEAVY"] {color:#ff8a4d;border-color:rgba(255,138,77,.5);text-shadow:0 0 10px rgba(255,138,77,.7);}
+  .ml-state[data-tier="DOOM"]  {color:#ff3a4d;border-color:rgba(255,58,77,.7);text-shadow:0 0 12px rgba(255,58,77,.8);animation:doomPulse 1.1s ease-in-out infinite;}
+  @keyframes doomPulse{
+    0%,100%{filter:brightness(1);}
+    50%    {filter:brightness(1.4) drop-shadow(0 0 8px rgba(255,58,77,.8));}
+  }
+  .ml-bar{
+    height:8px;border-radius:99px;overflow:hidden;
+    background:rgba(255,255,255,.05);
+    border:1px solid rgba(255,255,255,.06);
+    box-shadow:inset 0 0 8px rgba(0,0,0,.5);
+  }
+  .ml-fill{
+    height:100%;width:0%;
+    background:linear-gradient(90deg, var(--lo) 0%, var(--mid) 45%, var(--hi) 80%, #ff3a4d 100%);
+    box-shadow:0 0 10px rgba(255,206,77,.5), 0 0 18px rgba(255,58,77,.4);
+    transition:width .35s cubic-bezier(.2,.8,.2,1);
+  }
+
+  /* ===== STAGE / CANVAS ===== */
+  .stage{
+    flex:1 1 auto;
+    position:relative;
+    border-radius:18px;
+    background:
+      radial-gradient(80% 100% at 50% 0%, rgba(176,124,255,.10), transparent 60%),
+      linear-gradient(180deg, rgba(8,4,24,.85), rgba(0,0,0,.55) 60%, rgba(0,0,0,.40));
+    border:1px solid var(--line);
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,.06),
+      0 0 24px rgba(176,124,255,.18),
+      inset 0 0 50px rgba(0,0,0,.55),
+      inset 0 1px 0 rgba(255,255,255,.10);
+    overflow:hidden;
+    min-height:0;
+  }
+  .stage::after{
+    content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+    background:linear-gradient(135deg, rgba(255,255,255,.10), rgba(255,255,255,0) 30%, rgba(255,255,255,0) 70%, rgba(255,255,255,.06));
+    mix-blend-mode:overlay;
+  }
+  canvas#stack{
+    display:block;width:100%;height:100%;
+  }
+  .empty-hint{
+    position:absolute;inset:0;
+    display:flex;align-items:center;justify-content:center;
+    pointer-events:none;
+    color:var(--mute);font-size:12px;letter-spacing:.18em;text-align:center;
+    padding:20px;line-height:1.6;
+    transition:opacity .25s ease;
+  }
+  .empty-hint b{
+    display:block;
+    font-size:14px;letter-spacing:.28em;color:var(--sub);font-weight:900;
+    margin-bottom:6px;
+  }
+  .empty-hint.hidden{opacity:0;}
+
+  /* ===== ACTIONS ===== */
+  .actions{
+    flex:0 0 auto;
+    display:grid;grid-template-columns:repeat(4,1fr);gap:6px;
+  }
+  .act{
+    appearance:none;border:1px solid var(--line);
+    background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02));
+    color:#fff;
+    font-family:inherit;font-weight:900;font-size:11px;letter-spacing:.32em;
+    padding:12px 6px;border-radius:12px;
+    cursor:pointer;
+    box-shadow:0 4px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.10);
+    transition:transform .08s ease, box-shadow .15s ease, background .15s ease;
+  }
+  .act:active{transform:translateY(2px);box-shadow:0 2px 6px rgba(0,0,0,.35);}
+  .act[data-act="SMASH"]  {color:#ff3a4d;border-color:rgba(255,58,77,.45);text-shadow:0 0 8px rgba(255,58,77,.7);}
+  .act[data-act="SHAKE"]  {color:#ffce4d;border-color:rgba(255,206,77,.45);text-shadow:0 0 8px rgba(255,206,77,.7);}
+  .act[data-act="PURGE"]  {color:#a371ff;border-color:rgba(163,113,255,.45);text-shadow:0 0 8px rgba(163,113,255,.7);}
+  .act[data-act="RESTORE"]{color:#7df0d3;border-color:rgba(125,240,211,.45);text-shadow:0 0 8px rgba(125,240,211,.7);}
+
+  /* ===== INPUT ROW ===== */
+  .input-row{
+    flex:0 0 auto;
+    display:grid;grid-template-columns:1fr auto;gap:6px;
+  }
+  .input-wrap{
+    position:relative;
+    border-radius:14px;
+    background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02));
+    border:1px solid var(--line);
+    box-shadow:inset 0 0 14px rgba(0,0,0,.45);
+  }
+  .input-wrap::before{
+    content:"";position:absolute;inset:-1px;border-radius:inherit;padding:1px;
+    background:linear-gradient(135deg, rgba(61,240,255,.30), rgba(255,62,181,.30));
+    -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor;mask-composite:exclude;
+    pointer-events:none;opacity:.55;
+  }
+  input#taskInput{
+    appearance:none;
+    width:100%;
+    padding:12px 12px 36px 14px;
+    background:transparent;border:0;outline:none;
+    color:var(--ink);font-family:inherit;font-size:14px;letter-spacing:.04em;
+    caret-color:var(--cyan);
+  }
+  input#taskInput::placeholder{color:var(--mute);}
+  .pri-row{
+    position:absolute;left:8px;bottom:6px;display:flex;gap:5px;
+  }
+  .pri{
+    appearance:none;border:1px solid var(--line);cursor:pointer;
+    padding:4px 10px;border-radius:99px;
+    font-family:inherit;font-size:9px;font-weight:900;letter-spacing:.32em;
+    background:rgba(0,0,0,.35);color:var(--sub);
+    transition:all .15s ease;
+  }
+  .pri[aria-pressed="true"]{
+    border-color:currentColor;
+  }
+  .pri[data-pri="HIGH"]{color:var(--hi);}
+  .pri[data-pri="HIGH"][aria-pressed="true"]{background:rgba(255,91,110,.18);box-shadow:0 0 10px rgba(255,91,110,.55);}
+  .pri[data-pri="MID"] {color:var(--mid);}
+  .pri[data-pri="MID"][aria-pressed="true"] {background:rgba(255,206,77,.16);box-shadow:0 0 10px rgba(255,206,77,.5);}
+  .pri[data-pri="LOW"] {color:var(--lo);}
+  .pri[data-pri="LOW"][aria-pressed="true"] {background:rgba(125,240,211,.16);box-shadow:0 0 10px rgba(125,240,211,.5);}
+  .add{
+    appearance:none;border:0;cursor:pointer;
+    padding:0 18px;border-radius:14px;
+    font-family:inherit;font-weight:900;font-size:13px;letter-spacing:.28em;
+    color:#06020f;
+    background:linear-gradient(135deg,var(--cyan),var(--violet) 55%,var(--pink));
+    box-shadow:0 6px 20px var(--glow-pink), inset 0 1px 0 rgba(255,255,255,.4);
+    min-width:64px;
+    transition:transform .08s ease, box-shadow .15s ease;
+  }
+  .add:active{transform:translateY(1px);}
+
+  /* ===== PRO TEASER ===== */
+  .pro{
+    flex:0 0 auto;
+    position:relative;
+    padding:10px 14px;border-radius:14px;
+    background:
+      radial-gradient(120% 100% at 50% 0%, rgba(255,62,181,.10), transparent 60%),
+      linear-gradient(180deg, rgba(0,0,0,.45), rgba(0,0,0,.30));
+    border:1px solid rgba(255,62,181,.35);
+    overflow:hidden;
+    display:flex;align-items:center;gap:10px;
+    box-shadow:0 0 22px rgba(255,62,181,.18);
+  }
+  .pro::before{
+    content:"";position:absolute;inset:-1px;border-radius:inherit;padding:1.2px;
+    background:linear-gradient(135deg, var(--cyan), var(--violet) 50%, var(--pink));
+    -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor;mask-composite:exclude;
+    pointer-events:none;
+    animation:proBorder 5s linear infinite;
+  }
+  @keyframes proBorder{from{filter:hue-rotate(0deg);} to{filter:hue-rotate(360deg);}}
+  .pro-tag{
+    flex:0 0 auto;
+    padding:4px 10px;border-radius:99px;
+    font-size:10px;font-weight:900;letter-spacing:.32em;
+    background:linear-gradient(90deg,var(--cyan),var(--pink));
+    color:#06020f;
+    box-shadow:0 0 12px var(--glow-pink);
+  }
+  .pro-text{
+    flex:1 1 auto;
+    font-size:11px;letter-spacing:.10em;font-weight:700;color:var(--ink);
+    line-height:1.4;
+  }
+  .pro-text b{
+    background:linear-gradient(90deg,var(--cyan),#fff 50%,var(--pink));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    font-weight:900;
+  }
+  .pro-soon{
+    flex:0 0 auto;
+    padding:4px 8px;border-radius:99px;
+    font-size:9px;font-weight:800;letter-spacing:.28em;color:var(--mute);
+    border:1px solid var(--line);
+  }
+
+  /* small viewport tightening */
+  @media (max-height:700px){
+    .brand-name{font-size:15px;letter-spacing:.26em;}
+    .brand-tag{font-size:8px;}
+    .ml{padding:8px 10px;}
+    .act{padding:10px 4px;font-size:10px;letter-spacing:.24em;}
+    input#taskInput{padding:10px 10px 30px 12px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-name">DOOM STACK</div>
+      <div class="brand-tag">YOUR TASKS HAVE WEIGHT</div>
+      <div class="brand-free"><b>FREE</b> — TODAY ONLY</div>
+    </div>
+  </header>
+
+  <div class="ml" aria-label="MENTAL LOAD">
+    <div class="ml-row">
+      <span class="ml-lbl">MENTAL LOAD</span>
+      <span class="ml-state" id="mlState" data-tier="LIGHT">LIGHT</span>
+      <span class="ml-pct" id="mlPct">0%</span>
+    </div>
+    <div class="ml-bar"><div class="ml-fill" id="mlFill"></div></div>
+  </div>
+
+  <section class="stage">
+    <canvas id="stack"></canvas>
+    <div class="empty-hint" id="emptyHint">
+      <div>
+        <b>STACK IS EMPTY</b>
+        タスクを入力して<br/>頭の重さを物理で見る
+      </div>
+    </div>
+  </section>
+
+  <section class="actions" aria-label="アクション">
+    <button class="act" data-act="SMASH"   type="button">SMASH</button>
+    <button class="act" data-act="SHAKE"   type="button">SHAKE</button>
+    <button class="act" data-act="PURGE"   type="button">PURGE</button>
+    <button class="act" data-act="RESTORE" type="button">RESTORE</button>
+  </section>
+
+  <section class="input-row">
+    <div class="input-wrap">
+      <input id="taskInput" type="text" maxlength="36"
+        placeholder="タスクを書いて落とす（例: 月曜の会議資料）"
+        autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" />
+      <div class="pri-row" role="group" aria-label="優先度">
+        <button class="pri" data-pri="HIGH" type="button" aria-pressed="false">HIGH</button>
+        <button class="pri" data-pri="MID"  type="button" aria-pressed="true">MID</button>
+        <button class="pri" data-pri="LOW"  type="button" aria-pressed="false">LOW</button>
+      </div>
+    </div>
+    <button class="add" id="addBtn" type="button">ADD</button>
+  </section>
+
+  <section class="pro" aria-label="PRO 版">
+    <span class="pro-tag">PRO</span>
+    <p class="pro-text"><b>PRO版</b>で 保存・分析・繰り返し・履歴</p>
+    <span class="pro-soon">SOON</span>
+  </section>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const cv = $('stack');
+  const ctx = cv.getContext('2d');
+
+  /* ============== STATE ============== */
+  const state = {
+    tasks: [],     // canonical task data (text, pri)
+    blocks: [],    // physics objects, may be smashed/purged independently
+    nextId: 1,
+    selectedPri: 'MID',
+    width: 0, height: 0, dpr: 1,
+    floor: 0,
+  };
+
+  /* ============== CANVAS SIZING ============== */
+  function fitCanvas(){
+    const stage = document.querySelector('.stage');
+    const w = stage.clientWidth;
+    const h = stage.clientHeight;
+    if (w <= 0 || h <= 0) return;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    cv.width  = Math.max(1, Math.round(w * dpr));
+    cv.height = Math.max(1, Math.round(h * dpr));
+    state.width  = cv.width;
+    state.height = cv.height;
+    state.dpr    = dpr;
+    state.floor  = state.height - Math.round(8 * dpr);
+  }
+  window.addEventListener('resize', fitCanvas);
+  window.addEventListener('orientationchange', fitCanvas);
+
+  /* ============== PRIORITY → VISUAL/PHYSICS ============== */
+  const PRI_PROFILE = {
+    HIGH: { weight: 3, mass: 2.6, height: 56, glow: '#ff5b6e', tint:'#ff3a4d', darken:'#660018', sheen:'#ffd0d6' },
+    MID:  { weight: 2, mass: 1.6, height: 44, glow: '#ffce4d', tint:'#ffb84d', darken:'#5a3500', sheen:'#fff0c0' },
+    LOW:  { weight: 1, mass: 1.0, height: 34, glow: '#7df0d3', tint:'#5fe0c2', darken:'#003e35', sheen:'#cfffea' },
+  };
+  function priProfile(pri){ return PRI_PROFILE[pri] || PRI_PROFILE.MID; }
+
+  /* ============== PHYSICS ============== */
+  // Simple AABB rigid bodies, vertical gravity, ground + box-box collisions, no rotation.
+  const GRAVITY = 1800;     // px/s^2 (CSS px units; we scale by dpr in render)
+  const RESTITUTION = 0.18; // bounce
+  const FRICTION_FLOOR = 0.86;
+  const FRICTION_BOX   = 0.92;
+  const VEL_DAMP = 0.998;
+  const SLEEP_VEL = 6;       // px/s
+  const MAX_BLOCKS = 60;
+
+  function makeBlock(task, opts){
+    const profile = priProfile(task.pri);
+    const dpr = state.dpr || 1;
+    // visual sizing in canvas pixels
+    const text = (task.text || '').slice(0, 36);
+    const measureSize = Math.max(80, Math.min(220, 110 + text.length * 6)) * dpr;
+    const w = measureSize;
+    const h = profile.height * dpr;
+    // spawn near top center with a small horizontal offset
+    const cx = state.width / 2 + (Math.random() - 0.5) * state.width * 0.2;
+    const cy = -h * 0.6 + (opts && opts.spawnDelay ? -opts.spawnDelay * 0.04 * state.height : 0);
+    return {
+      id: state.nextId++,
+      taskId: task.id,
+      text,
+      pri: task.pri,
+      profile,
+      x: cx, y: cy,
+      vx: (Math.random() - 0.5) * 60 * dpr,
+      vy: 0,
+      w, h,
+      mass: profile.mass,
+      angleVisual: (Math.random() - 0.5) * 0.10, // small visual lean only, not used for physics
+      sleeping: false,
+      smashedAt: 0, // for fade-out after SMASH/PURGE
+      phase: Math.random() * Math.PI * 2,
+    };
+  }
+
+  function spawnBlocksFromTasks(){
+    state.blocks = [];
+    for (let i = 0; i < state.tasks.length; i++){
+      const b = makeBlock(state.tasks[i], { spawnDelay: i });
+      // stagger so they don't overlap-spawn
+      b.y -= i * (priProfile(state.tasks[i].pri).height * state.dpr * 1.1);
+      state.blocks.push(b);
+    }
+  }
+
+  function step(dt){
+    // gravity + integration
+    for (const b of state.blocks){
+      if (b.removed) continue;
+      // Apply gravity (mass-independent for Earth-like fall, but heavier blocks feel weightier via collision impulses)
+      b.vy += GRAVITY * dt * state.dpr;
+      b.x  += b.vx * dt;
+      b.y  += b.vy * dt;
+      b.vx *= VEL_DAMP; b.vy *= VEL_DAMP;
+    }
+    // ground + walls
+    const floorY = state.floor;
+    const leftX  = 6 * state.dpr;
+    const rightX = state.width - 6 * state.dpr;
+    for (const b of state.blocks){
+      if (b.removed) continue;
+      const half_w = b.w / 2;
+      const half_h = b.h / 2;
+      if (b.y + half_h > floorY){
+        b.y = floorY - half_h;
+        if (b.vy > 0) b.vy = -b.vy * RESTITUTION;
+        b.vx *= FRICTION_FLOOR;
+        if (Math.abs(b.vy) < SLEEP_VEL && Math.abs(b.vx) < SLEEP_VEL){
+          b.vy = 0; b.vx *= 0.6;
+        }
+      }
+      if (b.x - half_w < leftX){
+        b.x = leftX + half_w;
+        if (b.vx < 0) b.vx = -b.vx * RESTITUTION;
+      }
+      if (b.x + half_w > rightX){
+        b.x = rightX - half_w;
+        if (b.vx > 0) b.vx = -b.vx * RESTITUTION;
+      }
+    }
+    // box-box (sequential resolution; few iterations for stability)
+    for (let iter = 0; iter < 4; iter++){
+      for (let i = 0; i < state.blocks.length; i++){
+        const a = state.blocks[i];
+        if (a.removed) continue;
+        const ahw = a.w / 2, ahh = a.h / 2;
+        for (let j = i + 1; j < state.blocks.length; j++){
+          const c = state.blocks[j];
+          if (c.removed) continue;
+          const chw = c.w / 2, chh = c.h / 2;
+          const dx = c.x - a.x;
+          const dy = c.y - a.y;
+          const overlapX = (ahw + chw) - Math.abs(dx);
+          const overlapY = (ahh + chh) - Math.abs(dy);
+          if (overlapX <= 0 || overlapY <= 0) continue;
+          // push along smaller overlap axis
+          if (overlapX < overlapY){
+            const push = overlapX / 2;
+            const sign = dx >= 0 ? 1 : -1;
+            a.x -= sign * push;
+            c.x += sign * push;
+            // exchange momentum a bit
+            const avx = a.vx, cvx = c.vx;
+            a.vx = (avx * (a.mass - c.mass) + 2 * c.mass * cvx) / (a.mass + c.mass) * RESTITUTION;
+            c.vx = (cvx * (c.mass - a.mass) + 2 * a.mass * avx) / (a.mass + c.mass) * RESTITUTION;
+            a.vx *= FRICTION_BOX; c.vx *= FRICTION_BOX;
+          } else {
+            const push = overlapY / 2;
+            const sign = dy >= 0 ? 1 : -1;
+            a.y -= sign * push;
+            c.y += sign * push;
+            const avy = a.vy, cvy = c.vy;
+            a.vy = (avy * (a.mass - c.mass) + 2 * c.mass * cvy) / (a.mass + c.mass) * RESTITUTION;
+            c.vy = (cvy * (c.mass - a.mass) + 2 * a.mass * avy) / (a.mass + c.mass) * RESTITUTION;
+            a.vx *= FRICTION_BOX; c.vx *= FRICTION_BOX;
+          }
+        }
+      }
+    }
+    // particles
+    for (const p of particles){
+      p.age += dt;
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.vy += GRAVITY * dt * state.dpr * 0.6;
+      p.vx *= 0.97; p.vy *= 0.97;
+    }
+    particles = particles.filter(p => p.age < p.life);
+    // remove fully faded smashed/purged blocks
+    const now = performance.now();
+    state.blocks = state.blocks.filter(b => !b.removed || (now - b.smashedAt) < 1400);
+  }
+
+  /* ============== RENDER ============== */
+  let particles = [];
+  function render(){
+    ctx.clearRect(0, 0, state.width, state.height);
+    // checker subtle bg
+    ctx.fillStyle = 'rgba(255,255,255,.020)';
+    const cellSz = 36 * state.dpr;
+    for (let y = 0; y < state.height; y += cellSz){
+      for (let x = ((y / cellSz) | 0) % 2 === 0 ? 0 : cellSz; x < state.width; x += cellSz * 2){
+        ctx.fillRect(x, y, cellSz, cellSz);
+      }
+    }
+    // floor line
+    ctx.strokeStyle = 'rgba(255,255,255,.06)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(0, state.floor); ctx.lineTo(state.width, state.floor); ctx.stroke();
+
+    // particles (behind blocks)
+    for (const p of particles){
+      const k = Math.max(0, 1 - p.age / p.life);
+      ctx.globalAlpha = k;
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r * (0.5 + 0.5 * k), 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    // blocks
+    const tt = performance.now() * 0.001;
+    for (const b of state.blocks){
+      const opacity = b.removed
+        ? Math.max(0, 1 - (performance.now() - b.smashedAt) / 1300)
+        : 1;
+      if (opacity <= 0) continue;
+      drawBlock(b, tt, opacity);
+    }
+  }
+  function drawBlock(b, tt, opacity){
+    const p = b.profile;
+    const x = b.x, y = b.y;
+    const w = b.w, h = b.h;
+    const r = Math.min(10, h * 0.20) * state.dpr * 0.5 + 6;
+    const breathe = 1 + Math.sin(tt * 1.6 + b.phase) * 0.012;
+    const dw = w * breathe, dh = h * breathe;
+    ctx.globalAlpha = opacity;
+
+    // glow (drawn larger, blurred via gradient)
+    const gAura = ctx.createRadialGradient(x, y, 0, x, y, Math.max(dw, dh) * 0.95);
+    gAura.addColorStop(0, p.glow + '88');
+    gAura.addColorStop(0.4, p.glow + '33');
+    gAura.addColorStop(1, p.glow + '00');
+    ctx.fillStyle = gAura;
+    ctx.fillRect(x - dw, y - dh, dw * 2, dh * 2);
+
+    // body — gradient fill with rounded rect
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(b.angleVisual);
+    const grad = ctx.createLinearGradient(0, -dh / 2, 0, dh / 2);
+    grad.addColorStop(0, p.tint);
+    grad.addColorStop(0.55, p.tint);
+    grad.addColorStop(1, p.darken);
+    ctx.fillStyle = grad;
+    roundRect(-dw/2, -dh/2, dw, dh, r);
+    ctx.fill();
+
+    // top sheen
+    const sheen = ctx.createLinearGradient(0, -dh/2, 0, -dh/2 + dh * 0.45);
+    sheen.addColorStop(0, p.sheen + 'cc');
+    sheen.addColorStop(1, p.sheen + '00');
+    ctx.fillStyle = sheen;
+    roundRect(-dw/2 + 2, -dh/2 + 2, dw - 4, dh * 0.40, r * 0.7);
+    ctx.fill();
+
+    // priority pip (small dot top-right)
+    ctx.fillStyle = '#fff';
+    ctx.shadowColor = p.glow; ctx.shadowBlur = 8;
+    ctx.beginPath();
+    ctx.arc(dw/2 - 10, -dh/2 + 10, Math.max(2, 3 * state.dpr * 0.7), 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // text (priority chip + task text)
+    const fontPx = Math.max(10, Math.round(13 * state.dpr * 0.75));
+    ctx.font = '900 ' + fontPx + 'px -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Noto Sans JP", "Yu Gothic UI", sans-serif';
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'left';
+    // priority chip
+    const chip = b.pri;
+    const chipPad = 6 * state.dpr * 0.7;
+    const chipWidth = ctx.measureText(chip).width + chipPad * 2;
+    const chipHeight = fontPx + chipPad;
+    const chipX = -dw/2 + 8;
+    const chipY = -chipHeight / 2;
+    ctx.fillStyle = 'rgba(0,0,0,.45)';
+    roundRect(chipX, chipY, chipWidth, chipHeight, chipHeight / 2);
+    ctx.fill();
+    ctx.fillStyle = p.glow;
+    ctx.fillText(chip, chipX + chipPad, 1);
+
+    // task text
+    ctx.fillStyle = 'rgba(255,255,255,.96)';
+    ctx.font = '700 ' + Math.max(11, Math.round(14 * state.dpr * 0.78)) + 'px -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Noto Sans JP", "Yu Gothic UI", sans-serif';
+    let txt = b.text || '';
+    // truncate by px width
+    const maxTextW = dw - chipWidth - 14 - 14;
+    if (ctx.measureText(txt).width > maxTextW){
+      while (txt.length > 1 && ctx.measureText(txt + '…').width > maxTextW) txt = txt.slice(0, -1);
+      txt += '…';
+    }
+    ctx.fillText(txt, chipX + chipWidth + 8, 1);
+
+    ctx.restore();
+    ctx.globalAlpha = 1;
+  }
+  function roundRect(x, y, w, h, r){
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+  }
+
+  /* ============== TASK API ============== */
+  function addTask(text, pri){
+    text = (text || '').trim();
+    if (!text) return false;
+    if (state.tasks.length >= MAX_BLOCKS) return false;
+    const task = { id: state.nextId++, text, pri: pri || 'MID' };
+    state.tasks.push(task);
+    state.blocks.push(makeBlock(task));
+    updateMentalLoad();
+    updateEmptyHint();
+    return true;
+  }
+
+  /* ============== ACTIONS ============== */
+  function spawnSmashParticles(b, count, color){
+    const c = Math.min(count, 32);
+    for (let i = 0; i < c; i++){
+      const ang = Math.random() * Math.PI * 2;
+      const sp = (160 + Math.random() * 320) * state.dpr;
+      particles.push({
+        x: b.x + (Math.random() - 0.5) * b.w,
+        y: b.y + (Math.random() - 0.5) * b.h,
+        vx: Math.cos(ang) * sp,
+        vy: Math.sin(ang) * sp - 80 * state.dpr,
+        r: (2 + Math.random() * 3) * state.dpr,
+        color: color || b.profile.glow,
+        age: 0,
+        life: 0.6 + Math.random() * 0.5,
+      });
+    }
+  }
+  function smash(){
+    if (state.blocks.length === 0) return;
+    const now = performance.now();
+    for (const b of state.blocks){
+      if (b.removed) continue;
+      const ang = Math.random() * Math.PI * 2;
+      const sp = (700 + Math.random() * 600) * state.dpr;
+      b.vx = Math.cos(ang) * sp;
+      b.vy = -800 * state.dpr - Math.random() * 300 * state.dpr;
+      b.removed = true;
+      b.smashedAt = now;
+      spawnSmashParticles(b, 18, b.profile.glow);
+    }
+    flashAction('SMASH');
+  }
+  function shake(){
+    if (state.blocks.length === 0) return;
+    for (const b of state.blocks){
+      if (b.removed) continue;
+      b.vx += (Math.random() - 0.5) * 800 * state.dpr;
+      b.vy -= 400 * state.dpr + Math.random() * 300 * state.dpr;
+    }
+    flashAction('SHAKE');
+  }
+  function purge(){
+    if (state.blocks.length === 0) return;
+    const now = performance.now();
+    const cx = state.width / 2;
+    for (const b of state.blocks){
+      if (b.removed) continue;
+      const dir = (b.x - cx) || (Math.random() - 0.5);
+      b.vx = (dir > 0 ? 1 : -1) * (1100 + Math.random() * 700) * state.dpr;
+      b.vy = -600 * state.dpr - Math.random() * 600 * state.dpr;
+      b.removed = true;
+      b.smashedAt = now;
+      spawnSmashParticles(b, 10, b.profile.glow);
+    }
+    flashAction('PURGE');
+  }
+  function restore(){
+    // rebuild visual stack from canonical task data; tasks are NEVER deleted by SMASH/SHAKE/PURGE
+    spawnBlocksFromTasks();
+    flashAction('RESTORE');
+    updateEmptyHint();
+  }
+  function flashAction(name){
+    const stage = document.querySelector('.stage');
+    stage.animate(
+      [{boxShadow:'0 0 0 0 rgba(255,255,255,.0), 0 0 0 1px rgba(255,255,255,.06), 0 0 24px rgba(176,124,255,.18)'},
+       {boxShadow:'0 0 0 2px ' + actionTint(name) + ', 0 0 26px ' + actionTint(name) + ', 0 0 60px ' + actionTint(name)},
+       {boxShadow:'0 0 0 0 rgba(255,255,255,.0), 0 0 0 1px rgba(255,255,255,.06), 0 0 24px rgba(176,124,255,.18)'}],
+      { duration: 480, easing: 'ease-out' }
+    );
+  }
+  function actionTint(name){
+    return name === 'SMASH'  ? 'rgba(255,58,77,.55)' :
+           name === 'SHAKE'  ? 'rgba(255,206,77,.55)' :
+           name === 'PURGE'  ? 'rgba(163,113,255,.55)' :
+                               'rgba(125,240,211,.55)';
+  }
+
+  /* ============== MENTAL LOAD ============== */
+  const ML_MAX = 30; // capacity (10 LOWs or 10 MIDs / 2 etc.)
+  function updateMentalLoad(){
+    let weight = 0;
+    for (const t of state.tasks) weight += priProfile(t.pri).weight;
+    const pct = Math.min(100, Math.round((weight / ML_MAX) * 100));
+    const tier = pct >= 75 ? 'DOOM'
+              : pct >= 50 ? 'HEAVY'
+              : pct >= 25 ? 'BUSY'
+              :             'LIGHT';
+    $('mlPct').textContent  = pct + '%';
+    $('mlState').textContent = tier;
+    $('mlState').setAttribute('data-tier', tier);
+    $('mlFill').style.width  = pct + '%';
+  }
+  function updateEmptyHint(){
+    const hint = $('emptyHint');
+    if (!hint) return;
+    if (state.tasks.length === 0) hint.classList.remove('hidden');
+    else hint.classList.add('hidden');
+  }
+
+  /* ============== INPUT ============== */
+  const taskInput = $('taskInput');
+  const addBtn = $('addBtn');
+  const priBtns = document.querySelectorAll('.pri');
+  function setPri(p){
+    state.selectedPri = p;
+    priBtns.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.pri === p)));
+  }
+  priBtns.forEach(b => b.addEventListener('click', () => setPri(b.dataset.pri)));
+  setPri('MID');
+
+  function onAdd(){
+    const t = taskInput.value;
+    if (addTask(t, state.selectedPri)){
+      taskInput.value = '';
+      taskInput.blur();
+    }
+  }
+  addBtn.addEventListener('click', onAdd);
+  taskInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter'){ e.preventDefault(); onAdd(); }
+  });
+
+  document.querySelectorAll('.act').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const a = btn.dataset.act;
+      if      (a === 'SMASH')   smash();
+      else if (a === 'SHAKE')   shake();
+      else if (a === 'PURGE')   purge();
+      else if (a === 'RESTORE') restore();
+    });
+  });
+
+  /* ============== MAIN LOOP ============== */
+  let lastT = performance.now();
+  function loop(t){
+    const dtRaw = (t - lastT) / 1000;
+    lastT = t;
+    const dt = Math.min(0.05, dtRaw);
+    if (state.width > 0) step(dt);
+    if (state.width > 0) render();
+    requestAnimationFrame(loop);
+  }
+
+  /* ============== INIT ============== */
+  function init(){
+    fitCanvas();
+    updateMentalLoad();
+    updateEmptyHint();
+    requestAnimationFrame(loop);
+  }
+  // wait one frame so layout settles; setTimeout fallback covers hidden-tab rAF throttling
+  let booted = false;
+  function boot(){
+    if (booted) return;
+    booted = true;
+    fitCanvas();
+    init();
+  }
+  requestAnimationFrame(boot);
+  setTimeout(boot, 60);
+
+  // prevent zoom while playing
+  document.addEventListener('touchmove',    e => { if (!e.target.closest('input')) e.preventDefault(); }, { passive: false });
+  document.addEventListener('gesturestart', e => e.preventDefault());
+  let lastTouchEnd = 0;
+  document.addEventListener('touchend', e => {
+    const now = Date.now();
+    if (now - lastTouchEnd < 320 && !e.target.closest('input')){ e.preventDefault(); }
+    lastTouchEnd = now;
+  }, { passive: false });
+
+  /* ============== TEST SURFACE ============== */
+  window.__doomStack = {
+    state,
+    addTask,
+    smash, shake, purge, restore,
+    setPri,
+    blockCount: () => state.blocks.filter(b => !b.removed).length,
+    taskCount: () => state.tasks.length,
+    mentalLoad: () => ({
+      pct: parseInt(($('mlPct').textContent || '0').replace('%',''), 10),
+      tier: $('mlState').textContent,
+    }),
+  };
+})();
+</script>
+</body>
+</html>
