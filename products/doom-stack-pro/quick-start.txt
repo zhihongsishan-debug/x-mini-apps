@@ -1,0 +1,50 @@
+DOOM STACK PRO — Quick Start
+============================
+
+1. ADD A TASK
+   - Type in the bottom input.
+   - Tap HIGH / MID / LOW.
+   - Tap ADD (or press Enter).
+
+2. COMPLETE / UNDO
+   - Tap the checkbox on the left of a task to mark complete.
+   - 削除 / 完了 actions show a toast — tap "元に戻す" within 6 seconds
+     to undo.
+
+3. EDIT
+   - Tap the ✎ pencil on a task → opens the edit sheet.
+   - Set: title, priority, category, due date, repeat, notes.
+   - SAVE / CANCEL.
+
+4. NOTES + SUBTASKS
+   - Tap ▾ on a task to expand.
+   - Notes display below.
+   - Add subtasks from the inline input. Tap to toggle complete.
+
+5. FILTERS
+   - Top chip row: TODAY / TOMORROW / THIS WEEK / NEXT WEEK / ALL / DONE.
+   - Tap the date pill on the right to filter by a specific date.
+
+6. MENTAL LOAD
+   - Top-right percentage + tier (LIGHT / BUSY / HEAVY / DOOM).
+   - HIGH counts 3, MID counts 2, LOW counts 1. Capacity = 30.
+   - Only incomplete tasks count.
+
+7. RECURRING
+   - Set a due date + repeat (DAILY / WEEKDAYS / WEEKLY / MONTHLY) on
+     a task. When you complete it, a new instance is created on the
+     next due date automatically.
+
+8. PERSISTENCE
+   - All data lives in your browser via localStorage. Reload anytime —
+     your tasks, filter, and selected date are restored.
+   - Clearing site data wipes the state. Export/sync arrives in a
+     later phase.
+
+CAVEATS
+-------
+- CUSTOM repeat is a placeholder field — no auto-schedule yet.
+- No backend, no API, no account. Single device.
+
+THAT'S IT.
+- 追加 → 整える → 完了 → 重さが軽くなる
