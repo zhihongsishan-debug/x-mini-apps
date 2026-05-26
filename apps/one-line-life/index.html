@@ -1,0 +1,582 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no,maximum-scale=1" />
+<meta name="theme-color" content="#0a0a0a" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="description" content="あなたの人生を、一行で。" />
+<meta property="og:title" content="ONE LINE LIFE" />
+<meta property="og:description" content="あなたの人生を、一行で。" />
+<meta property="og:type" content="website" />
+<title>ONE LINE LIFE — あなたの人生を、一行で。</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#0a0a0a;
+    --bg-2:#101010;
+    --ink:#f5f5f5;
+    --ink-2:#e0e0e0;
+    --sub:#aaaaaa;
+    --mute:#888888;
+    --dim:#5a5a5a;
+    --line:rgba(245,245,245,.10);
+    --line-2:rgba(245,245,245,.20);
+    --gold:#c9a96e;
+    --gold-soft:rgba(201,169,110,.20);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;}
+  html,body{margin:0;padding:0;height:100%;overscroll-behavior:none;}
+  body{
+    font-family:"Noto Serif JP", "Hiragino Mincho ProN", "Yu Mincho", "Times New Roman", serif;
+    font-weight:400;
+    color:var(--ink);
+    background:var(--bg);
+    height:100dvh;width:100%;
+    overflow:hidden;
+    position:fixed;
+    -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+  }
+  /* subtle vignette only */
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+    background:radial-gradient(ellipse 80% 60% at 50% 50%, transparent 50%, rgba(0,0,0,.55) 100%);
+  }
+
+  .stage{
+    position:relative;z-index:1;
+    height:100dvh;width:100%;
+    display:flex;align-items:stretch;justify-content:center;
+    padding:max(20px, env(safe-area-inset-top)) 22px max(20px, env(safe-area-inset-bottom));
+  }
+
+  .screen{
+    width:100%;max-width:520px;
+    display:none;flex-direction:column;
+    align-items:stretch;justify-content:space-between;
+    gap:18px;
+    opacity:0;
+    transition:opacity .4s ease;
+  }
+  .screen.on{display:flex;opacity:1;}
+  .screen.fade-in{animation:fade .45s ease both;}
+  @keyframes fade{from{opacity:0;transform:translateY(6px);} to{opacity:1;transform:translateY(0);}}
+
+  /* ===== SCREEN 1: TITLE ===== */
+  .title-screen{
+    justify-content:center;text-align:center;gap:0;
+  }
+  .ts-eyebrow{
+    font-size:11px;letter-spacing:.6em;color:var(--mute);font-weight:300;
+    margin-bottom:32px;
+  }
+  .ts-title{
+    font-size:clamp(34px, 10vmin, 52px);font-weight:500;letter-spacing:.18em;
+    line-height:1.1;color:var(--ink);
+    margin:0;
+  }
+  .ts-sub{
+    margin-top:24px;
+    font-size:14px;font-weight:300;letter-spacing:.20em;color:var(--sub);
+    line-height:1.8;
+  }
+  .ts-start{
+    appearance:none;cursor:pointer;
+    margin:48px auto 0;
+    padding:14px 48px;
+    background:transparent;
+    border:1px solid var(--ink);
+    color:var(--ink);
+    font-family:inherit;font-size:14px;font-weight:400;letter-spacing:.5em;
+    transition:all .25s ease;
+    display:inline-block;
+  }
+  .ts-start:hover{background:var(--ink);color:var(--bg);}
+  .ts-start:active{transform:translateY(1px);}
+  .ts-warn{
+    margin:28px auto 0;
+    font-size:9px;font-weight:300;letter-spacing:.10em;color:var(--dim);
+    line-height:1.6;max-width:300px;
+  }
+
+  /* ===== SCREEN 2: QUESTIONS ===== */
+  .q-screen{
+    padding:0;
+  }
+  .q-top{
+    flex:0 0 auto;
+    display:flex;flex-direction:column;gap:10px;
+  }
+  .q-meta{
+    display:flex;justify-content:space-between;align-items:center;
+    font-size:10px;letter-spacing:.32em;font-weight:300;color:var(--mute);
+  }
+  .q-prog{
+    height:1px;background:var(--line);position:relative;
+  }
+  .q-prog-fill{
+    position:absolute;left:0;top:0;bottom:0;
+    background:var(--ink);
+    width:0%;
+    transition:width .45s cubic-bezier(.4,0,.2,1);
+  }
+  .q-mid{
+    flex:1 1 auto;
+    display:flex;flex-direction:column;justify-content:center;
+    text-align:center;
+    padding:24px 0;
+  }
+  .q-text{
+    font-size:clamp(18px, 5.4vmin, 24px);font-weight:400;line-height:1.7;
+    letter-spacing:.04em;color:var(--ink);
+    margin:0;
+  }
+  .q-opts{
+    flex:0 0 auto;
+    display:flex;flex-direction:column;gap:10px;
+  }
+  .q-opt{
+    appearance:none;cursor:pointer;
+    width:100%;
+    padding:18px 20px;
+    background:transparent;
+    border:1px solid var(--line-2);
+    color:var(--ink-2);
+    font-family:inherit;font-size:14px;font-weight:400;letter-spacing:.06em;
+    text-align:left;line-height:1.5;
+    transition:all .2s ease;
+  }
+  .q-opt:hover{
+    background:var(--ink);color:var(--bg);
+    border-color:var(--ink);
+  }
+  .q-opt:active{transform:translateY(1px);}
+
+  /* ===== SCREEN 3: RESULT (screenshot-worthy) ===== */
+  .r-screen{
+    text-align:center;
+  }
+  .r-card{
+    flex:1 1 auto;
+    display:flex;flex-direction:column;justify-content:center;
+    align-items:center;
+    padding:36px 12px;
+    background:linear-gradient(180deg, var(--bg-2) 0%, var(--bg) 100%);
+    border:1px solid var(--line);
+    position:relative;
+    min-height:0;
+  }
+  .r-card::before{
+    content:"";position:absolute;inset:8px;border:1px solid var(--line);pointer-events:none;
+  }
+  .r-eyebrow{
+    font-size:11px;letter-spacing:.42em;color:var(--mute);font-weight:300;
+    margin-bottom:34px;
+    position:relative;
+  }
+  .r-line{
+    font-size:clamp(18px, 6vmin, 26px);font-weight:500;line-height:2.0;
+    letter-spacing:.06em;color:var(--ink);
+    margin:0 auto;max-width:380px;
+    padding:0 8px;
+    position:relative;
+  }
+  .r-line .quote-mark{
+    display:block;font-size:.6em;color:var(--gold);opacity:.8;
+    letter-spacing:0;
+    margin:10px 0;
+    font-weight:300;
+  }
+  .r-sig{
+    margin-top:38px;
+    display:flex;flex-direction:column;align-items:center;gap:10px;
+    font-size:10px;letter-spacing:.45em;color:var(--gold);font-weight:400;
+    position:relative;
+  }
+  .r-sig::before{
+    content:"";display:block;width:32px;height:1px;background:var(--gold);opacity:.6;
+  }
+  .r-actions{
+    flex:0 0 auto;
+    display:flex;flex-direction:column;gap:10px;
+    margin-top:20px;
+  }
+  .r-btn{
+    appearance:none;cursor:pointer;
+    padding:14px 20px;
+    background:transparent;
+    border:1px solid var(--line-2);
+    color:var(--ink-2);
+    font-family:inherit;font-size:12px;font-weight:400;letter-spacing:.32em;
+    transition:all .2s ease;
+    text-decoration:none;
+    display:inline-block;text-align:center;
+  }
+  .r-btn:hover{background:var(--ink);color:var(--bg);border-color:var(--ink);}
+  .r-btn.primary{
+    border-color:var(--gold);color:var(--gold);
+    background:transparent;
+  }
+  .r-btn.primary:hover{
+    background:var(--gold);color:var(--bg);
+    border-color:var(--gold);
+  }
+  .r-btn:active{transform:translateY(1px);}
+
+  /* responsive */
+  @media (max-height:680px){
+    .ts-eyebrow{margin-bottom:24px;}
+    .ts-title{font-size:clamp(30px, 9vmin, 44px);}
+    .ts-sub{font-size:13px;margin-top:18px;}
+    .ts-start{margin-top:32px;padding:12px 36px;}
+    .r-card{padding:22px 12px;}
+    .r-eyebrow{margin-bottom:22px;}
+    .r-sig{margin-top:24px;}
+    .q-opt{padding:14px 16px;font-size:13px;}
+  }
+  @media (max-width:380px){
+    .stage{padding-left:18px;padding-right:18px;}
+    .ts-title{letter-spacing:.14em;}
+    .r-eyebrow,.r-sig{letter-spacing:.32em;}
+  }
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+
+  <!-- SCREEN 1: TITLE -->
+  <section class="screen title-screen on" id="screenTitle">
+    <div></div>
+    <div>
+      <p class="ts-eyebrow">A QUIET DIAGNOSIS</p>
+      <h1 class="ts-title">ONE&nbsp;LINE<br/>LIFE</h1>
+      <p class="ts-sub">あなたの人生を、<br/>一行で。</p>
+      <button class="ts-start" id="startBtn" type="button">START</button>
+      <p class="ts-warn">これは診断遊びです。<br/>真剣な悩みは専門家にご相談ください。</p>
+    </div>
+    <div></div>
+  </section>
+
+  <!-- SCREEN 2: QUESTIONS -->
+  <section class="screen q-screen" id="screenQuestion">
+    <div class="q-top">
+      <div class="q-meta">
+        <span id="qIndex">Q1 / 5</span>
+        <span>ONE LINE LIFE</span>
+      </div>
+      <div class="q-prog"><div class="q-prog-fill" id="qProg"></div></div>
+    </div>
+    <div class="q-mid">
+      <p class="q-text" id="qText">—</p>
+    </div>
+    <div class="q-opts" id="qOpts"></div>
+  </section>
+
+  <!-- SCREEN 3: RESULT -->
+  <section class="screen r-screen" id="screenResult">
+    <div class="r-card">
+      <p class="r-eyebrow">あなたの人生は、</p>
+      <div class="r-line" id="rLine">—</div>
+      <div class="r-sig">ONE LINE LIFE</div>
+    </div>
+    <div class="r-actions">
+      <a class="r-btn primary" id="shareBtn" target="_blank" rel="noopener noreferrer">Xでシェア</a>
+      <button class="r-btn" id="rerollBtn" type="button">同じ回答で、別の一行</button>
+      <button class="r-btn" id="restartBtn" type="button">もう一度、診断する</button>
+    </div>
+  </section>
+
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+
+  /* ============== DATA ============== */
+  const QUESTIONS = [
+    {
+      text: 'これまでの人生を、一言で言うと？',
+      options: [
+        { label: '他人の期待に応えてきた',  score: { A:1, B:1, C:0, D:0 } },
+        { label: '自分を後回しにしてきた',  score: { A:0, B:1, C:0, D:1 } },
+        { label: 'なんとなく生きてきた',    score: { A:0, B:0, C:0, D:1 } },
+        { label: '本当の自分を隠してきた',  score: { A:0, B:1, C:1, D:0 } },
+      ]
+    },
+    {
+      text: 'あなたが一番恐れていることは？',
+      options: [
+        { label: '嫌われること',            score: { A:1, B:0, C:0, D:0 } },
+        { label: '失敗すること',            score: { A:0, B:1, C:0, D:0 } },
+        { label: '何者にもなれないこと',    score: { A:0, B:0, C:1, D:1 } },
+        { label: '本心を知られること',      score: { A:0, B:1, C:0, D:0 } },
+      ]
+    },
+    {
+      text: '他人にどう見られたい？',
+      options: [
+        { label: '良い人',                  score: { A:1, B:1, C:0, D:0 } },
+        { label: 'すごい人',                score: { A:0, B:0, C:1, D:0 } },
+        { label: '普通の人',                score: { A:0, B:0, C:0, D:1 } },
+        { label: '見られたくない',          score: { A:0, B:1, C:0, D:1 } },
+      ]
+    },
+    {
+      text: '何のために生きてる？',
+      options: [
+        { label: '誰かのため',              score: { A:1, B:0, C:0, D:0 } },
+        { label: '自分のため',              score: { A:0, B:0, C:1, D:0 } },
+        { label: 'わからない',              score: { A:0, B:0, C:0, D:1 } },
+        { label: '終わらせないため',        score: { A:0, B:1, C:0, D:1 } },
+      ]
+    },
+    {
+      text: '今、本当はどうしたい？',
+      options: [
+        { label: '全部投げ出したい',         score: { A:0, B:0, C:0, D:1 } },
+        { label: 'もう一度やり直したい',     score: { A:0, B:0, C:1, D:0 } },
+        { label: 'このままでいい',           score: { A:0, B:0, C:0, D:1 } },
+        { label: '静かに距離を置きたい',     score: { A:0, B:1, C:0, D:1 } },
+      ]
+    },
+  ];
+
+  /* 16 TYPES — each has 3 one-line patterns.
+     Index mapping:
+        1..16 = (A_low?8:0) + (B_low?4:0) + (C_high?2:0) + (D_high?1:0) + 1
+     i.e. typeKey = "AHIGH/BHIGH/CLOW/DLOW" → TYPE 1, etc.
+  */
+  const TYPE_LINES = {
+    1:  [ '他人の正解を、自分の不正解にしてきた',
+          '正解の中で、息ができなかった',
+          '鏡を見るたび、誰かの目で自分を見ている' ],
+    2:  [ '諦めることを、優しさと呼んできた',
+          '他人の人生を生きて、自分の人生を終わらせた',
+          'いい人のまま、いなくなりたかった' ],
+    3:  [ '欲しいものを言えないまま、人生が短くなった',
+          '叫びたかったことを、全部詩にしている',
+          '優しさという仮面が、いちばん重かった' ],
+    4:  [ '欲しかったものは、もう欲しくないと言うことにした',
+          '叶わなかった夢は、今でも自分の影にいる',
+          '期待を捨てて、軽くなったふりをしている' ],
+    5:  [ '誰かに必要とされて、自分を忘れた',
+          '優しさで作られた、空っぽの形',
+          '他人の幸せの中に、自分の居場所を探した' ],
+    6:  [ '諦めた瞬間、誰かが拍手した',
+          '期待されないことに、安心している',
+          '役割を脱いだら、何も残らなかった' ],
+    7:  [ '誰かのために、本気で生きてきた',
+          '奪われることを、愛だと呼んできた',
+          '他人の夢を、自分の夢にしてしまった' ],
+    8:  [ '全部捧げて、何も残らなかった',
+          '与えることでしか、自分を確認できなかった',
+          '役目を終えた静けさが、こんなにも空虚だった' ],
+    9:  [ '自分のために生きると決めて、何も始まらなかった',
+          '孤独を選んで、自由を失った',
+          'ひとりでいることに、慣れすぎてしまった' ],
+    10: [ '終わらせたいのに、終わらせ方を忘れた',
+          '諦めることを、選択と呼んでみた',
+          'もう何も望まないことを、強さと呼ぶことにした' ],
+    11: [ '言葉にできなかったものが、いちばん本当だった',
+          '自分の本心に、まだ会えていない',
+          '黙ることを、強さだと呼んできた' ],
+    12: [ '本当の自分は、まだ誰にも会わせていない',
+          '叫ばないことを、品だと教えられた',
+          '飢えたまま、満たされたふりをしている' ],
+    13: [ '淡々と、自分を生きている',
+          '期待しないことで、満たされている',
+          '静けさが、いちばん贅沢になった' ],
+    14: [ 'もう何もいらないと、思える日が来た',
+          '投げ出すことが、答えだった',
+          '軽くなることだけを、選び続けてきた' ],
+    15: [ '欲しいものを欲しいと言える人生に、やっと近づいた',
+          '自分の手で、自分を取り戻している',
+          '遅すぎることなんて、なかった' ],
+    16: [ '全部やりきって、軽く笑える人生にしたい',
+          'もう、誰の人生でもなく、自分の人生を生きる',
+          '人生は、まだ書き終わっていない' ],
+  };
+
+  /* ============== STATE ============== */
+  const state = {
+    answers: [],     // array of option indices
+    typeId: null,
+    lineIdx: 0,
+  };
+
+  /* ============== SCREEN FLOW ============== */
+  const screens = {
+    title:    $('screenTitle'),
+    question: $('screenQuestion'),
+    result:   $('screenResult'),
+  };
+  function showScreen(name){
+    Object.keys(screens).forEach(k => {
+      const el = screens[k];
+      if (k === name){
+        el.classList.add('on', 'fade-in');
+        el.setAttribute('aria-hidden', 'false');
+        // restart fade
+        void el.offsetWidth;
+      } else {
+        el.classList.remove('on', 'fade-in');
+        el.setAttribute('aria-hidden', 'true');
+      }
+    });
+  }
+
+  /* ============== QUESTION FLOW ============== */
+  let qIdx = 0;
+  function startDiagnosis(){
+    state.answers = [];
+    qIdx = 0;
+    renderQuestion();
+    showScreen('question');
+  }
+  function renderQuestion(){
+    const q = QUESTIONS[qIdx];
+    $('qIndex').textContent = 'Q' + (qIdx + 1) + ' / ' + QUESTIONS.length;
+    $('qProg').style.width = (((qIdx) / QUESTIONS.length) * 100) + '%';
+    $('qText').textContent = q.text;
+    const opts = $('qOpts');
+    opts.innerHTML = '';
+    q.options.forEach((opt, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'q-opt';
+      btn.type = 'button';
+      btn.textContent = opt.label;
+      btn.addEventListener('click', () => onAnswer(i), { once: true });
+      opts.appendChild(btn);
+    });
+    // also re-trigger fade on the screen
+    const s = $('screenQuestion');
+    s.classList.remove('fade-in'); void s.offsetWidth; s.classList.add('fade-in');
+  }
+  function onAnswer(i){
+    state.answers.push(i);
+    qIdx++;
+    if (qIdx >= QUESTIONS.length){
+      computeAndShowResult();
+    } else {
+      renderQuestion();
+    }
+  }
+
+  /* ============== SCORING ============== */
+  function scoreFromAnswers(answers){
+    const sum = { A:0, B:0, C:0, D:0 };
+    for (let i = 0; i < answers.length; i++){
+      const opt = QUESTIONS[i] && QUESTIONS[i].options[answers[i]];
+      if (!opt) continue;
+      sum.A += opt.score.A || 0;
+      sum.B += opt.score.B || 0;
+      sum.C += opt.score.C || 0;
+      sum.D += opt.score.D || 0;
+    }
+    return sum;
+  }
+  function typeIdFromScores(s){
+    // axis high if > 0
+    const Ah = s.A > 0, Bh = s.B > 0, Ch = s.C > 0, Dh = s.D > 0;
+    // typeId = 1..16
+    return (Ah ? 0 : 8) + (Bh ? 0 : 4) + (Ch ? 2 : 0) + (Dh ? 1 : 0) + 1;
+  }
+  function typeIdFromAnswers(answers){
+    return typeIdFromScores(scoreFromAnswers(answers));
+  }
+
+  /* ============== RESULT ============== */
+  function computeAndShowResult(){
+    state.typeId = typeIdFromAnswers(state.answers);
+    state.lineIdx = Math.floor(Math.random() * 3);
+    paintResult();
+    showScreen('result');
+  }
+  function paintResult(){
+    const lines = TYPE_LINES[state.typeId] || TYPE_LINES[13];
+    const line  = lines[state.lineIdx % lines.length] || lines[0];
+    $('rLine').innerHTML = '<span class="quote-mark">「</span>' + escapeHtml(line) + '<span class="quote-mark">」</span>';
+    // refresh share URL
+    $('shareBtn').setAttribute('href', buildShareUrl(line));
+  }
+  function rerollLine(){
+    const lines = TYPE_LINES[state.typeId] || TYPE_LINES[13];
+    // pick a different index than current
+    if (lines.length > 1){
+      let next = state.lineIdx;
+      while (next === state.lineIdx) next = Math.floor(Math.random() * lines.length);
+      state.lineIdx = next;
+    }
+    paintResult();
+    // gentle refresh animation
+    const card = document.querySelector('.r-card');
+    if (card){ card.classList.remove('fade-in'); void card.offsetWidth; }
+    const s = $('screenResult');
+    s.classList.remove('fade-in'); void s.offsetWidth; s.classList.add('fade-in');
+  }
+
+  /* ============== SHARE ============== */
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  function buildShareText(line){
+    const url = 'https://zhihongsishan-debug.github.io/x-mini-apps/apps/one-line-life/';
+    return 'あなたの人生は、\n\n「' + line + '」\n\n── ONE LINE LIFE\n' + url + '\n#OneLineLife';
+  }
+  function buildShareUrl(line){
+    return 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(buildShareText(line));
+  }
+
+  /* ============== WIRE ============== */
+  $('startBtn').addEventListener('click', startDiagnosis);
+  $('restartBtn').addEventListener('click', () => {
+    showScreen('title');
+  });
+  $('rerollBtn').addEventListener('click', rerollLine);
+
+  // guard: no zoom on double-tap (preserve serif rendering)
+  let lastTouchEnd = 0;
+  document.addEventListener('touchend', e => {
+    const now = Date.now();
+    if (now - lastTouchEnd < 320 && !e.target.closest('input, textarea, select')){ e.preventDefault(); }
+    lastTouchEnd = now;
+  }, { passive: false });
+
+  /* ============== TEST SURFACE (hidden) ============== */
+  window.__oneLineLife = {
+    QUESTIONS,
+    TYPE_LINES,
+    state,
+    showScreen,
+    typeIdFromAnswers,
+    typeIdFromScores,
+    scoreFromAnswers,
+    /* Drive all 16 type combos by axis flags */
+    typeIdForFlags: (Ah, Bh, Ch, Dh) => (Ah ? 0 : 8) + (Bh ? 0 : 4) + (Ch ? 2 : 0) + (Dh ? 1 : 0) + 1,
+    /* Simulate a specific answer set [i,i,i,i,i] */
+    simulate: (answers) => {
+      const tid = typeIdFromAnswers(answers);
+      return {
+        typeId: tid,
+        scores: scoreFromAnswers(answers),
+        lines: TYPE_LINES[tid],
+      };
+    },
+    buildShareUrl, buildShareText,
+    audit: () => ({
+      hasQuestions:   QUESTIONS.length === 5,
+      hasTypes:       Object.keys(TYPE_LINES).length === 16,
+      hasThreeLines:  Object.values(TYPE_LINES).every(arr => arr.length === 3),
+      hasShare:       /^https:\/\/twitter\.com\/intent\/tweet\?text=/.test(buildShareUrl('test')),
+      mobileReady:    document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1,
+      noExternalDeps: !document.querySelector('script[src]') &&
+                       !document.querySelector('link[href^="http"][rel="stylesheet"]:not([href*="fonts.googleapis"])'),
+    }),
+  };
+})();
+</script>
+</body>
+</html>
