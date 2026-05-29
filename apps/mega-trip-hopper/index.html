@@ -133,20 +133,6 @@
     pointer-events:none;
   }
 
-  /* FPS pill */
-  .fps{
-    position:fixed;right:8px;bottom:8px;z-index:9;
-    padding:3px 8px;border-radius:6px;
-    background:rgba(0,0,0,.55);
-    border:1px solid var(--line);
-    font-family:"Courier New",monospace;
-    font-size:10px;font-weight:700;letter-spacing:.06em;
-    color:var(--lime);
-    pointer-events:none;
-    font-feature-settings:"tnum";
-  }
-  body.in-game .fps{ bottom:auto; top:max(8px, env(safe-area-inset-top)); right:8px; }
-
   /* tap hint */
   .tap-hint{
     position:fixed;left:0;right:0;bottom:32%;z-index:7;
@@ -437,8 +423,6 @@
   <button class="dash-btn" id="dashBtn" type="button">DASH</button>
 </section>
 
-<div class="fps" id="fps">FPS: -- · F: 0</div>
-
 <div class="tap-hint" id="tapHint">TAP TO JUMP · 空中で2段</div>
 
 <!-- TITLE -->
@@ -541,7 +525,7 @@
 const $ = id => document.getElementById(id);
 
 /* ===========================================================
-   MEGA TRIP HOPPER v1.3 — moving enemies + layered psyc BGM + complex bg
+   MEGA TRIP HOPPER v1.4 — v1.3 with FPS debug pill removed
    =========================================================== */
 
 const GROUND_Y_FRAC = 0.74;
@@ -2512,7 +2496,7 @@ function drawStar(x, y, r){
 let last = 0;
 let frameCount = 0;
 let fpsAccum = 0, fpsFrames = 0, fpsDisplay = 0;
-const fpsEl = $('fps');
+const fpsEl = null; // v1.4: display element removed; counter kept internal for diagnostics()
 let lastFrameAt = 0;
 function frame(now){
   try {
