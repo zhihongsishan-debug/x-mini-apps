@@ -541,7 +541,7 @@
 const $ = id => document.getElementById(id);
 
 /* ===========================================================
-   MEGA TRIP HOPPER v1.2 — double-jump + dash + biological feel
+   MEGA TRIP HOPPER v1.3 — moving enemies + layered psyc BGM + complex bg
    =========================================================== */
 
 const GROUND_Y_FRAC = 0.74;
@@ -880,58 +880,266 @@ function sfxOver(){
   const c = aCtx; if (!c) return; const t = c.currentTime;
   [440, 392, 330, 247, 165].forEach((f, i) => tone(f, f * 0.9, 0.32, 0.16, 'sine', t + i * 0.13));
 }
+/* v1.3 — multi-layer psychedelic BGM
+   Layers: bass / pad (detuned saws + lowpass LFO) / arpeggio lead /
+           kick / hi-hat / sparkle / delay feedback */
 const BGM_PATTERNS = {
-  1: { tempo: 80,  scale: [220, 247, 277, 330, 392, 440, 494, 587], lead:'sine',     bass: 110, modDepth: 0.6,  filt: 800,  hat: 6000 },
-  2: { tempo: 100, scale: [196, 233, 261, 311, 370, 415, 466, 523], lead:'sawtooth', bass: 98,  modDepth: 1.1,  filt: 1100, hat: 5200 },
-  3: { tempo: 120, scale: [220, 277, 311, 370, 415, 466, 554, 622], lead:'square',   bass: 87,  modDepth: 1.6,  filt: 1400, hat: 4400 },
+  // Stage 1: DREAM PLAIN — 85 BPM, A minor pentatonic
+  1: {
+    tempo: 85, lead: 'triangle',
+    bass: [110.00, 110.00, 87.31, 98.00],        // A2 A2 F2 G2
+    pent: [220.00, 261.63, 293.66, 329.63, 392.00, 523.25], // A C D E G C
+    padRoots: [110, 164.81],                     // A2 + E3 fifth
+    padDetune: [0, +7, -7, +14],
+    padType: 'sawtooth',
+    filtBase: 600, filtMod: 700,
+    hat: 6800, kickFreq: 88,
+    sparkleProb: 0.07,
+    sparkleScale: [880, 1046.5, 1318.5, 1568, 1760],
+  },
+  // Stage 2: NEON CAVERN — 100 BPM, D minor pentatonic
+  2: {
+    tempo: 100, lead: 'triangle',
+    bass: [73.42, 73.42, 55.00, 65.41],          // D2 D2 A1 C2
+    pent: [146.83, 174.61, 196.00, 220.00, 261.63, 349.23], // D F G A C F
+    padRoots: [73.42, 110.00],                   // D2 + A2 fifth
+    padDetune: [0, +9, -9, +18],
+    padType: 'sawtooth',
+    filtBase: 800, filtMod: 1000,
+    hat: 5600, kickFreq: 73,
+    sparkleProb: 0.10,
+    sparkleScale: [1046.5, 1318.5, 1567.98, 1760, 2093],
+  },
+  // Stage 3: MIND HORIZON — 120 BPM, F# minor pentatonic (dissonant)
+  3: {
+    tempo: 120, lead: 'sawtooth',
+    bass: [92.50, 69.30, 55.00, 61.74],          // F#2 C#2 A1 B1
+    pent: [185.00, 220.00, 246.94, 277.18, 329.63, 369.99, 415.30], // adds tritone
+    padRoots: [92.50, 138.59],                   // F#2 + C#3
+    padDetune: [0, +12, -12, +22],
+    padType: 'sawtooth',
+    filtBase: 1100, filtMod: 1500,
+    hat: 4600, kickFreq: 65,
+    sparkleProb: 0.18,
+    sparkleScale: [1109, 1480, 1865, 2349, 2960], // higher / dissonant
+  },
 };
+
+let bgmNodes = [];         // active long-lived nodes (pad, delay etc.) to stop on stopBgm
+let bgmStageNum = 1;
+let bgmFadeUntil = 0;
+
+function bgmTrack(node){ bgmNodes.push(node); return node; }
+
 function startBgm(stage){
   if (!ensureAudio()) return;
   stopBgm();
   const p = BGM_PATTERNS[stage] || BGM_PATTERNS[1];
-  const beatMs = 60000 / p.tempo / 2;
+  bgmStageNum = stage;
   bgmBeat = 0;
   bgmStarted = true;
+
+  const c = aCtx;
+  const tStart = c.currentTime + 0.05;
+
+  // === Delay feedback bus (pseudo-reverb) ===
+  const dl = c.createDelay(1.0);
+  dl.delayTime.value = (60 / p.tempo) * 0.75;     // dotted-eighth delay
+  const dlFb = c.createGain(); dlFb.gain.value = 0.42;
+  const dlMix = c.createGain(); dlMix.gain.value = 0.22;
+  const dlFilt = c.createBiquadFilter(); dlFilt.type = 'lowpass'; dlFilt.frequency.value = 2200;
+  dl.connect(dlFilt); dlFilt.connect(dlFb); dlFb.connect(dl);
+  dlFilt.connect(dlMix); dlMix.connect(bgmGain);
+  bgmTrack(dl); bgmTrack(dlFb); bgmTrack(dlMix); bgmTrack(dlFilt);
+
+  // === Pad bus: detuned sawtooth stack + slow LFO lowpass ===
+  const padMix = c.createGain(); padMix.gain.value = 0.0;
+  const padFilt = c.createBiquadFilter(); padFilt.type = 'lowpass';
+  padFilt.frequency.value = p.filtBase;
+  padFilt.Q.value = 1.4;
+  const padLfo = c.createOscillator(); padLfo.type = 'sine';
+  padLfo.frequency.value = 0.13; // slow breath
+  const padLfoGain = c.createGain(); padLfoGain.gain.value = p.filtMod;
+  padLfo.connect(padLfoGain); padLfoGain.connect(padFilt.frequency);
+  padFilt.connect(padMix); padMix.connect(bgmGain); padMix.connect(dl);
+  padLfo.start(tStart);
+  bgmTrack(padLfo); bgmTrack(padLfoGain); bgmTrack(padFilt); bgmTrack(padMix);
+
+  // Add detuned saw oscillators per pad root
+  for (const root of p.padRoots){
+    for (const cents of p.padDetune){
+      const o = c.createOscillator();
+      o.type = p.padType;
+      o.frequency.value = root;
+      o.detune.value = cents;
+      const g = c.createGain(); g.gain.value = 0.025; // each voice quiet; many sum
+      o.connect(g); g.connect(padFilt);
+      o.start(tStart);
+      bgmTrack(o); bgmTrack(g);
+    }
+  }
+  // Fade pad in
+  padMix.gain.linearRampToValueAtTime(0.0, tStart);
+  padMix.gain.linearRampToValueAtTime(0.20, tStart + 0.5);
+
+  // === Sequencer ===
+  const sixteenth = (60 / p.tempo) / 4;
+  const beatMs = sixteenth * 1000;
+  bgmBeat = 0;
+  const ctxRef = c;
+
+  function spawnBassNote(when, freq){
+    const o = ctxRef.createOscillator(); o.type = 'triangle';
+    // small intrinsic vibrato via slight detune wobble (no shared LFO connection)
+    o.detune.setValueAtTime((Math.sin(when * 6.3) * 12), when);
+    o.frequency.setValueAtTime(freq, when);
+    o.frequency.exponentialRampToValueAtTime(Math.max(20, freq * 0.75), when + 0.32);
+    const flt = ctxRef.createBiquadFilter(); flt.type='lowpass';
+    flt.frequency.value = 480; flt.Q.value = 3;
+    const g = ctxRef.createGain(); g.gain.value = 0;
+    o.connect(flt); flt.connect(g); g.connect(bgmGain);
+    g.gain.linearRampToValueAtTime(0.22, when + 0.015);
+    g.gain.exponentialRampToValueAtTime(0.001, when + 0.35);
+    o.start(when); o.stop(when + 0.40);
+  }
+  function spawnLeadNote(when, freq, detuneCents){
+    const o = ctxRef.createOscillator(); o.type = p.lead;
+    o.frequency.value = freq;
+    o.detune.value = detuneCents || 0;
+    const flt = ctxRef.createBiquadFilter(); flt.type='bandpass';
+    flt.Q.value = 4;
+    flt.frequency.value = freq * 2 + 600;
+    const g = ctxRef.createGain(); g.gain.value = 0;
+    o.connect(flt); flt.connect(g);
+    g.connect(bgmGain); g.connect(dl);
+    g.gain.linearRampToValueAtTime(0.085, when + 0.005);
+    g.gain.exponentialRampToValueAtTime(0.001, when + 0.20);
+    o.start(when); o.stop(when + 0.22);
+  }
+  function spawnKick(when){
+    const o = ctxRef.createOscillator(); o.type = 'sine';
+    o.frequency.setValueAtTime(p.kickFreq * 2.4, when);
+    o.frequency.exponentialRampToValueAtTime(p.kickFreq * 0.55, when + 0.12);
+    const g = ctxRef.createGain(); g.gain.value = 0;
+    o.connect(g); g.connect(bgmGain);
+    g.gain.linearRampToValueAtTime(0.32, when + 0.005);
+    g.gain.exponentialRampToValueAtTime(0.001, when + 0.18);
+    o.start(when); o.stop(when + 0.22);
+  }
+  function spawnHat(when, accent){
+    const len = ctxRef.sampleRate * 0.05;
+    const buf = ctxRef.createBuffer(1, len, ctxRef.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random()*2-1);
+    const src = ctxRef.createBufferSource(); src.buffer = buf;
+    const flt = ctxRef.createBiquadFilter(); flt.type='highpass'; flt.frequency.value = p.hat; flt.Q.value = 1.2;
+    const g = ctxRef.createGain(); g.gain.value = 0;
+    src.connect(flt); flt.connect(g); g.connect(bgmGain);
+    const v = accent ? 0.08 : 0.045;
+    g.gain.linearRampToValueAtTime(v, when + 0.002);
+    g.gain.exponentialRampToValueAtTime(0.001, when + 0.06);
+    src.start(when); src.stop(when + 0.08);
+  }
+  function spawnSparkle(when){
+    const f = p.sparkleScale[Math.floor(Math.random() * p.sparkleScale.length)];
+    const o = ctxRef.createOscillator(); o.type = 'sine';
+    o.frequency.setValueAtTime(f, when);
+    o.frequency.exponentialRampToValueAtTime(f * (1.05 + Math.random() * 0.4), when + 0.5);
+    const g = ctxRef.createGain(); g.gain.value = 0;
+    o.connect(g); g.connect(dl); g.connect(bgmGain);
+    g.gain.linearRampToValueAtTime(0.04, when + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.001, when + 0.55);
+    o.start(when); o.stop(when + 0.6);
+  }
+  function spawnSweep(when){
+    // Slow filter sweep noise burst — psyc "rush"
+    const len = ctxRef.sampleRate * 1.5;
+    const buf = ctxRef.createBuffer(1, len, ctxRef.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random()*2-1) * 0.5;
+    const src = ctxRef.createBufferSource(); src.buffer = buf;
+    const flt = ctxRef.createBiquadFilter(); flt.type='bandpass';
+    flt.frequency.setValueAtTime(300, when);
+    flt.frequency.exponentialRampToValueAtTime(4500, when + 1.4);
+    flt.Q.value = 9;
+    const g = ctxRef.createGain(); g.gain.value = 0;
+    src.connect(flt); flt.connect(g); g.connect(bgmGain); g.connect(dl);
+    g.gain.linearRampToValueAtTime(0.10, when + 0.4);
+    g.gain.exponentialRampToValueAtTime(0.001, when + 1.5);
+    src.start(when); src.stop(when + 1.6);
+  }
+
+  let bar = 0;
   const tick = () => {
     if (!bgmStarted || !aCtx) return;
     try {
-      const t = aCtx.currentTime;
-      noisePop(p.hat, 0.04, 0.05, true);
-      if ((bgmBeat & 3) === 0){
-        const f = p.bass;
-        const o = aCtx.createOscillator(); o.type = 'triangle';
-        o.frequency.setValueAtTime(f, t);
-        o.frequency.exponentialRampToValueAtTime(Math.max(20, f * 0.7), t + 0.25);
-        const flt = aCtx.createBiquadFilter(); flt.type='lowpass'; flt.frequency.value = p.filt;
-        const g = aCtx.createGain(); g.gain.value = 0;
-        o.connect(flt); flt.connect(g); g.connect(bgmGain);
-        g.gain.linearRampToValueAtTime(0.18, t + 0.01);
-        g.gain.exponentialRampToValueAtTime(0.001, t + 0.30);
-        o.start(t); o.stop(t + 0.34);
+      const stepInBar = bgmBeat & 15;
+      const when = aCtx.currentTime + 0.02;
+      // Bass on beats 1 and 9 of each bar (downbeats)
+      if (stepInBar === 0 || stepInBar === 8){
+        const bIdx = (bgmBeat >> 3) % p.bass.length;
+        spawnBassNote(when, p.bass[bIdx]);
       }
-      if ((bgmBeat & 1) === 0){
-        const idx = (bgmBeat / 2) % p.scale.length;
-        const f = p.scale[idx];
-        const o = aCtx.createOscillator(); o.type = p.lead;
-        o.frequency.value = f;
-        const flt = aCtx.createBiquadFilter(); flt.type='lowpass';
-        const lfo = (Math.sin(t * 1.2) * 0.5 + 0.5) * (p.filt * p.modDepth) + p.filt * 0.6;
-        flt.frequency.value = lfo;
-        flt.Q.value = 2;
-        const g = aCtx.createGain(); g.gain.value = 0;
-        o.connect(flt); flt.connect(g); g.connect(bgmGain);
-        g.gain.linearRampToValueAtTime(0.07, t + 0.005);
-        g.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
-        o.start(t); o.stop(t + 0.20);
+      // Kick on 1 and 9
+      if (stepInBar === 0 || stepInBar === 8){
+        spawnKick(when);
       }
+      // Stage 3 polyrhythm: extra kick on 7 (3/4 feel mixed)
+      if (bgmStageNum === 3 && stepInBar === 6) spawnKick(when);
+      // Hi-hat every 8th
+      if ((stepInBar & 1) === 0){
+        spawnHat(when, stepInBar === 4 || stepInBar === 12);
+      }
+      // Lead arpeggio every 8th, walk the pentatonic
+      if ((stepInBar & 1) === 0){
+        const idx = (bgmBeat / 2) % p.pent.length;
+        // micro pitch wobble — psyc detune ±18 cents
+        const det = (Math.sin(bgmBeat * 0.41) + Math.sin(bgmBeat * 0.27) * 0.6) * 12;
+        spawnLeadNote(when, p.pent[idx], det);
+        // Stage 3: layered second voice a tritone higher
+        if (bgmStageNum === 3 && stepInBar === 4){
+          spawnLeadNote(when, p.pent[(idx + 3) % p.pent.length] * 1.0595, det + 7);
+        }
+      }
+      // Random sparkle
+      if (Math.random() < p.sparkleProb) spawnSparkle(when);
+      // Once-per-2-bar sweep on stages 2+
+      if (bgmStageNum >= 2 && stepInBar === 0 && (bar & 1) === 1) spawnSweep(when);
+      if (stepInBar === 15) bar++;
     } catch(_){}
     bgmBeat++;
   };
+  // Fade BGM in
+  bgmGain.gain.cancelScheduledValues(c.currentTime);
+  bgmGain.gain.setValueAtTime(0.0, c.currentTime);
+  bgmGain.gain.linearRampToValueAtTime(0.50, c.currentTime + 0.5);
   bgmTimer = setInterval(tick, beatMs);
 }
 function stopBgm(){
+  const wasStarted = bgmStarted;
   bgmStarted = false;
   if (bgmTimer){ clearInterval(bgmTimer); bgmTimer = null; }
+  // Snapshot the current node set so a startBgm() called during fade-out
+  // doesn't have its fresh nodes torn down by this stop's deferred cleanup.
+  const dying = bgmNodes;
+  bgmNodes = [];
+  if (aCtx && dying.length){
+    const t = aCtx.currentTime;
+    try {
+      bgmGain.gain.cancelScheduledValues(t);
+      bgmGain.gain.setValueAtTime(bgmGain.gain.value, t);
+      bgmGain.gain.linearRampToValueAtTime(0.0, t + 0.5);
+    } catch(_){}
+    for (const n of dying){
+      try { if (typeof n.stop === 'function') n.stop(t + 0.55); } catch(_){}
+    }
+    setTimeout(() => {
+      for (const n of dying){
+        try { if (typeof n.disconnect === 'function') n.disconnect(); } catch(_){}
+      }
+    }, 700);
+  }
+  if (wasStarted) bgmFadeUntil = (aCtx ? aCtx.currentTime : 0) + 0.6;
   stopDashNoise();
 }
 
@@ -966,6 +1174,10 @@ const state = {
   flashes: [],
   particles: [],
   starFlash: 0, hurtFlash: 0, hueShift: 0,
+  // v1.3 background reactivity
+  bgReact: { jump: 0, doubleJump: 0, kill: 0, dash: 0 },
+  bgRings: [],     // expanding radial waves spawned on stomp
+  enemiesActiveCount: 0,
   showTapHint: true,
   best: { score: 0, rank: '—' },
   eyes: [
@@ -985,7 +1197,17 @@ try {
 /* ---------- HELPERS ---------- */
 function freshStage(idx){
   const def = STAGE_BUILDERS[idx]();
-  def.enemies = def.enemies.map(e => Object.assign({ dead:false, animT: Math.random()*Math.PI*2, pulse: 0 }, e));
+  def.enemies = def.enemies.map(e => Object.assign({
+    dead:false,
+    animT: Math.random()*Math.PI*2,
+    pulse: 0,
+    homeX: e.x,
+    patDir: Math.random() < 0.5 ? -1 : 1,
+    jumpT: Math.random() * 1.5,
+    jumpVy: 0,
+    jumpY: 0,
+    _yOff: 0,
+  }, e));
   def.stars   = def.stars.map(s => Object.assign({ taken:false, animT: Math.random()*Math.PI*2 }, s));
   def.platforms = def.platforms.map(p => Object.assign({
     baseY: p.y, fadeT: 0, fadeState: 'idle', anim: 0,
@@ -1021,12 +1243,14 @@ function tryJump(){
     p.holdFrames = HOLD_BOOST_FRAMES;
     p.airJumpsLeft = 1;
     p.squashStretch = 1.45; // stretch up on takeoff
+    state.bgReact.jump = 1;
     sfxJump();
   } else if (p.airJumpsLeft > 0){
     p.vy = DOUBLE_JUMP_VY;
     p.airJumpsLeft = 0;
     p.holdFrames = 0;
     p.squashStretch = 1.55;
+    state.bgReact.doubleJump = 1;
     sfxDoubleJump();
     // radial ring of light particles
     for (let i = 0; i < 14; i++){
@@ -1187,15 +1411,47 @@ function update(dt){
     }
   }
 
-  // === Enemies (animation + pulse) ===
+  // === Enemies (movement + animation) — v1.3 fix ===
+  // Update enemies within camera ±500px. Each type has distinct motion.
+  let enemiesActiveCount = 0;
+  const enemyCamMin = state.cameraX - 500;
+  const enemyCamMax = state.cameraX + W + 500;
   for (const e of stage.enemies){
     if (e.dead) continue;
-    e.animT += dt * 4 * 1.20; // 20% faster than v1.1
+    if (e.x < enemyCamMin || e.x > enemyCamMax) continue;
+    enemiesActiveCount++;
+    e.animT += dt * 4 * 1.20;
     e.pulse = (e.pulse || 0) + dt * 2.2;
-    if (e.type === 'zukemushi')      e._yOff = Math.sin(e.animT * 0.5) * 2;
-    else if (e.type === 'hoshime')   e._yOff = Math.sin(e.animT) * 16;
-    else if (e.type === 'hanekurage')e._yOff = Math.abs(Math.sin(e.animT * 0.9)) * -28;
+    if (e.type === 'zukemushi'){
+      // crawl back-and-forth ±150px around homeX at 60 px/s
+      e.x += 60 * (e.patDir || 1) * dt;
+      if (e.x >= e.homeX + 150){ e.x = e.homeX + 150; e.patDir = -1; }
+      else if (e.x <= e.homeX - 150){ e.x = e.homeX - 150; e.patDir = 1; }
+      e._yOff = Math.sin(e.animT * 1.5) * 3;
+    } else if (e.type === 'hoshime'){
+      // float up/down (~50px amplitude, ~3s period) + slow chase when player is near
+      const playerDx = state.player.worldX - e.x;
+      if (Math.abs(playerDx) < 350){
+        e.x += Math.sign(playerDx) * 40 * dt;
+      }
+      e._yOff = Math.sin(e.animT * 0.7) * 25;
+    } else if (e.type === 'hanekurage'){
+      // hops every 1.5s up to ~80px, drifts ±100px around homeX at 30 px/s
+      e.jumpT = (e.jumpT || 0) - dt;
+      if (e.jumpT <= 0){
+        e.jumpT = 1.5;
+        e.jumpVy = -310;
+      }
+      e.jumpVy = (e.jumpVy || 0) + 600 * dt;
+      e.jumpY = (e.jumpY || 0) + e.jumpVy * dt;
+      if (e.jumpY > 0){ e.jumpY = 0; e.jumpVy = 0; }
+      e.x += 30 * (e.patDir || 1) * dt;
+      if (e.x >= e.homeX + 100){ e.x = e.homeX + 100; e.patDir = -1; }
+      else if (e.x <= e.homeX - 100){ e.x = e.homeX - 100; e.patDir = 1; }
+      e._yOff = e.jumpY;
+    }
   }
+  state.enemiesActiveCount = enemiesActiveCount;
 
   // === Collisions: enemies ===
   if (!p.dead){
@@ -1214,6 +1470,8 @@ function update(dt){
           p.vy = -460; p.onGround = false;
           // grant a fresh air-jump after a stomp to encourage chains
           p.airJumpsLeft = 1;
+          state.bgReact.kill = 1;
+          state.bgRings.push({ x: e.x, y: eY, t: 0 });
           sfxStomp();
           state.flashes.push({ kind:'pop', t: 0 });
           // splatter particles per enemy type
@@ -1275,6 +1533,13 @@ function update(dt){
 
   state.starFlash = Math.max(0, state.starFlash - dt * 1.6);
   state.hurtFlash = Math.max(0, state.hurtFlash - dt * 0.9);
+  // v1.3 bg reactivity decay
+  state.bgReact.jump      = Math.max(0, state.bgReact.jump      - dt * 2.5);
+  state.bgReact.doubleJump= Math.max(0, state.bgReact.doubleJump- dt * 1.8);
+  state.bgReact.kill      = Math.max(0, state.bgReact.kill      - dt * 1.6);
+  state.bgReact.dash      = state.dash.active ? 1 : Math.max(0, state.bgReact.dash - dt * 2.0);
+  for (const r of state.bgRings) r.t += dt;
+  state.bgRings = state.bgRings.filter(r => r.t < 1.4);
   updateHud();
 }
 
@@ -1397,6 +1662,24 @@ function renderBg(dt){
   if (!ctx) return;
   bgT += dt;
   const pal = paletteForBg();
+  const isStage3Game = state.screen === 'game' && state.stageIdx === 2;
+  const stageSpeed = isStage3Game ? 2.0 : 1.0;
+
+  // v1.3 dynamic hue — multi-sin composite (non-linear, occasional spikes)
+  const dynHue =
+    Math.sin(bgT * 0.07) * 35 +
+    Math.sin(bgT * 0.13 + 1.7) * 18 +
+    Math.sin(bgT * 0.027 + 2.4) * 14 +
+    Math.sin(bgT * 0.005) * 28 +
+    state.bgReact.doubleJump * 90 +
+    state.bgReact.kill * 60;
+  const dynSat = 1 + 0.18 * Math.sin(bgT * 0.09) + state.bgReact.dash * 0.25;
+  // apply CSS filter to canvas (cheap; one repaint per frame, no per-pixel work)
+  try { cv.style.filter = 'hue-rotate(' + dynHue.toFixed(1) + 'deg) saturate(' + dynSat.toFixed(2) + ')'; } catch(_){}
+
+  // v1.3 jump reactivity: scale background slightly (squeeze on jump release)
+  const bgScale = 1 + state.bgReact.jump * 0.04 - state.bgReact.jump * state.bgReact.jump * 0.06;
+
   // Layer 1: vertical sky gradient
   const grd = ctx.createLinearGradient(0, 0, 0, H);
   grd.addColorStop(0,    pal.sky1);
@@ -1410,7 +1693,7 @@ function renderBg(dt){
   ctx.globalCompositeOperation = 'screen';
   ctx.globalAlpha = 0.10;
   ctx.translate(W * 0.5, H * 0.45);
-  ctx.rotate(bgT * 0.03);
+  ctx.rotate(bgT * 0.03 * stageSpeed);
   for (let i = 1; i <= 7; i++){
     const r = i * 38 + (Math.sin(bgT * 0.4 + i) * 6);
     ctx.beginPath();
@@ -1427,10 +1710,10 @@ function renderBg(dt){
   ctx.globalAlpha = 0.55;
   const colors = [pal.marble1, pal.marble2, pal.marble3];
   for (let i = 0; i < 5; i++){
-    const phase = bgT * (0.06 + i * 0.018);
+    const phase = bgT * (0.06 + i * 0.018) * stageSpeed;
     const cx = W * (0.5 + Math.sin(phase + i * 1.7) * 0.30);
     const cy = H * (0.5 + Math.cos(phase * 1.1 + i * 2.3) * 0.30);
-    const r = Math.max(W, H) * (0.22 + Math.sin(phase * 0.8 + i) * 0.05);
+    const r = Math.max(W, H) * (0.22 + Math.sin(phase * 0.8 + i) * 0.05) * bgScale;
     const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
     const col = colors[i % colors.length];
     g.addColorStop(0,    col + 'aa');
@@ -1441,46 +1724,173 @@ function renderBg(dt){
   }
   ctx.restore();
 
-  // Layer 4: kaleidoscope spokes (stage 3 spins twice as fast)
+  // v1.3 Layer 3b: pseudo-Perlin noise blobs (organic flowing field)
   ctx.save();
-  ctx.translate(W * 0.5, H * 0.36);
-  const kSpeed = state.screen === 'game' && state.stageIdx === 2 ? 0.45 : 0.22;
-  ctx.rotate(bgT * kSpeed);
-  const spokes = state.stageIdx === 2 ? 20 : 16;
-  for (let i = 0; i < spokes; i++){
-    const a = (i / spokes) * Math.PI * 2;
-    const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, Math.max(W, H) * 0.95);
-    grad.addColorStop(0, pal.kaleido + 'dd');
-    grad.addColorStop(0.45, pal.kaleido + '30');
-    grad.addColorStop(1, 'transparent');
-    ctx.fillStyle = grad;
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.arc(0, 0, Math.max(W, H) * 0.95, a - 0.10, a + 0.10);
-    ctx.closePath();
-    ctx.fill();
+  ctx.globalCompositeOperation = 'overlay';
+  const noiseAlpha = 0.18 + state.bgReact.kill * 0.15;
+  ctx.globalAlpha = noiseAlpha;
+  // Sparse blob grid driven by composite sin (cheap pseudo-noise)
+  const noiseStep = Math.max(70, Math.round(Math.min(W, H) / 8));
+  for (let yy = noiseStep * 0.5; yy < H; yy += noiseStep){
+    for (let xx = noiseStep * 0.5; xx < W; xx += noiseStep){
+      const n =
+        Math.sin(xx * 0.013 + bgT * 0.55) +
+        Math.sin(yy * 0.017 + bgT * 0.41) * 0.7 +
+        Math.sin((xx + yy) * 0.009 + bgT * 0.33) * 0.6;
+      const r = Math.max(8, noiseStep * 0.55 + n * noiseStep * 0.22);
+      const off = Math.sin(bgT * 0.3 + xx * 0.005) * 14;
+      const cx = xx + off;
+      const cy = yy + Math.cos(bgT * 0.27 + yy * 0.005) * 14;
+      ctx.fillStyle = colors[(Math.floor(xx + yy) >> 6) % colors.length] + '40';
+      ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
+    }
   }
   ctx.restore();
 
-  // Layer 5: tentacle shadows (huge sweeping curves from edges)
+  // v1.3 Layer 4: 3-stack kaleidoscope on Lissajous-moving center
+  const lissCx = W * (0.5 + Math.sin(bgT * 0.045) * 0.28);
+  const lissCy = H * (0.40 + Math.cos(bgT * 0.067) * 0.18);
+  const kBase = (isStage3Game ? 0.42 : 0.22);
+  for (let layer = 0; layer < 3; layer++){
+    ctx.save();
+    ctx.translate(lissCx, lissCy);
+    const dir = (layer & 1) ? -1 : 1;
+    ctx.rotate(bgT * (kBase + layer * 0.11) * dir);
+    ctx.globalCompositeOperation = layer === 0 ? 'screen' : 'lighter';
+    const breath = 0.5 + 0.5 * Math.sin(bgT * 0.32 + layer * 1.7);
+    ctx.globalAlpha = 0.18 + breath * 0.22;
+    const spokes = (isStage3Game ? 22 : 16) + layer * 4;
+    const radius = Math.max(W, H) * (0.78 + layer * 0.10);
+    for (let i = 0; i < spokes; i++){
+      const a = (i / spokes) * Math.PI * 2;
+      const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, radius);
+      grad.addColorStop(0, pal.kaleido + 'dd');
+      grad.addColorStop(0.45, pal.kaleido + '30');
+      grad.addColorStop(1, 'transparent');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.arc(0, 0, radius, a - 0.085, a + 0.085);
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  // v1.3 Layer 5: 5 tentacle shadows (was 3) — bezier with deeper undulation
   ctx.save();
   ctx.globalCompositeOperation = 'multiply';
-  ctx.globalAlpha = 0.35;
+  ctx.globalAlpha = 0.32;
   ctx.strokeStyle = pal.tentacle || '#1a0510';
-  for (let i = 0; i < 3; i++){
-    const phase = bgT * 0.08 + i * 1.7;
-    ctx.lineWidth = 60 + Math.sin(phase) * 14;
+  ctx.lineCap = 'round';
+  for (let i = 0; i < 5; i++){
+    const phase = bgT * (0.07 + i * 0.013) * stageSpeed + i * 1.13;
+    ctx.lineWidth = 38 + Math.sin(phase) * 22;
     ctx.beginPath();
-    const x0 = i % 2 === 0 ? -50 : W + 50;
-    const yA = H * (0.6 + Math.sin(phase) * 0.10);
-    const yB = H * (0.4 + Math.cos(phase * 1.1) * 0.10);
-    const cx = W * (0.5 + Math.sin(phase * 0.7) * 0.30);
-    const cy = H * (0.3 + Math.cos(phase * 0.8 + i) * 0.10);
+    const x0 = (i & 1) ? W + 60 : -60;
+    const yA = H * (0.18 + i * 0.14 + Math.sin(phase) * 0.10);
+    const yB = H * (0.32 + (4 - i) * 0.12 + Math.cos(phase * 1.1) * 0.10);
+    const cx1 = W * (0.5 + Math.sin(phase * 0.7) * 0.40);
+    const cy1 = H * (0.22 + Math.cos(phase * 0.83 + i) * 0.24);
+    const cx2 = W * (0.5 + Math.cos(phase * 0.91 + i) * 0.36);
+    const cy2 = H * (0.46 + Math.sin(phase * 0.6) * 0.22);
     ctx.moveTo(x0, yA);
-    ctx.quadraticCurveTo(cx, cy, (i % 2 === 0 ? W + 50 : -50), yB);
+    ctx.bezierCurveTo(cx1, cy1, cx2, cy2, ((i & 1) ? -60 : W + 60), yB);
     ctx.stroke();
   }
   ctx.restore();
+
+  // v1.3 stage-specific decoration
+  ctx.save();
+  ctx.globalCompositeOperation = 'screen';
+  if (state.stageIdx === 0){
+    // Stage 1 — drifting flower petals (rotating arcs)
+    ctx.globalAlpha = 0.22;
+    for (let i = 0; i < 4; i++){
+      const ph = bgT * (0.12 + i * 0.03) + i * 1.7;
+      const fx = W * (0.18 + 0.22 * i + Math.sin(ph) * 0.05);
+      const fy = H * (0.25 + Math.cos(ph * 0.9) * 0.15);
+      ctx.save(); ctx.translate(fx, fy); ctx.rotate(ph * 0.6);
+      for (let p = 0; p < 6; p++){
+        const a = p * Math.PI / 3;
+        ctx.beginPath();
+        ctx.ellipse(Math.cos(a) * 16, Math.sin(a) * 16, 20, 8, a, 0, Math.PI * 2);
+        ctx.fillStyle = colors[p % 3] + '55';
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+  } else if (state.stageIdx === 1){
+    // Stage 2 — crystal sparkles (pulsing bright dots)
+    ctx.globalAlpha = 0.50;
+    for (let i = 0; i < 18; i++){
+      const ph = bgT * (1.5 + i * 0.07) + i * 0.9;
+      const tw = 0.5 + 0.5 * Math.sin(ph);
+      const cx = W * ((i * 0.137) % 1);
+      const cy = H * ((i * 0.211 + 0.1) % 1);
+      ctx.fillStyle = pal.marble3 + 'cc';
+      ctx.beginPath(); ctx.arc(cx, cy, 1.4 + tw * 3.2, 0, Math.PI * 2); ctx.fill();
+      // 4-point sparkle ray
+      ctx.strokeStyle = pal.marble1 + '88';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(cx - 6 * tw, cy); ctx.lineTo(cx + 6 * tw, cy);
+      ctx.moveTo(cx, cy - 6 * tw); ctx.lineTo(cx, cy + 6 * tw);
+      ctx.stroke();
+    }
+  } else if (state.stageIdx === 2){
+    // Stage 3 — collapsing horizon: skewed dark band crossing the screen
+    ctx.globalCompositeOperation = 'multiply';
+    ctx.globalAlpha = 0.35;
+    const skew = Math.sin(bgT * 0.6) * 0.12;
+    ctx.save();
+    ctx.translate(W * 0.5, H * 0.5);
+    ctx.transform(1, skew, -skew, 1, 0, 0);
+    ctx.fillStyle = '#1a0008';
+    ctx.fillRect(-W, -20 + Math.sin(bgT * 0.4) * 24, W * 2, 40);
+    ctx.restore();
+    // extra inverted kaleido ring (urgent)
+    ctx.globalCompositeOperation = 'screen';
+    ctx.globalAlpha = 0.32;
+    ctx.save();
+    ctx.translate(W * (0.5 + Math.cos(bgT * 0.18) * 0.18), H * (0.55 + Math.sin(bgT * 0.21) * 0.16));
+    ctx.rotate(-bgT * 0.6);
+    for (let i = 0; i < 10; i++){
+      const a = (i / 10) * Math.PI * 2;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.arc(0, 0, Math.max(W, H) * 0.6, a - 0.06, a + 0.06);
+      ctx.closePath();
+      ctx.fillStyle = pal.marble1 + '60';
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+  ctx.restore();
+
+  // v1.3 stomp rings — radial waves emanating from kill positions
+  if (state.bgRings.length){
+    ctx.save();
+    ctx.globalCompositeOperation = 'screen';
+    for (const r of state.bgRings){
+      const cam = state.cameraX || 0;
+      const rx = r.x - cam;
+      const ry = r.y;
+      const a = Math.max(0, 1 - r.t / 1.4);
+      ctx.globalAlpha = a * 0.55;
+      ctx.strokeStyle = pal.marble1;
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.arc(rx, ry, 20 + r.t * 240, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.globalAlpha = a * 0.30;
+      ctx.strokeStyle = pal.marble3;
+      ctx.beginPath();
+      ctx.arc(rx, ry, 30 + r.t * 180, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
 
   // Layer 6: warped symbols (∞ ◉ ⚭) drifting far behind
   ctx.save();
@@ -2117,7 +2527,7 @@ function frame(now){
     if (fpsAccum >= 0.5){
       fpsDisplay = Math.round(fpsFrames / fpsAccum);
       fpsAccum = 0; fpsFrames = 0;
-      if (fpsEl) fpsEl.textContent = 'FPS: ' + fpsDisplay + ' · F: ' + frameCount;
+      if (fpsEl) fpsEl.textContent = 'FPS: ' + fpsDisplay + ' · F: ' + frameCount + ' · E: ' + (state.enemiesActiveCount || 0);
     }
     renderBg(dt);
     update(dt);
@@ -2361,7 +2771,27 @@ window.__megaTripHopper = {
         playerVy: state.player.vy, onGround: state.player.onGround,
         airJumpsLeft: state.player.airJumpsLeft,
         dashActive: state.dash.active, dashStamina: state.dash.stamina,
+        enemiesActiveCount: state.enemiesActiveCount || 0,
       },
+    };
+  },
+  enemySnapshot(){
+    if (!state.stage) return [];
+    return state.stage.enemies.slice(0, 12).map(e => ({
+      type: e.type, x: Math.round(e.x), homeX: e.homeX,
+      patDir: e.patDir, yOff: Math.round(e._yOff || 0),
+      dead: !!e.dead,
+    }));
+  },
+  bgmDiagnostics(){
+    return {
+      bgmStarted: bgmStarted, bgmStage: bgmStageNum,
+      activeBgmNodes: bgmNodes.length,
+      oscillators: bgmNodes.filter(n => n && n.constructor && /Oscillator/.test(n.constructor.name)).length,
+      delays:      bgmNodes.filter(n => n && n.constructor && /Delay/.test(n.constructor.name)).length,
+      filters:     bgmNodes.filter(n => n && n.constructor && /Biquad/.test(n.constructor.name)).length,
+      gains:       bgmNodes.filter(n => n && n.constructor && /Gain/.test(n.constructor.name)).length,
+      tempo: (BGM_PATTERNS[bgmStageNum] || {}).tempo,
     };
   },
   audit(){
