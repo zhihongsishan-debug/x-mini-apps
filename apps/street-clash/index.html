@@ -626,7 +626,7 @@
 const $ = id => document.getElementById(id);
 
 /* ================================================================
-   STREET CLASH v3.2 — dedicated portrait + CSS clip fix
+   STREET CLASH v3.3 — realistic underground-arena background
    ================================================================ */
 
 /* ---------- CONSTANTS ---------- */
@@ -2474,269 +2474,493 @@ function renderMenuBg(){
 function renderBattle(){
   const ws = worldToScreen();
   const sc = ws.sx, dx = ws.dx, dy = ws.dy;
-  // === Layer 1: concrete wall (slow parallax) ===
-  const par1 = state.cameraX * 0.10;
+  // ============================================================
+  // v3.3 — Realistic underground-arena background overhaul.
+  // Replaces line-pattern walls + flat floor + thin spotlights with
+  // textured concrete + perspective-tile floor + volumetric light shafts.
+  // ============================================================
   ctx.save();
   ctx.translate(dx, dy);
   ctx.scale(sc, sc);
+  const groundY = STAGE_H * GROUND_FRAC;
 
-  // Sky base — slight cool tint at top for air perspective
-  const grd = ctx.createLinearGradient(0, 0, 0, STAGE_H);
-  grd.addColorStop(0,    '#040608');
-  grd.addColorStop(0.40, '#0c0e12');
-  grd.addColorStop(0.70, '#171818');
-  grd.addColorStop(1,    '#060606');
-  ctx.fillStyle = grd;
-  ctx.fillRect(0, 0, STAGE_W, STAGE_H * GROUND_FRAC + 4);
+  // === Sky / vertical background gradient ===
+  const skyG = ctx.createLinearGradient(0, 0, 0, STAGE_H);
+  skyG.addColorStop(0,    '#0a0a0a');
+  skyG.addColorStop(0.40, '#1a1a1a');
+  skyG.addColorStop(0.75, '#222222');
+  skyG.addColorStop(1,    '#0d0d0d');
+  ctx.fillStyle = skyG;
+  ctx.fillRect(0, 0, STAGE_W, groundY + 4);
 
-  // === Layer 1: distant wall (air perspective — cool desaturated blue-grey) ===
+  // === Layer 1 — Concrete wall (slow parallax 0.10) ===
+  const par1 = state.cameraX * 0.10;
   ctx.save();
   ctx.translate(-par1, 0);
-  for (let i = -2; i < 30; i++){
-    const bx = i * 120 - 60;
-    // concrete blocks with slight blue cast (far layer atmospheric)
-    ctx.fillStyle = i % 2 ? '#0e1014' : '#0a0c10';
-    ctx.fillRect(bx, 0, 120, STAGE_H * GROUND_FRAC);
-    // texture noise — gritty speckles
-    ctx.fillStyle = 'rgba(180,184,196,0.04)';
-    for (let s = 0; s < 24; s++){
-      const sx = bx + Math.floor((i * 37 + s * 19) % 120);
-      const sy = Math.floor((s * 41 + i * 23) % (STAGE_H * GROUND_FRAC));
-      ctx.fillRect(sx, sy, 1.5, 1.5);
-    }
-    // mortar lines
-    ctx.strokeStyle = 'rgba(0,0,0,0.5)';
-    ctx.lineWidth = 1;
+  const wallH = groundY;
+  // base wall gradient — vertical concrete tone
+  const wallG = ctx.createLinearGradient(0, 0, 0, wallH);
+  wallG.addColorStop(0,   '#1a1a1a');
+  wallG.addColorStop(0.5, '#2a2a2a');
+  wallG.addColorStop(1,   '#1a1a1a');
+  ctx.fillStyle = wallG;
+  ctx.fillRect(-200, 0, STAGE_W + 400, wallH);
+  // irregular horizontal mortar lines — concrete block courses
+  ctx.strokeStyle = 'rgba(60,60,60,0.6)';
+  ctx.lineWidth = 1.2;
+  const courses = [60, 110, 170, 230, 295, 360, 425, 490];
+  for (let ri = 0; ri < courses.length; ri++){
+    const y = courses[ri];
     ctx.beginPath();
-    ctx.moveTo(bx + 120, 0); ctx.lineTo(bx + 120, STAGE_H * GROUND_FRAC);
-    ctx.moveTo(bx, STAGE_H * 0.30); ctx.lineTo(bx + 120, STAGE_H * 0.30);
-    ctx.moveTo(bx, STAGE_H * 0.55); ctx.lineTo(bx + 120, STAGE_H * 0.55);
-    ctx.stroke();
-    // graffiti / blood splotches — desaturated, slightly tilted
-    if (i % 5 === 2){
-      ctx.save();
-      ctx.translate(bx + 60, STAGE_H * 0.40);
-      ctx.rotate(((i * 0.21) % 0.4 - 0.2));
-      // blood splotch — irregular shape
-      ctx.fillStyle = 'rgba(122,16,16,0.42)';
-      ctx.beginPath();
-      ctx.ellipse(0, 0, 32, 22, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = 'rgba(82,8,8,0.55)';
-      ctx.beginPath();
-      ctx.ellipse(-6, 6, 14, 9, 0, 0, Math.PI * 2);
-      ctx.fill();
-      // drip
-      ctx.fillStyle = 'rgba(82,8,8,0.40)';
-      ctx.fillRect(8, -2, 2, 18);
-      ctx.restore();
-      // graffiti tag, faded
-      ctx.save();
-      ctx.translate(bx + 30, STAGE_H * 0.30);
-      ctx.rotate(-0.04);
-      ctx.fillStyle = 'rgba(160,150,120,0.20)';
-      ctx.font = '900 22px monospace';
-      ctx.fillText('XIII', 0, 0);
-      ctx.restore();
-    } else if (i % 5 === 4){
-      ctx.save();
-      ctx.translate(bx + 16, STAGE_H * 0.50);
-      ctx.rotate(0.03);
-      ctx.fillStyle = 'rgba(200,190,170,0.12)';
-      ctx.font = '900 22px sans-serif';
-      ctx.fillText('STREET', 0, 0);
-      ctx.restore();
-    }
-    // vent
-    if (i % 7 === 3){
-      ctx.fillStyle = '#000';
-      ctx.fillRect(bx + 40, STAGE_H * 0.08, 50, 18);
-      ctx.strokeStyle = '#222'; ctx.lineWidth = 1;
-      for (let k = 0; k < 5; k++){
-        ctx.beginPath();
-        ctx.moveTo(bx + 42, STAGE_H * 0.08 + 3 + k * 3);
-        ctx.lineTo(bx + 88, STAGE_H * 0.08 + 3 + k * 3);
-        ctx.stroke();
-      }
-    }
-  }
-  ctx.restore();
-  // === Layer 1.5: air-perspective haze overlay (cool blue) — gives depth ===
-  ctx.save();
-  const haze = ctx.createLinearGradient(0, 0, 0, STAGE_H * GROUND_FRAC);
-  haze.addColorStop(0,   'rgba(40,60,90,0.20)');
-  haze.addColorStop(0.5, 'rgba(20,30,50,0.12)');
-  haze.addColorStop(1,   'rgba(0,0,0,0)');
-  ctx.fillStyle = haze;
-  ctx.fillRect(0, 0, STAGE_W, STAGE_H * GROUND_FRAC);
-  ctx.restore();
-
-  // === Layer 2: crowd silhouettes (medium parallax, independent sway) ===
-  const par2 = state.cameraX * 0.30;
-  ctx.save();
-  ctx.translate(-par2 + STAGE_W * 0.5, 0);
-  const t = state.ringPulse;
-  const crowdY = STAGE_H * 0.52;
-  for (let i = -16; i < 16; i++){
-    const x0 = i * 56;
-    // per-person phase = deterministic from index
-    const phaseA = i * 1.71;
-    const phaseB = i * 2.47;
-    const sway = Math.sin(t * (0.8 + (i % 5) * 0.18) + phaseA) * (3 + (i % 4));
-    const headBob = Math.sin(t * 1.4 + phaseB) * 2;
-    const fistUp  = (Math.sin(t * 0.45 + phaseA) > (0.82 - (i % 7) * 0.04));
-    const standUp = (Math.sin(t * 0.18 + phaseB) > 0.96);
-    const standOff = standUp ? -8 : 0;
-    const headR = 13 + (i % 3) * 2;
-    // depth-shaded silhouettes — slight blue cast
-    ctx.fillStyle = i % 5 === 0 ? '#070a0e' : '#0b0c10';
-    // body
-    ctx.beginPath();
-    ctx.moveTo(x0 - 18, crowdY + 90);
-    ctx.lineTo(x0 - 18, crowdY + 12 + sway + standOff);
-    ctx.lineTo(x0 + 18, crowdY + 12 + sway + standOff);
-    ctx.lineTo(x0 + 18, crowdY + 90);
-    ctx.fill();
-    // head
-    ctx.beginPath(); ctx.arc(x0, crowdY + sway + headBob + standOff, headR, 0, Math.PI * 2); ctx.fill();
-    // raised fist
-    if (fistUp){
-      const fy = crowdY - 32 + sway + standOff;
-      ctx.fillRect(x0 - 4, fy, 8, 24);
-      ctx.beginPath(); ctx.arc(x0, fy - 4, 6, 0, Math.PI * 2); ctx.fill();
-    }
-    // shoulders shrug occasionally
-    const shrug = Math.sin(t * 0.5 + phaseB) > 0.94 ? -2 : 0;
-    if (shrug){
-      ctx.fillRect(x0 - 22, crowdY + 14 + sway + standOff + shrug, 8, 16);
-      ctx.fillRect(x0 + 14, crowdY + 14 + sway + standOff + shrug, 8, 16);
-    }
-  }
-  ctx.restore();
-
-  // === Layer 3: fence / pillars (closer parallax) ===
-  const par3 = state.cameraX * 0.60;
-  ctx.save();
-  ctx.translate(-par3, 0);
-  ctx.strokeStyle = 'rgba(140,128,108,0.34)';
-  ctx.lineWidth = 1.5;
-  for (let x = -200; x < STAGE_W + 200; x += 38){
-    ctx.beginPath(); ctx.moveTo(x, STAGE_H * 0.40); ctx.lineTo(x + 38, STAGE_H * 0.65); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(x + 38, STAGE_H * 0.40); ctx.lineTo(x, STAGE_H * 0.65); ctx.stroke();
-  }
-  // pillars with subtle vertical highlight
-  for (const pxFrac of [0.10, 0.90]){
-    const px = STAGE_W * pxFrac;
-    ctx.fillStyle = '#070707';
-    ctx.fillRect(px, STAGE_H * 0.30, 22, STAGE_H * 0.42);
-    ctx.fillStyle = 'rgba(120,108,90,0.20)';
-    ctx.fillRect(px + 3, STAGE_H * 0.30, 3, STAGE_H * 0.42);
-    ctx.fillStyle = 'rgba(0,0,0,0.45)';
-    ctx.fillRect(px + 18, STAGE_H * 0.30, 4, STAGE_H * 0.42);
-  }
-  ctx.restore();
-
-  // === Spotlights: visible cones + housing + floor halos ===
-  ctx.save();
-  for (let i = 0; i < 3; i++){
-    const cx = STAGE_W * (0.3 + i * 0.2);
-    const cy = STAGE_H * 0.13;
-    const pulse = (i === 1 ? 1.0 : 0.75) + state.spotPulse * 0.5;
-    // light housing
-    ctx.fillStyle = '#000';
-    ctx.fillRect(cx - 18, cy - 14, 36, 18);
-    ctx.strokeStyle = 'rgba(120,108,90,0.55)'; ctx.lineWidth = 1.4;
-    ctx.strokeRect(cx - 18, cy - 14, 36, 18);
-    // bulb glow
-    const bgr = ctx.createRadialGradient(cx, cy + 2, 0, cx, cy + 2, 18);
-    bgr.addColorStop(0, 'rgba(255,232,160,' + (0.75 * pulse) + ')');
-    bgr.addColorStop(1, 'rgba(212,175,55,0)');
-    ctx.fillStyle = bgr;
-    ctx.beginPath(); ctx.arc(cx, cy + 2, 18, 0, Math.PI * 2); ctx.fill();
-    // visible cone (screen blend)
-    ctx.save();
-    ctx.globalCompositeOperation = 'screen';
-    const grd = ctx.createRadialGradient(cx, cy + 2, 8, cx, cy + 70, 380);
-    grd.addColorStop(0, 'rgba(255,232,160,' + (0.22 * pulse) + ')');
-    grd.addColorStop(0.4, 'rgba(212,175,55,' + (0.10 * pulse) + ')');
-    grd.addColorStop(1, 'rgba(212,175,55,0)');
-    ctx.fillStyle = grd;
-    ctx.beginPath();
-    ctx.moveTo(cx - 22, cy + 4);
-    ctx.lineTo(cx + 22, cy + 4);
-    ctx.lineTo(cx + 280, STAGE_H * GROUND_FRAC);
-    ctx.lineTo(cx - 280, STAGE_H * GROUND_FRAC);
-    ctx.closePath();
-    ctx.fill();
-    // edge beams visible in air
-    ctx.strokeStyle = 'rgba(255,232,160,' + (0.08 * pulse) + ')';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(cx - 22, cy + 4); ctx.lineTo(cx - 280, STAGE_H * GROUND_FRAC);
-    ctx.moveTo(cx + 22, cy + 4); ctx.lineTo(cx + 280, STAGE_H * GROUND_FRAC);
-    ctx.stroke();
-    ctx.restore();
-  }
-  ctx.restore();
-
-  // === Layer 4: floor (1:1 scroll) ===
-  const par4 = state.cameraX * 1.0;
-  ctx.save();
-  ctx.translate(-par4, 0);
-  // floor base
-  const floorGrd = ctx.createLinearGradient(0, STAGE_H * GROUND_FRAC, 0, STAGE_H);
-  floorGrd.addColorStop(0, '#0a0a0a');
-  floorGrd.addColorStop(0.4, '#0d0d0e');
-  floorGrd.addColorStop(1, '#060606');
-  ctx.fillStyle = floorGrd;
-  ctx.fillRect(-STAGE_W, STAGE_H * GROUND_FRAC, STAGE_W * 3, STAGE_H * (1 - GROUND_FRAC));
-  // wet floor reflections under each spotlight
-  for (let i = 0; i < 3; i++){
-    const cx = STAGE_W * (0.3 + i * 0.2);
-    const ry = STAGE_H * (GROUND_FRAC + 0.05);
-    const pulse = (i === 1 ? 1.0 : 0.75) + state.spotPulse * 0.5;
-    const rgrd = ctx.createRadialGradient(cx, ry, 0, cx, ry, 220);
-    rgrd.addColorStop(0, 'rgba(255,232,160,' + (0.16 * pulse) + ')');
-    rgrd.addColorStop(0.4, 'rgba(212,175,55,' + (0.06 * pulse) + ')');
-    rgrd.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = rgrd;
-    ctx.beginPath();
-    ctx.ellipse(cx, ry, 220, 30, 0, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  // circle mark
-  ctx.strokeStyle = 'rgba(212,175,55,0.32)';
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-  ctx.arc(STAGE_W * 0.5, STAGE_H * (GROUND_FRAC + 0.06), 180, 0, Math.PI * 2);
-  ctx.stroke();
-  // inner circle
-  ctx.strokeStyle = 'rgba(193,20,20,0.32)';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.arc(STAGE_W * 0.5, STAGE_H * (GROUND_FRAC + 0.06), 120, 0, Math.PI * 2);
-  ctx.stroke();
-  // cross lines
-  ctx.strokeStyle = 'rgba(212,175,55,0.18)';
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(STAGE_W * 0.5 - 200, STAGE_H * (GROUND_FRAC + 0.06));
-  ctx.lineTo(STAGE_W * 0.5 + 200, STAGE_H * (GROUND_FRAC + 0.06));
-  ctx.moveTo(STAGE_W * 0.5, STAGE_H * (GROUND_FRAC - 0.04));
-  ctx.lineTo(STAGE_W * 0.5, STAGE_H);
-  ctx.stroke();
-  // cracks
-  ctx.strokeStyle = 'rgba(0,0,0,0.5)';
-  for (let k = 0; k < 10; k++){
-    ctx.beginPath();
-    let cx = (k * 240) - STAGE_W, cy = STAGE_H * (GROUND_FRAC + 0.04);
+    let cx = -200, cy = y + Math.sin(ri * 1.7) * 3;
     ctx.moveTo(cx, cy);
-    for (let s = 0; s < 5; s++){
-      cx += 20 + Math.random() * 16; cy += (Math.random() - 0.5) * 12;
+    while (cx < STAGE_W + 400){
+      cx += 26 + (Math.sin(cx * 0.013 + y * 0.027) + 1) * 22;
+      cy = y + Math.sin(cx * 0.007 + ri * 0.7) * 2.4;
       ctx.lineTo(cx, cy);
     }
     ctx.stroke();
   }
+  // vertical mortar lines at varied intervals (block staggering)
+  ctx.strokeStyle = 'rgba(60,60,60,0.45)';
+  ctx.lineWidth = 1.0;
+  for (let i = 0; i < 20; i++){
+    const x = -200 + i * 90 + Math.sin(i * 2.13) * 18;
+    // pick adjacent rows to bound the seam
+    const ri = i % (courses.length - 1);
+    const y1 = courses[ri];
+    const y2 = courses[ri + 1];
+    ctx.beginPath();
+    ctx.moveTo(x, y1);
+    ctx.lineTo(x + Math.sin(i * 4.13) * 2, y2);
+    ctx.stroke();
+  }
+  // grit noise — deterministic pseudo-random specks for concrete texture
+  for (let i = 0; i < 480; i++){
+    const sx = ((i * 217) % (STAGE_W + 200)) - 100;
+    const sy = ((i * 137) % wallH);
+    const dark = (Math.sin(i * 1.23) > 0);
+    ctx.fillStyle = dark ? 'rgba(0,0,0,0.18)' : 'rgba(190,190,190,0.06)';
+    ctx.fillRect(sx, sy, 1.4, 1.4);
+  }
+  // larger water/mold stains
+  const stains = [
+    { x: 120, y: 80,  r: 36, a: 0.34 },
+    { x: 240, y: 240, r: 28, a: 0.28 },
+    { x: 380, y: 120, r: 44, a: 0.36 },
+    { x: 520, y: 320, r: 32, a: 0.30 },
+    { x: 680, y: 180, r: 40, a: 0.34 },
+    { x: 820, y: 280, r: 36, a: 0.32 },
+    { x: 970, y: 100, r: 28, a: 0.26 },
+    { x: 1110, y: 220, r: 42, a: 0.34 },
+    { x: 1240, y: 340, r: 32, a: 0.30 },
+  ];
+  for (const s of stains){
+    const g = ctx.createRadialGradient(s.x, s.y, 4, s.x, s.y, s.r);
+    g.addColorStop(0, 'rgba(0,0,0,' + s.a + ')');
+    g.addColorStop(0.6, 'rgba(0,0,0,' + (s.a * 0.5) + ')');
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.ellipse(s.x, s.y, s.r, s.r * 0.85, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  // cracks — irregular branching dark lines
+  const cracks = [
+    { x: 180, y: 50,  segs: 6 },
+    { x: 460, y: 100, segs: 5 },
+    { x: 740, y: 60,  segs: 7 },
+    { x: 1000, y: 80, segs: 5 },
+  ];
+  for (let ci = 0; ci < cracks.length; ci++){
+    const c = cracks[ci];
+    ctx.strokeStyle = 'rgba(0,0,0,0.65)';
+    ctx.lineWidth = 1.2;
+    let px = c.x, py = c.y;
+    ctx.beginPath();
+    ctx.moveTo(px, py);
+    for (let k = 0; k < c.segs; k++){
+      const seed = ci * 37 + k * 13.7;
+      const dx2 = (Math.sin(seed * 1.31) * 0.5 + 0.4) * 38;
+      const dy2 = (Math.sin(seed * 2.17) * 0.6 + 0.6) * 48;
+      px += dx2; py += dy2;
+      ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+    // small branch
+    ctx.beginPath();
+    ctx.moveTo(c.x + 18, c.y + 30);
+    ctx.lineTo(c.x + 18 + Math.sin(ci * 7) * 22, c.y + 30 + 36);
+    ctx.stroke();
+  }
+  // blood spatters — small, dark, sparse
+  const blood = [
+    { x: 340, y: 200, r: 12 },
+    { x: 800, y: 380, r: 14 },
+    { x: 1080, y: 280, r: 11 },
+  ];
+  for (const b of blood){
+    ctx.fillStyle = 'rgba(70,8,8,0.55)';
+    ctx.beginPath(); ctx.ellipse(b.x, b.y, b.r, b.r * 0.7, 0, 0, Math.PI * 2); ctx.fill();
+    // surrounding droplets
+    for (let i = 0; i < 5; i++){
+      const ang = (i / 5) * Math.PI * 2 + b.x * 0.01;
+      const r2 = b.r * (1.2 + Math.sin(i * 3.7) * 0.4);
+      const dxd = Math.cos(ang) * r2 + Math.sin(i * 9.7) * 4;
+      const dyd = Math.sin(ang) * r2 + Math.cos(i * 5.3) * 3;
+      ctx.fillStyle = 'rgba(70,8,8,0.42)';
+      ctx.beginPath();
+      ctx.arc(b.x + dxd, b.y + dyd, 1.6 + Math.sin(i * 3.1) * 0.7, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    // drip below
+    ctx.fillStyle = 'rgba(50,6,6,0.50)';
+    ctx.fillRect(b.x + 2, b.y + 6, 1.4, 22 + Math.sin(b.x * 0.1) * 8);
+  }
+  // handwritten graffiti — tiny, faded, no XIII/STREET. just atmosphere.
+  ctx.save();
+  ctx.globalAlpha = 0.13;
+  ctx.font = 'italic 12px "Comic Sans MS","Lucida Handwriting",cursive,sans-serif';
+  ctx.fillStyle = '#a0a0a0';
+  ctx.save(); ctx.translate(280, 340); ctx.rotate(-0.09); ctx.fillText('no future', 0, 0); ctx.restore();
+  ctx.fillStyle = '#8a4444';
+  ctx.save(); ctx.translate(900, 360); ctx.rotate(0.06); ctx.fillText('we are the night', 0, 0); ctx.restore();
+  ctx.fillStyle = '#909090';
+  ctx.save(); ctx.translate(560,  70); ctx.rotate(-0.04); ctx.fillText('exit?', 0, 0); ctx.restore();
+  ctx.restore();
+  // vents — smaller, fewer
+  for (let v = 0; v < 3; v++){
+    const vx = 160 + v * 420;
+    ctx.fillStyle = '#040404';
+    ctx.fillRect(vx, 30, 48, 18);
+    ctx.strokeStyle = '#3a3a3a'; ctx.lineWidth = 1;
+    ctx.strokeRect(vx, 30, 48, 18);
+    ctx.strokeStyle = '#1a1a1a';
+    for (let k = 0; k < 4; k++){
+      ctx.beginPath();
+      ctx.moveTo(vx + 3, 33 + k * 4); ctx.lineTo(vx + 45, 33 + k * 4); ctx.stroke();
+    }
+  }
+  ctx.restore();
+
+  // === Layer 1.5 — atmospheric haze (subtle warm desaturation) ===
+  ctx.save();
+  const haze = ctx.createLinearGradient(0, 0, 0, groundY);
+  haze.addColorStop(0,   'rgba(30,28,22,0.22)');
+  haze.addColorStop(0.6, 'rgba(20,18,14,0.10)');
+  haze.addColorStop(1,   'rgba(0,0,0,0)');
+  ctx.fillStyle = haze;
+  ctx.fillRect(0, 0, STAGE_W, groundY);
+  ctx.restore();
+
+  // === Layer 2 — Tiered crowd (parallax 0.30) ===
+  const par2 = state.cameraX * 0.30;
+  const tT = state.ringPulse;
+  ctx.save();
+  ctx.translate(-par2, 0);
+  // 3 tiers — back tier higher and dimmer (air-perspective)
+  const tiers = [
+    { y: STAGE_H * 0.62, alpha: 1.00, spacing: 50, headR: 13, color: '#0c0d10' },
+    { y: STAGE_H * 0.54, alpha: 0.85, spacing: 56, headR: 11, color: '#0a0b0e' },
+    { y: STAGE_H * 0.46, alpha: 0.70, spacing: 62, headR: 10, color: '#080a0c' },
+  ];
+  for (let ti = 0; ti < tiers.length; ti++){
+    const tier = tiers[ti];
+    ctx.globalAlpha = tier.alpha;
+    // bench seating bar
+    ctx.fillStyle = '#070707';
+    ctx.fillRect(-300, tier.y + 90, STAGE_W + 600, 7);
+    for (let i = -18; i < 26; i++){
+      const x0 = i * tier.spacing + ti * 22;
+      const phaseA = i * 1.71 + ti * 3.13;
+      const phaseB = i * 2.47 + ti * 1.91;
+      const sway = Math.sin(tT * (0.8 + (i % 5) * 0.18) + phaseA) * (2 + (i % 4));
+      const headBob = Math.sin(tT * 1.4 + phaseB) * 1.5;
+      const fistUp = (Math.sin(tT * 0.45 + phaseA) > (0.85 - (i % 7) * 0.04));
+      const standUp = (Math.sin(tT * 0.18 + phaseB) > 0.94);
+      const standOff = standUp ? -10 : 0;
+      const bodyW = 17 + (i % 3) * 3;
+      ctx.fillStyle = tier.color;
+      // body trapezoid
+      ctx.beginPath();
+      ctx.moveTo(x0 - bodyW, tier.y + 90);
+      ctx.lineTo(x0 - bodyW + 1, tier.y + 14 + sway + standOff);
+      ctx.lineTo(x0 + bodyW - 1, tier.y + 14 + sway + standOff);
+      ctx.lineTo(x0 + bodyW, tier.y + 90);
+      ctx.fill();
+      // shoulders
+      ctx.fillRect(x0 - bodyW * 0.7, tier.y + 8 + sway + standOff, bodyW * 1.4, 7);
+      // head
+      const hr = tier.headR + (i % 3);
+      const headY = tier.y - 4 + sway + headBob + standOff;
+      ctx.beginPath();
+      ctx.arc(x0 + Math.sin(phaseB) * 1, headY, hr, 0, Math.PI * 2);
+      ctx.fill();
+      // hood/cap on some — extra dome above the head
+      if ((i + ti) % 3 === 0){
+        ctx.beginPath();
+        ctx.ellipse(x0, headY - 2, hr * 1.15, hr * 0.65, 0, Math.PI, Math.PI * 2);
+        ctx.fill();
+      }
+      // raised fist
+      if (fistUp){
+        const fy = tier.y - 30 + sway + standOff;
+        ctx.fillRect(x0 - 3, fy, 6, 22);
+        ctx.beginPath(); ctx.arc(x0, fy - 3, 5, 0, Math.PI * 2); ctx.fill();
+      }
+      // phone light flicker
+      if (Math.sin(tT * 0.7 + phaseA * 1.7) > 0.97){
+        ctx.save();
+        ctx.fillStyle = 'rgba(220,230,255,0.92)';
+        ctx.beginPath();
+        ctx.arc(x0 + (i % 2 ? 6 : -6), headY + 8, 1.4, 0, Math.PI * 2);
+        ctx.fill();
+        // halo
+        ctx.fillStyle = 'rgba(180,200,240,0.30)';
+        ctx.beginPath();
+        ctx.arc(x0 + (i % 2 ? 6 : -6), headY + 8, 4.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+  }
+  ctx.globalAlpha = 1;
+  ctx.restore();
+
+  // === Layer 3 — Chain-link fence + pillars (parallax 0.60) ===
+  const par3 = state.cameraX * 0.60;
+  ctx.save();
+  ctx.translate(-par3, 0);
+  // chain-link mesh — fine X grid
+  ctx.strokeStyle = 'rgba(118,108,90,0.30)';
+  ctx.lineWidth = 0.9;
+  const fenceTop = STAGE_H * 0.42, fenceBot = groundY - 2;
+  for (let x = -260; x < STAGE_W + 260; x += 14){
+    ctx.beginPath(); ctx.moveTo(x, fenceTop); ctx.lineTo(x + 14, fenceBot); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x + 14, fenceTop); ctx.lineTo(x, fenceBot); ctx.stroke();
+  }
+  // fence rails
+  ctx.strokeStyle = 'rgba(60,55,45,0.55)'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(-260, fenceTop); ctx.lineTo(STAGE_W + 260, fenceTop); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-260, fenceBot); ctx.lineTo(STAGE_W + 260, fenceBot); ctx.stroke();
+  // pillars — metal cap + rivets
+  for (const pxFrac of [0.10, 0.90]){
+    const px = STAGE_W * pxFrac;
+    const pg = ctx.createLinearGradient(px, 0, px + 24, 0);
+    pg.addColorStop(0,   '#040404');
+    pg.addColorStop(0.3, '#1a1a1a');
+    pg.addColorStop(0.7, '#0a0a0a');
+    pg.addColorStop(1,   '#040404');
+    ctx.fillStyle = pg;
+    ctx.fillRect(px, STAGE_H * 0.28, 24, STAGE_H * 0.44);
+    // metal cap
+    ctx.fillStyle = '#3a3a3a';
+    ctx.fillRect(px - 3, STAGE_H * 0.28, 30, 6);
+    ctx.fillStyle = '#1a1a1a';
+    ctx.fillRect(px - 3, STAGE_H * 0.28 + 6, 30, 2);
+    // rivets
+    ctx.fillStyle = '#5a5a5a';
+    for (let r = 0; r < 4; r++){
+      ctx.beginPath();
+      ctx.arc(px + 4 + r * 5, STAGE_H * 0.28 + 3, 1.3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+  ctx.restore();
+
+  // === Spotlights — fixture + bulb + volumetric cone + dust motes ===
+  ctx.save();
+  for (let i = 0; i < 3; i++){
+    const cx = STAGE_W * (0.3 + i * 0.2);
+    const cy = STAGE_H * 0.12;
+    const pulse = (i === 1 ? 1.0 : 0.78) + state.spotPulse * 0.5;
+    // hanging cable
+    ctx.strokeStyle = '#0a0a0a'; ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(cx, 0); ctx.lineTo(cx, cy - 18);
+    ctx.stroke();
+    // housing — black metal box
+    ctx.fillStyle = '#0a0a0a';
+    ctx.fillRect(cx - 22, cy - 18, 44, 22);
+    ctx.strokeStyle = '#3a3a3a'; ctx.lineWidth = 1.4;
+    ctx.strokeRect(cx - 22, cy - 18, 44, 22);
+    // rivets
+    ctx.fillStyle = '#5a5a5a';
+    for (let r = 0; r < 4; r++){
+      ctx.beginPath();
+      ctx.arc(cx - 18 + r * 12, cy - 14, 1.2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    // bulb housing — inner darker ring
+    ctx.fillStyle = '#1a1a1a';
+    ctx.fillRect(cx - 18, cy - 12, 36, 14);
+    // bulb glow
+    const bgr = ctx.createRadialGradient(cx, cy - 3, 0, cx, cy - 3, 26);
+    bgr.addColorStop(0,   'rgba(255,245,224,' + Math.min(1, 0.95 * pulse) + ')');
+    bgr.addColorStop(0.4, 'rgba(255,232,180,' + (0.55 * pulse) + ')');
+    bgr.addColorStop(1,   'rgba(212,175,55,0)');
+    ctx.fillStyle = bgr;
+    ctx.beginPath(); ctx.arc(cx, cy - 3, 26, 0, Math.PI * 2); ctx.fill();
+    // bright center
+    ctx.fillStyle = 'rgba(255,255,240,' + Math.min(1, 0.95 * pulse) + ')';
+    ctx.beginPath(); ctx.arc(cx, cy - 3, 5, 0, Math.PI * 2); ctx.fill();
+  }
+  // Volumetric cones (screen blend)
+  ctx.save();
+  ctx.globalCompositeOperation = 'screen';
+  for (let i = 0; i < 3; i++){
+    const cx = STAGE_W * (0.3 + i * 0.2);
+    const cy = STAGE_H * 0.12;
+    const pulse = (i === 1 ? 1.0 : 0.78) + state.spotPulse * 0.5;
+    const grd = ctx.createRadialGradient(cx, cy, 12, cx, cy + 200, 460);
+    grd.addColorStop(0,   'rgba(255,245,224,' + (0.34 * pulse) + ')');
+    grd.addColorStop(0.4, 'rgba(255,232,180,' + (0.16 * pulse) + ')');
+    grd.addColorStop(1,   'rgba(212,175,55,0)');
+    ctx.fillStyle = grd;
+    ctx.beginPath();
+    ctx.moveTo(cx - 28, cy + 4);
+    ctx.lineTo(cx + 28, cy + 4);
+    ctx.lineTo(cx + 320, groundY);
+    ctx.lineTo(cx - 320, groundY);
+    ctx.closePath();
+    ctx.fill();
+    // edge beams
+    ctx.strokeStyle = 'rgba(255,232,180,' + (0.12 * pulse) + ')';
+    ctx.lineWidth = 2.4;
+    ctx.beginPath();
+    ctx.moveTo(cx - 28, cy + 4); ctx.lineTo(cx - 320, groundY);
+    ctx.moveTo(cx + 28, cy + 4); ctx.lineTo(cx + 320, groundY);
+    ctx.stroke();
+    // ambient dust motes inside the cone — animated
+    for (let m = 0; m < 7; m++){
+      const tm = (state.ringPulse * 0.35 + m * 1.7 + i * 0.5) % 1;
+      const mx = cx + (Math.sin(m * 2.13 + i) * 70) * (1 - tm) + (Math.sin(m + i) * 100) * tm;
+      const my = cy + 30 + (groundY - cy - 30) * tm;
+      ctx.fillStyle = 'rgba(255,232,180,' + (0.30 * pulse * (1 - tm)) + ')';
+      ctx.beginPath(); ctx.arc(mx, my, 1.4, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+  ctx.restore();
+  ctx.restore();
+
+  // === Layer 4 — Floor with perspective tiles + spotlight halos (parallax 1.0) ===
+  const par4 = state.cameraX * 1.0;
+  ctx.save();
+  ctx.translate(-par4, 0);
+  // base floor gradient — slight near-bright/far-dark
+  const floorG = ctx.createLinearGradient(0, groundY, 0, STAGE_H);
+  floorG.addColorStop(0,    '#1a1a1a');
+  floorG.addColorStop(0.22, '#2a2a2a');
+  floorG.addColorStop(0.7,  '#222222');
+  floorG.addColorStop(1,    '#181818');
+  ctx.fillStyle = floorG;
+  ctx.fillRect(-STAGE_W, groundY, STAGE_W * 3, STAGE_H - groundY);
+  // Perspective lines converging to vanishing point at horizon center
+  const vpX = STAGE_W * 0.5;
+  const vpY = groundY - 1;
+  ctx.strokeStyle = 'rgba(80,80,80,0.34)';
+  for (let i = -8; i <= 8; i++){
+    if (i === 0) continue;
+    const screenBX = vpX + i * 95;
+    ctx.lineWidth = 0.4 + Math.abs(i) * 0.18;
+    ctx.beginPath();
+    ctx.moveTo(vpX, vpY);
+    ctx.lineTo(screenBX, STAGE_H);
+    ctx.stroke();
+  }
+  // Horizontal tile bands — closer to camera → wider apart
+  ctx.strokeStyle = 'rgba(48,48,48,0.45)';
+  for (let i = 1; i <= 8; i++){
+    const yp = i / 8;
+    const lineY = groundY + Math.pow(yp, 1.6) * (STAGE_H - groundY);
+    ctx.lineWidth = 0.5 + yp * 1.8;
+    ctx.beginPath();
+    ctx.moveTo(0, lineY);
+    ctx.lineTo(STAGE_W, lineY);
+    ctx.stroke();
+  }
+  // spotlight halos on floor — bright elliptical pools (under each lamp)
+  for (let i = 0; i < 3; i++){
+    const cx = STAGE_W * (0.3 + i * 0.2);
+    const ry = groundY + (STAGE_H - groundY) * 0.30;
+    const pulse = (i === 1 ? 1.0 : 0.78) + state.spotPulse * 0.5;
+    // outer halo
+    const outer = ctx.createRadialGradient(cx, ry, 0, cx, ry, 320);
+    outer.addColorStop(0,   'rgba(255,232,180,' + (0.34 * pulse) + ')');
+    outer.addColorStop(0.4, 'rgba(212,175,55,' + (0.10 * pulse) + ')');
+    outer.addColorStop(1,   'rgba(0,0,0,0)');
+    ctx.fillStyle = outer;
+    ctx.beginPath();
+    ctx.ellipse(cx, ry, 300, 42, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // bright inner pool
+    const inner = ctx.createRadialGradient(cx, ry, 0, cx, ry, 130);
+    inner.addColorStop(0, 'rgba(255,245,224,' + (0.44 * pulse) + ')');
+    inner.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = inner;
+    ctx.beginPath();
+    ctx.ellipse(cx, ry, 130, 18, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  // Floor cracks — deterministic branching
+  ctx.strokeStyle = 'rgba(0,0,0,0.55)';
+  ctx.lineWidth = 1;
+  for (let k = 0; k < 7; k++){
+    const seedX = k * 260 - STAGE_W * 0.4;
+    let cx2 = seedX, cy2 = groundY + 15 + Math.sin(k * 3.1) * 12;
+    ctx.beginPath();
+    ctx.moveTo(cx2, cy2);
+    for (let s = 0; s < 6; s++){
+      const dx2 = 22 + Math.sin(k * 5.3 + s * 1.7) * 12;
+      const dy2 = (Math.sin(s * 2.13 + k) * 0.5 + 0.5) * 8;
+      cx2 += dx2; cy2 += dy2;
+      ctx.lineTo(cx2, cy2);
+    }
+    ctx.stroke();
+  }
+  // Arena metal-plate ring — center stage
+  const ringCX = STAGE_W * 0.5;
+  const ringCY = groundY + (STAGE_H - groundY) * 0.45;
+  const ringRX = 210, ringRY = 38;
+  ctx.save();
+  // outer gold edge (worn)
+  ctx.strokeStyle = '#a08338';
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.ellipse(ringCX, ringCY, ringRX, ringRY, 0, 0, Math.PI * 2);
+  ctx.stroke();
+  // inner finer ring
+  ctx.strokeStyle = 'rgba(214,176,82,0.50)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.ellipse(ringCX, ringCY, ringRX - 7, ringRY - 4, 0, 0, Math.PI * 2);
+  ctx.stroke();
+  // inner darker plate
+  ctx.fillStyle = 'rgba(0,0,0,0.30)';
+  ctx.beginPath();
+  ctx.ellipse(ringCX, ringCY, ringRX - 9, ringRY - 5, 0, 0, Math.PI * 2);
+  ctx.fill();
+  // worn gaps in the outer edge
+  ctx.strokeStyle = 'rgba(0,0,0,0.55)';
+  ctx.lineWidth = 1.6;
+  for (let w2 = 0; w2 < 7; w2++){
+    const ang = (w2 / 7) * Math.PI * 2 + 0.4;
+    const x1 = ringCX + Math.cos(ang) * ringRX;
+    const y1 = ringCY + Math.sin(ang) * ringRY;
+    const x2 = ringCX + Math.cos(ang + 0.12) * ringRX;
+    const y2 = ringCY + Math.sin(ang + 0.12) * ringRY;
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+  }
+  // simple abstract emblem — gold cross + dot
+  ctx.strokeStyle = 'rgba(214,176,82,0.55)';
+  ctx.lineWidth = 2.4;
+  ctx.beginPath();
+  ctx.moveTo(ringCX - 22, ringCY - 8); ctx.lineTo(ringCX + 22, ringCY + 8);
+  ctx.moveTo(ringCX + 22, ringCY - 8); ctx.lineTo(ringCX - 22, ringCY + 8);
+  ctx.stroke();
+  ctx.fillStyle = 'rgba(214,176,82,0.65)';
+  ctx.beginPath(); ctx.arc(ringCX, ringCY, 3, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
   ctx.restore();
 
   // === Fighters + afterimages ===
@@ -2879,7 +3103,29 @@ function renderBattle(){
   ctx.globalAlpha = 1;
   ctx.restore();
 
-  ctx.restore(); // outer
+  ctx.restore(); // outer (world transform)
+
+  // === v3.3 — screen-space vignette + subtle warm overlay ===
+  // Drawn after the world transform restores, so it covers the visible canvas
+  // in screen coordinates. No camera-shake or scale interference.
+  ctx.save();
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0); // identity in CSS-pixel space
+  // warm color cast — very subtle (multiply blend)
+  ctx.globalCompositeOperation = 'multiply';
+  const warm = ctx.createLinearGradient(0, 0, 0, H);
+  warm.addColorStop(0, 'rgba(255,236,200,0.04)');
+  warm.addColorStop(1, 'rgba(255,200,140,0.07)');
+  ctx.fillStyle = warm;
+  ctx.fillRect(0, 0, W, H);
+  ctx.globalCompositeOperation = 'source-over';
+  // vignette — radial dark from corners
+  const vig = ctx.createRadialGradient(W * 0.5, H * 0.48, Math.min(W, H) * 0.30, W * 0.5, H * 0.55, Math.max(W, H) * 0.85);
+  vig.addColorStop(0, 'rgba(0,0,0,0)');
+  vig.addColorStop(0.6, 'rgba(0,0,0,0.18)');
+  vig.addColorStop(1, 'rgba(0,0,0,0.55)');
+  ctx.fillStyle = vig;
+  ctx.fillRect(0, 0, W, H);
+  ctx.restore();
 }
 
 /* ============================================================
