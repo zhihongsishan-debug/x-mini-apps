@@ -189,6 +189,13 @@
     animation:superRdy .9s ease-in-out infinite;
   }
   .super-btn.active{transform:translateY(3px);}
+  /* v3.0: charging long-press → projectile */
+  .super-btn.charging{
+    color:#cfe6ff;
+    background:linear-gradient(180deg,#1a5078,#0a2a48);
+    border-color:#5aa0e0;
+    box-shadow:0 0 22px rgba(90,160,224,.65),inset 0 1px 0 rgba(255,255,255,.30),0 4px 0 #022040;
+  }
   @keyframes superRdy{50%{filter:brightness(1.30) saturate(1.2);}}
   .atk-btn{
     pointer-events:auto;
@@ -549,8 +556,9 @@
   <p class="ts-tag">HOW TO FIGHT</p>
   <div style="max-width:340px;text-align:left;font-size:12px;line-height:1.85;color:var(--ink);letter-spacing:.04em;">
     <p><b style="color:var(--gold);">左半分</b>：ドラッグで前後移動。<br/>ダブルタップでジャンプ、長押しでガード。</p>
-    <p><b style="color:var(--blood);">右下 ATTACK</b>：通常攻撃。連打で連撃。</p>
-    <p><b style="color:var(--warn);">右上 SUPER</b>：ゲージMAXで必殺技発動。<br/>攻撃を当て・受け・ガードでゲージ蓄積。</p>
+    <p><b style="color:var(--blood);">右下 ATTACK</b>：通常攻撃。連打で連撃。<br/>ジャンプ中に押すと<b>空中攻撃</b>。</p>
+    <p><b style="color:var(--warn);">右上 SUPER 短押し</b>：ゲージMAXで超必殺技。<br/><b style="color:#5aa0e0;">右上 SUPER 長押し</b>：ゲージ50%で<b>飛び技</b>発動。<br/>攻撃を当て・受け・ガードでゲージ蓄積。</p>
+    <p><b>空中飛び技</b>：ジャンプ中に SUPER 長押し。</p>
     <p><b>勝利条件</b>：相手のHPを0にするか、<br/>制限時間60秒経過時のHPで判定。</p>
   </div>
   <div class="ts-row">
@@ -614,7 +622,7 @@
 const $ = id => document.getElementById(id);
 
 /* ================================================================
-   STREET CLASH v2.0 — visual overhaul: faces + polygons + keyframes
+   STREET CLASH v3.0 — projectiles + air-attacks + face-bug fix
    ================================================================ */
 
 /* ---------- CONSTANTS ---------- */
@@ -627,14 +635,20 @@ const ROUND_TIME = 60;
 const GRAVITY = 1900;           // px/s^2
 const WALK_SPEED = 240;         // px/s forward
 const BACK_SPEED = 180;         // px/s backward
-const JUMP_VY = -780;           // px/s
+const JUMP_VY = -1014;          // px/s — v3.0: 1.3× v2.0 (was -780)
 const STAGE_MIN_X = 80;
 const STAGE_MAX_X = STAGE_W - 80;
+// v3.0 projectile constants
+const PROJECTILE_COST = 50;     // SG % consumed by projectile
+const PROJ_HOLD_MS = 400;       // SUPER button hold time (ms) to fire projectile
+const PROJ_CAST_S = 0.45;       // pre-fire cast time (telegraph)
+const PROJ_RECOVER_S = 0.30;    // post-fire stagger
+const AIRATK_DMG = { TATSUKI: 12, RYUJI: 14, KAGE: 11, SAKURA: 13 };
 
 const DIFFICULTY = {
-  easy:   { name:'EASY',   reactSec:0.30, guardP:0.30, specialP:0.10, pressure:0.55 },
-  normal: { name:'NORMAL', reactSec:0.20, guardP:0.50, specialP:0.50, pressure:0.75 },
-  hard:   { name:'HARD',   reactSec:0.10, guardP:0.70, specialP:0.80, pressure:0.95 },
+  easy:   { name:'EASY',   reactSec:0.30, guardP:0.30, specialP:0.10, pressure:0.55, projP:0.05, airAtkP:0.05 },
+  normal: { name:'NORMAL', reactSec:0.20, guardP:0.50, specialP:0.50, pressure:0.75, projP:0.30, airAtkP:0.20 },
+  hard:   { name:'HARD',   reactSec:0.10, guardP:0.70, specialP:0.80, pressure:0.95, projP:0.50, airAtkP:0.40 },
 };
 
 /* ---------- CHARACTERS ---------- */
@@ -648,6 +662,7 @@ const CHARS = {
     pants:'#1a1a1a', shoe:'#050505', accent:'#c11414', gold:'#d4af37',
     hairStyle:'slick', accStyle:'tie+chain',
     specialName:'BLACK DEAL', specialDmg:35, specialTime:1.6,
+    projectileName:'NEGOTIATION', projectileDmg:10, projectileSpeed:780, projectileKind:'paper',
     desc:'闇取引の刹那、影が群れて踊る。',
   },
   RYUJI: {
@@ -659,6 +674,7 @@ const CHARS = {
     pants:'#3a3a5a', shoe:'#1a1a1a', accent:'#c11414', gold:'#d4af37',
     hairStyle:'buzz', accStyle:'chain+tattoo',
     specialName:'ROAD RAGE', specialDmg:40, specialTime:1.8,
+    projectileName:'STREET BLAST', projectileDmg:30, projectileSpeed:500, projectileKind:'blast',
     desc:'壁も骨も折る、轢き殺すような一直線。',
   },
   KAGE: {
@@ -670,6 +686,7 @@ const CHARS = {
     pants:'#0a0a0a', shoe:'#0a0a0a', accent:'#c11414', gold:'#f0f0f0',
     hairStyle:'mask', accStyle:'bandage',
     specialName:'SHADOW STRIKE', specialDmg:45, specialTime:1.4,
+    projectileName:'SHADOW LANCE', projectileDmg:25, projectileSpeed:640, projectileKind:'lance',
     desc:'音もなく回る。気付いた頃には、もう遅い。',
   },
   SAKURA: {
@@ -681,6 +698,7 @@ const CHARS = {
     pants:'#1a1a1a', shoe:'#f0f0f0', accent:'#c11414', gold:'#d4af37',
     hairStyle:'ponytail', accStyle:'wristband',
     specialName:'CHERRY BLAST', specialDmg:35, specialTime:1.6,
+    projectileName:'PETAL TYPHOON', projectileDmg:22, projectileSpeed:560, projectileKind:'typhoon',
     desc:'手数で削る。最後の一蹴りで、決まる。',
   },
 };
@@ -997,13 +1015,16 @@ const state = {
   share: '',
   tapHint: true,
   dust: [],                  // background ambient dust particles
+  projectiles: [],           // v3.0 — flying projectiles
   inputs: {
     p1: {
       move: 0,    // -1, 0, +1
       jump: false,
       guard: false,
       attack: false,    // edge
-      special: false,   // edge
+      special: false,   // edge (super/projectile decided by hold time)
+      superHoldStart: 0, // performance.now() when SUPER pressed; 0 = not pressed
+      superHeldFor: 0,   // ms held — updated each frame for visual
       moveTouchId: null, moveStartX: 0, moveStartY: 0, moveCurX: 0, moveCurY: 0,
       lastTapTime: 0,
       guardStartTime: 0,
@@ -1179,11 +1200,29 @@ function onAtkRelease(){
 function onSuperPress(ev){
   if (state.screen !== 'battle') return;
   try { if (ev && ev.cancelable) ev.preventDefault(); } catch(_){}
-  state.inputs.p1.special = true;
+  const now = performance.now();
+  state.inputs.p1.superHoldStart = now;
+  state.inputs.p1.superHeldFor = 0;
   superBtnEl.classList.add('active');
 }
 function onSuperRelease(){
   superBtnEl.classList.remove('active');
+  superBtnEl.classList.remove('charging');
+  if (state.screen !== 'battle') {
+    state.inputs.p1.superHoldStart = 0;
+    return;
+  }
+  const start = state.inputs.p1.superHoldStart;
+  if (!start) return;
+  const heldMs = performance.now() - start;
+  state.inputs.p1.superHoldStart = 0;
+  if (heldMs >= PROJ_HOLD_MS){
+    // Try projectile (needs SG >= 50)
+    state.inputs.p1.projectile = true;
+  } else {
+    // Short tap — try super (needs SG = 100)
+    state.inputs.p1.special = true;
+  }
 }
 ['touchstart','pointerdown'].forEach(ev => superBtnEl.addEventListener(ev, onSuperPress, { passive:false }));
 ['touchend','touchcancel','pointerup','pointercancel'].forEach(ev => superBtnEl.addEventListener(ev, onSuperRelease, { passive:true }));
@@ -1208,6 +1247,17 @@ function attackBox(f, action){
     w = reach * 0.95; h = 24; off = 18; oy = -56 * f.def.scale;
   } else if (action === 'kick'){
     w = reach * 1.15; h = 26; off = 16; oy = -28 * f.def.scale;
+  } else if (action === 'airAtk'){
+    // v3.0 — air attacks reach downward; per-character tuning
+    if (f.def.id === 'RYUJI'){      // stomp — straight down, wide
+      w = reach * 1.10; h = 40; off = -reach * 0.30; oy = -10 * f.def.scale;
+    } else if (f.def.id === 'KAGE'){ // triangle kick — multi-hit feel via wider box
+      w = reach * 1.20; h = 30; off = 8; oy = -36 * f.def.scale;
+    } else if (f.def.id === 'SAKURA'){ // hi-kick downward
+      w = reach * 1.05; h = 36; off = 10; oy = -22 * f.def.scale;
+    } else {                          // TATSUKI — elbow drop
+      w = reach * 0.90; h = 32; off = 14; oy = -18 * f.def.scale;
+    }
   } else if (action === 'special'){
     w = reach * 1.7; h = 90; off = 12; oy = -70 * f.def.scale;
   }
@@ -1251,12 +1301,14 @@ function pollInputs(dt){
 
 /* ---------- ATTACK INITIATION ---------- */
 function tryStartAttack(f, kind){
-  if (f.state === 'down' || f.state === 'rise' || f.state === 'hit') return false;
-  if (f.state === 'special') return false;
-  // allow attacks from idle/walk/back/guard; cancel guard
-  if (f.state === 'jump'){
-    // jump kick allowed
-    if (kind !== 'punch') return false;
+  const ng = ['down','rise','hit','special','projectile'];
+  if (ng.indexOf(f.state) >= 0) return false;
+  // v3.0: in-air attack — character-specific air-attack
+  if (f.state === 'jump' || !f.onGround){
+    f.state = 'airAtk';
+    f.stateT = 0;
+    f.hitOnce = false;
+    return true;
   }
   f.state = kind;
   f.stateT = 0;
@@ -1275,6 +1327,279 @@ function tryStartSpecial(f){
   // tiny BGM duck — purely cosmetic by spawning kick on screen via sfxSuperReady? Use a slight roar:
   noiseBurst(120, 0.20, 0.25, 'lowpass');
   return true;
+}
+/* v3.0 — Projectile attempt: SG cost 50, cast 0.45s, recover 0.30s. */
+function tryStartProjectile(f, fromAir){
+  if (f.sg < PROJECTILE_COST) return false;
+  const ng = ['down','rise','hit','special','projectile'];
+  if (ng.indexOf(f.state) >= 0) return false;
+  f.state = 'projectile';
+  f.stateT = 0;
+  f.hitOnce = false;
+  f.sg -= PROJECTILE_COST;
+  f.stateData = { fromAir: !!fromAir, fired: false, kind: f.def.projectileKind };
+  noiseBurst(220, 0.18, 0.18, 'bandpass');
+  return true;
+}
+function spawnProjectile(f){
+  const def = f.def;
+  const facing = f.facing;
+  const muzzleY = f.y - 56 * def.scale;
+  const muzzleX = f.x + facing * 24;
+  // dy: airborne projectiles aim slightly downward
+  const dy = (f.stateData && f.stateData.fromAir) ? 170 : 0;
+  state.projectiles.push({
+    owner: f.side,
+    x: muzzleX, y: muzzleY,
+    vx: facing * def.projectileSpeed,
+    vy: dy,
+    kind: def.projectileKind,
+    dmg: def.projectileDmg,
+    name: def.projectileName,
+    facing,
+    t: 0,
+    age: 0,
+    hits: 0,
+    maxHits: def.projectileKind === 'paper' ? 4 : (def.projectileKind === 'typhoon' ? 3 : 1),
+    spin: 0,
+    born: { x: muzzleX, y: muzzleY },
+  });
+  // muzzle particles
+  if (def.projectileKind === 'blast'){
+    for (let i = 0; i < 12; i++){
+      const ang = Math.random() * Math.PI * 2;
+      state.particles.push({
+        kind:'spark', x: muzzleX, y: muzzleY,
+        vx: Math.cos(ang) * 220, vy: Math.sin(ang) * 220 - 40,
+        life: 0.30, t:0,
+        col: i % 2 === 0 ? '#ff8030' : '#ffdda0', r: 2.4 + Math.random() * 2,
+      });
+    }
+    state.shake.t = Math.max(state.shake.t, 0.18); state.shake.mag = Math.max(state.shake.mag, 4);
+  } else if (def.projectileKind === 'paper'){
+    for (let i = 0; i < 6; i++){
+      state.particles.push({
+        kind:'spark', x: muzzleX + (Math.random()-0.5)*18, y: muzzleY + (Math.random()-0.5)*14,
+        vx: -facing * (80 + Math.random()*100), vy: -40 - Math.random()*60,
+        life: 0.32, t:0,
+        col: '#e6ecf6', r: 1.4 + Math.random() * 1.4,
+      });
+    }
+  } else if (def.projectileKind === 'lance'){
+    for (let i = 0; i < 10; i++){
+      const ang = Math.random() * Math.PI * 2;
+      state.particles.push({
+        kind:'smoke', x: muzzleX, y: muzzleY,
+        vx: Math.cos(ang) * 60, vy: Math.sin(ang) * 60,
+        life: 0.6, t:0, col:'#1a0a22', r: 8 + Math.random()*10, r2:0, a0: 0.55,
+      });
+    }
+  } else if (def.projectileKind === 'typhoon'){
+    for (let i = 0; i < 10; i++){
+      state.particles.push({
+        kind:'petal', x: muzzleX, y: muzzleY,
+        vx: facing * (40 + Math.random()*100), vy: -40 - Math.random()*60,
+        life: 0.9, t:0, col: '#e088a0', r: 4 + Math.random()*2,
+        spin: (Math.random()-0.5)*4,
+      });
+    }
+  }
+  sfxPunchHit();
+}
+function renderProjectiles(){
+  if (!state.projectiles.length) return;
+  for (const pr of state.projectiles){
+    const x = pr.x, y = pr.y;
+    const fwd = pr.facing > 0 ? 1 : -1;
+    ctx.save();
+    if (pr.kind === 'paper'){
+      // White paper-shuriken — rotating rectangle with blue trail
+      // trail
+      ctx.globalCompositeOperation = 'screen';
+      ctx.fillStyle = 'rgba(180,220,255,0.20)';
+      for (let i = 1; i <= 4; i++){
+        ctx.beginPath();
+        ctx.ellipse(x - fwd * i * 14, y, 16 - i*2, 6 - i*0.7, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalCompositeOperation = 'source-over';
+      // paper sheet
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(pr.spin * fwd);
+      ctx.fillStyle = '#f6f6f6';
+      ctx.fillRect(-14, -10, 28, 20);
+      ctx.fillStyle = 'rgba(160,170,190,0.45)';
+      ctx.fillRect(-10, -7, 20, 1.4);
+      ctx.fillRect(-10, -3, 20, 1.4);
+      ctx.fillRect(-10,  1, 20, 1.4);
+      ctx.fillRect(-10,  5, 20, 1.4);
+      ctx.strokeStyle = '#000'; ctx.lineWidth = 1.4;
+      ctx.strokeRect(-14, -10, 28, 20);
+      ctx.restore();
+    } else if (pr.kind === 'blast'){
+      // Big red+orange energy ball
+      const r = 38;
+      // outer glow
+      const og = ctx.createRadialGradient(x, y, r * 0.5, x, y, r * 1.6);
+      og.addColorStop(0, 'rgba(255,100,30,0.65)');
+      og.addColorStop(1, 'rgba(255,40,0,0)');
+      ctx.fillStyle = og;
+      ctx.beginPath(); ctx.arc(x, y, r * 1.6, 0, Math.PI * 2); ctx.fill();
+      // core
+      const cg = ctx.createRadialGradient(x - 6, y - 6, 2, x, y, r);
+      cg.addColorStop(0, '#fff8e0');
+      cg.addColorStop(0.3, '#ffb060');
+      cg.addColorStop(0.7, '#ff5020');
+      cg.addColorStop(1, '#a01010');
+      ctx.fillStyle = cg;
+      ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+      // dark outline
+      ctx.strokeStyle = 'rgba(80,8,8,0.7)'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.stroke();
+      // crackles
+      ctx.strokeStyle = '#ffe060'; ctx.lineWidth = 1.4;
+      for (let i = 0; i < 3; i++){
+        const a = pr.spin + i * 2.1;
+        ctx.beginPath();
+        ctx.moveTo(x + Math.cos(a) * r * 0.4, y + Math.sin(a) * r * 0.4);
+        ctx.lineTo(x + Math.cos(a + 0.3) * r * 0.9, y + Math.sin(a + 0.3) * r * 0.9);
+        ctx.stroke();
+      }
+      // trail
+      ctx.globalCompositeOperation = 'screen';
+      for (let i = 1; i <= 5; i++){
+        ctx.fillStyle = 'rgba(255,80,20,' + (0.18 - i * 0.03) + ')';
+        ctx.beginPath();
+        ctx.ellipse(x - fwd * i * 22, y + Math.sin(pr.age*8+i)*4, r - i * 4, (r - i * 5) * 0.6, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    } else if (pr.kind === 'lance'){
+      // Black-purple shadow spear
+      const len = 64;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(fwd > 0 ? 0 : Math.PI);
+      // trailing shadow puffs
+      ctx.globalCompositeOperation = 'multiply';
+      for (let i = 1; i <= 4; i++){
+        ctx.fillStyle = 'rgba(20,8,30,' + (0.18 - i * 0.03) + ')';
+        ctx.beginPath();
+        ctx.ellipse(-i * 18, 0, 16 - i * 3, 7 - i, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalCompositeOperation = 'source-over';
+      // spear body — triangle + tail
+      ctx.fillStyle = '#0a0014';
+      ctx.beginPath();
+      ctx.moveTo(len * 0.5, 0);
+      ctx.lineTo(0, -8);
+      ctx.lineTo(-len * 0.5, -2);
+      ctx.lineTo(-len * 0.5,  2);
+      ctx.lineTo(0,  8);
+      ctx.closePath();
+      ctx.fill();
+      // purple glow stripe
+      ctx.fillStyle = 'rgba(122,40,178,0.65)';
+      ctx.fillRect(-len * 0.5 + 4, -1.6, len * 0.7, 3.2);
+      // outline
+      ctx.strokeStyle = '#5a1a78'; ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.moveTo(len * 0.5, 0);
+      ctx.lineTo(0, -8);
+      ctx.lineTo(-len * 0.5, -2);
+      ctx.lineTo(-len * 0.5,  2);
+      ctx.lineTo(0,  8);
+      ctx.closePath();
+      ctx.stroke();
+      ctx.restore();
+    } else if (pr.kind === 'typhoon'){
+      // Pink petal vortex — elongated
+      ctx.save();
+      ctx.translate(x, y);
+      // outer vortex glow
+      const og = ctx.createRadialGradient(0, 0, 6, 0, 0, 80);
+      og.addColorStop(0, 'rgba(255,200,220,0.45)');
+      og.addColorStop(1, 'rgba(224,136,160,0)');
+      ctx.fillStyle = og;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 36, 60, 0, 0, Math.PI * 2);
+      ctx.fill();
+      // swirling petals
+      for (let i = 0; i < 14; i++){
+        const ang = pr.spin * 2 + i * 0.45;
+        const rr = 24 + Math.sin(ang + i) * 8;
+        const px = Math.cos(ang) * 22 * 0.7;
+        const py = Math.sin(ang) * 50 * 0.7;
+        ctx.save();
+        ctx.translate(px, py);
+        ctx.rotate(ang);
+        ctx.fillStyle = i % 3 === 0 ? '#ffffff' : '#e088a0';
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 6, 3, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+      // outline ellipse
+      ctx.strokeStyle = '#9a3050'; ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 30, 56, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+    ctx.restore();
+  }
+}
+function updateProjectiles(dt){
+  if (!state.fighters) return;
+  const [p1, p2] = state.fighters;
+  for (const pr of state.projectiles){
+    pr.t += dt;
+    pr.age += dt;
+    pr.spin = (pr.spin || 0) + dt * 6;
+    // movement with mild sin sway for lance/typhoon
+    let swayY = 0;
+    if (pr.kind === 'lance') swayY = Math.sin(pr.age * 18) * 1.6;
+    if (pr.kind === 'typhoon') swayY = Math.sin(pr.age * 12) * 2.6;
+    pr.x += pr.vx * dt;
+    pr.y += (pr.vy + swayY * 60) * dt;
+    // gravity for airborne projectiles slightly
+    if (pr.vy !== 0) pr.vy += 380 * dt;
+    // collision vs opponent
+    const opp = (pr.owner === 0) ? p2 : p1;
+    if (opp.state !== 'down' && opp.hp > 0){
+      const [bx, by, bw, bh] = fighterBodyBox(opp);
+      const halfW = pr.kind === 'blast' ? 40 : (pr.kind === 'typhoon' ? 30 : (pr.kind === 'lance' ? 20 : 18));
+      const halfH = pr.kind === 'blast' ? 40 : (pr.kind === 'typhoon' ? 60 : (pr.kind === 'lance' ? 8 : 8));
+      if (aabb(pr.x - halfW, pr.y - halfH, halfW * 2, halfH * 2, bx, by, bw, bh)){
+        // hit
+        const attacker = (pr.owner === 0) ? p1 : p2;
+        applyDamage(attacker, opp, pr.dmg, pr.kind === 'blast' ? 'kick' : 'punch', pr.kind === 'blast' ? 6 : 3, pr.kind === 'blast' ? 6 : 3, false);
+        // visual burst at hit position
+        if (pr.kind === 'blast') spawnShockwave(pr.x, pr.y);
+        if (pr.kind === 'paper'){
+          for (let i = 0; i < 4; i++){
+            state.particles.push({ kind:'spark', x: pr.x, y: pr.y,
+              vx:(Math.random()-0.5)*200, vy:-80 - Math.random()*120,
+              life:0.30, t:0, col:'#e6ecf6', r:1.6+Math.random()*1.4 });
+          }
+        }
+        if (pr.kind === 'typhoon'){
+          for (let i = 0; i < 8; i++){
+            state.particles.push({ kind:'petal', x: pr.x, y: pr.y,
+              vx:(Math.random()-0.5)*220, vy:-40-Math.random()*80,
+              life:0.9, t:0, col:'#e088a0', r:4+Math.random()*2, spin:(Math.random()-0.5)*4 });
+          }
+        }
+        pr.hits++;
+        if (pr.hits >= pr.maxHits) pr.t = (pr.life || 99); // mark for removal
+      }
+    }
+  }
+  // expire when offscreen or after max age (3s)
+  state.projectiles = state.projectiles.filter(pr =>
+    pr.x > -200 && pr.x < STAGE_W + 200 && pr.t < 3.0 && pr.hits < pr.maxHits
+  );
 }
 function tryStartJump(f){
   if (!f.onGround) return false;
@@ -1298,6 +1623,7 @@ function tryStartGuard(f){
 const ATK_TIME = {
   punch:   { startup:0.08, active:0.10, recover:0.18, dmg:9,  gauge:10, kind:'normal' },
   kick:    { startup:0.10, active:0.10, recover:0.22, dmg:12, gauge:10, kind:'normal' },
+  airAtk:  { startup:0.06, active:0.16, recover:0.16, dmg:12, gauge:10, kind:'air' },
   special: { startup:0.40, active:0.70, recover:0.50, dmg:35, gauge:0,  kind:'special' },
   guard:   { startup:0.04, active:9999, recover:0.10, dmg:0, gauge:0, kind:'guard' },
 };
@@ -1560,7 +1886,12 @@ function fighterUpdate(f, opp, dt){
         inp.jump = false;
         tryStartJump(f);
       }
-      // special
+      // projectile (long-press SUPER, hold >=400ms, cost 50 SG)
+      if (inp.projectile){
+        inp.projectile = false;
+        tryStartProjectile(f, !f.onGround);
+      }
+      // special (short tap SUPER, cost 100 SG)
       if (inp.special){
         inp.special = false;
         tryStartSpecial(f);
@@ -1568,7 +1899,7 @@ function fighterUpdate(f, opp, dt){
       // attack
       if (inp.attack && inp.attackCooldownT <= 0){
         inp.attack = false;
-        const kind = (f.state === 'jump') ? 'kick' : (Math.random() < 0.4 ? 'kick' : 'punch');
+        const kind = (f.state === 'jump' || !f.onGround) ? 'airAtk' : (Math.random() < 0.4 ? 'kick' : 'punch');
         if (tryStartAttack(f, kind)){
           inp.attackCooldownT = 0.12;
         }
@@ -1616,7 +1947,6 @@ function fighterUpdate(f, opp, dt){
     const def = ATK_TIME[f.state];
     const t = f.stateT;
     if (t >= def.startup && t <= def.startup + def.active && !f.hitOnce){
-      // attempt hit
       const [ax, ay, aw, ah] = attackBox(f, f.state);
       const [bx, by, bw, bh] = fighterBodyBox(opp);
       if (aabb(ax, ay, aw, ah, bx, by, bw, bh)){
@@ -1628,6 +1958,39 @@ function fighterUpdate(f, opp, dt){
     }
     if (t >= def.startup + def.active + def.recover){
       f.state = 'idle'; f.stateT = 0;
+    }
+  } else if (f.state === 'airAtk'){
+    // v3.0 — air normal attack; lifetime ends when grounded or recover done.
+    const def = ATK_TIME.airAtk;
+    const t = f.stateT;
+    const charDmg = AIRATK_DMG[f.def.id] || def.dmg;
+    if (t >= def.startup && t <= def.startup + def.active && !f.hitOnce){
+      const [ax, ay, aw, ah] = attackBox(f, 'airAtk');
+      const [bx, by, bw, bh] = fighterBodyBox(opp);
+      if (aabb(ax, ay, aw, ah, bx, by, bw, bh)){
+        f.hitOnce = true;
+        applyDamage(f, opp, charDmg, 'kick', 4, 5, false);
+        // KAGE: second hit chance — quick re-arm
+        if (f.def.id === 'KAGE' && (f.stateData == null || !f.stateData.kageHits)) {
+          f.stateData = { kageHits: 1 };
+          // small window before re-arming hitOnce
+          setTimeout(() => { if (f.state === 'airAtk') f.hitOnce = false; }, 80);
+        }
+      }
+    }
+    if (t >= def.startup + def.active + def.recover || f.onGround){
+      f.state = f.onGround ? 'idle' : 'jump';
+      f.stateT = 0; f.stateData = null;
+    }
+  } else if (f.state === 'projectile'){
+    const t = f.stateT;
+    // fire mid-cast
+    if (t >= PROJ_CAST_S * 0.6 && f.stateData && !f.stateData.fired){
+      f.stateData.fired = true;
+      spawnProjectile(f);
+    }
+    if (t >= PROJ_CAST_S + PROJ_RECOVER_S){
+      f.state = f.onGround ? 'idle' : 'jump'; f.stateT = 0; f.stateData = null;
     }
   } else if (f.state === 'special'){
     fighterSpecialUpdate(f, opp, dt);
@@ -1771,6 +2134,15 @@ function fighterSpecialUpdate(f, opp, dt){
 function aiUpdate(f, opp, dt){
   const cfg = DIFFICULTY[f.diff] || DIFFICULTY.normal;
   f.aiTimer += dt;
+  // v3.0 — fire projectile when SG >= 50 and at mid-long range
+  if (f.sg >= PROJECTILE_COST && f.onGround &&
+      f.state !== 'hit' && f.state !== 'down' && f.state !== 'rise' &&
+      f.state !== 'special' && f.state !== 'projectile'){
+    const dx2 = Math.abs(opp.x - f.x);
+    if (dx2 > f.def.reach * 1.5 && dx2 < 700 && Math.random() < (cfg.projP || 0.3) * dt * 2){
+      if (tryStartProjectile(f, false)) return;
+    }
+  }
   // pose-bound: if hit/down/special, no AI input
   if (f.state === 'hit' || f.state === 'down' || f.state === 'rise' || f.state === 'special') return;
   // reaction to incoming attack
@@ -1921,8 +2293,19 @@ function update(dt){
   }
   // fighters
   const [p1, p2] = state.fighters;
+  // track SUPER hold duration for visual feedback (player only)
+  if (state.inputs.p1.superHoldStart){
+    state.inputs.p1.superHeldFor = performance.now() - state.inputs.p1.superHoldStart;
+    if (state.inputs.p1.superHeldFor >= PROJ_HOLD_MS && p1.sg >= PROJECTILE_COST){
+      superBtnEl.classList.add('charging');
+    } else {
+      superBtnEl.classList.remove('charging');
+    }
+  }
   fighterUpdate(p1, p2, dt);
   fighterUpdate(p2, p1, dt);
+  // v3.0 projectiles
+  updateProjectiles(dt);
   // camera follows midpoint
   state.cameraTargetX = (p1.x + p2.x) * 0.5;
   state.cameraX += (state.cameraTargetX - state.cameraX) * Math.min(1, dt * 4);
@@ -2364,6 +2747,9 @@ function renderBattle(){
     drawFighterCurrent(f);
   }
 
+  // v3.0 — projectiles render between fighters and particles
+  renderProjectiles();
+
   // === Layer 5: front particles + dust ===
   ctx.save();
   for (const p of state.particles){
@@ -2751,6 +3137,121 @@ function computePose(def, st, t, walkPh, breathPh, f){
     p.raU = lerp(-90, -10, k);
     p.llU = lerp(-40, 0, k);
     p.rlU = lerp(-50, 0, k);
+  } else if (st === 'projectile'){
+    // v3.0 — cast + fire + recover
+    const T1 = PROJ_CAST_S * 0.6;
+    const T2 = PROJ_CAST_S;
+    const T3 = PROJ_CAST_S + PROJ_RECOVER_S;
+    if (def.id === 'TATSUKI'){
+      keyframe(t, [
+        { from:0, to:T1, ease:easeIn,
+          vals:{ raU:[-8,-40], raL:[-22,-110], laU:[10,38], laL:[-22,-80],
+                 torsoAngle:[0,10], torsoYOff:[0,2], headAngle:[0,-4] }, expr:'attack' },
+        { from:T1, to:T2, ease:easeOut,
+          vals:{ raU:[-40,68], raL:[-110,0], laU:[38,40], laL:[-80,-70],
+                 torsoAngle:[10,-10], torsoYOff:[2,-2], headAngle:[-4,4] }, expr:'attack' },
+        { from:T2, to:T3, ease:easeInOut,
+          vals:{ raU:[68,-8], raL:[0,-22], laU:[40,10], laL:[-70,-22],
+                 torsoAngle:[-10,0], torsoYOff:[-2,0], headAngle:[4,0] }, expr:'attack' },
+      ], p);
+    } else if (def.id === 'RYUJI'){
+      // Two-hand crouch then blast
+      keyframe(t, [
+        { from:0, to:T1, ease:easeIn,
+          vals:{ raU:[-8,40], raL:[-22,-60], laU:[10,-40], laL:[-22,-60],
+                 torsoAngle:[0,8], torsoYOff:[0,6], llU:[0,8], rlU:[0,-8] }, expr:'attack' },
+        { from:T1, to:T2, ease:easeOutBack,
+          vals:{ raU:[40,80], raL:[-60,8], laU:[-40,80], laL:[-60,8],
+                 torsoAngle:[8,-10], torsoYOff:[6,-2] }, expr:'attack' },
+        { from:T2, to:T3, ease:easeInOut,
+          vals:{ raU:[80,-8], raL:[8,-22], laU:[80,10], laL:[8,-22],
+                 torsoAngle:[-10,0], torsoYOff:[-2,0] }, expr:'attack' },
+      ], p);
+    } else if (def.id === 'KAGE'){
+      // Bow down then thrust upward/forward
+      keyframe(t, [
+        { from:0, to:T1, ease:easeIn,
+          vals:{ raU:[-8,30], raL:[-22,-100], laU:[10,30], laL:[-22,-100],
+                 torsoAngle:[0,18], torsoYOff:[0,8], headAngle:[0,8] }, expr:'attack' },
+        { from:T1, to:T2, ease:easeOut,
+          vals:{ raU:[30,70], raL:[-100,-10], laU:[30,60], laL:[-100,-30],
+                 torsoAngle:[18,-8], torsoYOff:[8,-4], headAngle:[8,-2] }, expr:'attack' },
+        { from:T2, to:T3, ease:easeInOut,
+          vals:{ raU:[70,-8], raL:[-10,-22], laU:[60,10], laL:[-30,-22],
+                 torsoAngle:[-8,0], torsoYOff:[-4,0], headAngle:[-2,0] }, expr:'attack' },
+      ], p);
+    } else if (def.id === 'SAKURA'){
+      // Circle hands, kick raised
+      keyframe(t, [
+        { from:0, to:T1, ease:easeIn,
+          vals:{ raU:[-10,-40], raL:[-22,-110], laU:[10,-40], laL:[-22,-110],
+                 torsoAngle:[0,-6], torsoYOff:[0,-2], rlU:[0,40], rlL:[0,10] }, expr:'attack' },
+        { from:T1, to:T2, ease:easeOutBack,
+          vals:{ raU:[-40,70], raL:[-110,-10], laU:[-40,70], laL:[-110,-10],
+                 torsoAngle:[-6,-12], torsoYOff:[-2,-4], rlU:[40,90], rlL:[10,16] }, expr:'attack' },
+        { from:T2, to:T3, ease:easeInOut,
+          vals:{ raU:[70,-10], raL:[-10,-22], laU:[70,10], laL:[-10,-22],
+                 torsoAngle:[-12,0], torsoYOff:[-4,0], rlU:[90,0], rlL:[16,0] }, expr:'attack' },
+      ], p);
+    }
+  } else if (st === 'airAtk'){
+    const A = ATK_TIME.airAtk;
+    const T1 = A.startup;
+    const T2 = T1 + A.active;
+    const T3 = T2 + A.recover;
+    if (def.id === 'TATSUKI'){
+      // Elbow drop
+      keyframe(t, [
+        { from:0, to:T1, ease:easeIn,
+          vals:{ raU:[-8,-40], raL:[-22,-90], laU:[10,30], laL:[-22,-60],
+                 torsoAngle:[0,-8], llU:[0,-20], rlU:[0,8] }, expr:'attack' },
+        { from:T1, to:T2, ease:easeOut,
+          vals:{ raU:[-40,60], raL:[-90,40], laU:[30,40], laL:[-60,-30],
+                 torsoAngle:[-8,12], llU:[-20,0], rlU:[8,0] }, expr:'attack' },
+        { from:T2, to:T3, ease:easeInOut,
+          vals:{ raU:[60,-8], raL:[40,-22], laU:[40,10], laL:[-30,-22],
+                 torsoAngle:[12,0], llU:[0,0], rlU:[0,0] }, expr:'attack' },
+      ], p);
+    } else if (def.id === 'RYUJI'){
+      // Stomp — both feet down
+      keyframe(t, [
+        { from:0, to:T1, ease:easeIn,
+          vals:{ llU:[0,-32], llL:[0,-30], rlU:[0,-32], rlL:[0,-30],
+                 laU:[10,-50], raU:[-10,-50], torsoAngle:[0,-6] }, expr:'attack' },
+        { from:T1, to:T2, ease:easeOut,
+          vals:{ llU:[-32,30], llL:[-30,0], rlU:[-32,30], rlL:[-30,0],
+                 laU:[-50,20], raU:[-50,20], torsoAngle:[-6,8] }, expr:'attack' },
+        { from:T2, to:T3, ease:easeInOut,
+          vals:{ llU:[30,0], rlU:[30,0], torsoAngle:[8,0],
+                 laU:[20,10], raU:[20,-10] }, expr:'attack' },
+      ], p);
+    } else if (def.id === 'KAGE'){
+      // Triangle/round kick — spinning
+      keyframe(t, [
+        { from:0, to:T1, ease:easeIn,
+          vals:{ rlU:[0,40], rlL:[0,-20], llU:[0,-20], llL:[0,-10],
+                 torsoAngle:[0,-8], laU:[10,40], raU:[-10,-30] }, expr:'attack' },
+        { from:T1, to:T2, ease:easeOutBack,
+          vals:{ rlU:[40,100], rlL:[-20,30], llU:[-20,-10], llL:[-10,-10],
+                 torsoAngle:[-8,-16], laU:[40,80], raU:[-30,-70] }, expr:'attack' },
+        { from:T2, to:T3, ease:easeInOut,
+          vals:{ rlU:[100,0], rlL:[30,0], llU:[-10,0], llL:[-10,0],
+                 torsoAngle:[-16,0], laU:[80,10], raU:[-70,-10] }, expr:'attack' },
+      ], p);
+    } else if (def.id === 'SAKURA'){
+      // Downward heel kick
+      keyframe(t, [
+        { from:0, to:T1, ease:easeIn,
+          vals:{ rlU:[0,-40], rlL:[0,-60], llU:[0,-20], llL:[0,-10],
+                 torsoAngle:[0,-10], laU:[10,40], raU:[-10,-40] }, expr:'attack' },
+        { from:T1, to:T2, ease:easeOut,
+          vals:{ rlU:[-40,80], rlL:[-60,30], llU:[-20,-10], llL:[-10,-10],
+                 torsoAngle:[-10,16], laU:[40,60], raU:[-40,-60] }, expr:'attack' },
+        { from:T2, to:T3, ease:easeInOut,
+          vals:{ rlU:[80,0], rlL:[30,0], llU:[-10,0], llL:[-10,0],
+                 torsoAngle:[16,0], laU:[60,10], raU:[-60,-10] }, expr:'attack' },
+      ], p);
+    }
   }
   return p;
 }
@@ -2880,7 +3381,7 @@ function drawFighterAtPose(def, pose, x, y, facing, alpha, tintShadow, st){
       ctx.fillStyle = 'rgba(40,40,40,0.6)';
       ctx.fillRect(-tW2 * 0.2, -torsoH/2 + 4, tW2 * 0.4, torsoH - 8);
     } else if (def.id === 'SAKURA'){
-      // hoodie chest stripe
+      // hoodie chest stripe + drawstring
       ctx.fillStyle = 'rgba(0,0,0,0.18)';
       ctx.fillRect(-tW2 * 0.85, -torsoH/2 + 12, tW2 * 1.7, 4);
       // hood drape
@@ -2892,6 +3393,41 @@ function drawFighterAtPose(def, pose, x, y, facing, alpha, tintShadow, st){
       ctx.lineTo(-tW2 * 0.6, -torsoH/2 + 14);
       ctx.closePath();
       ctx.fill();
+      // v3.0: drawstrings
+      ctx.strokeStyle = 'rgba(245,245,245,0.55)'; ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.moveTo(-3, -torsoH/2 + 14); ctx.quadraticCurveTo(-5, -torsoH/2 + 26, -1, -torsoH/2 + 34); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(3, -torsoH/2 + 14); ctx.quadraticCurveTo(5, -torsoH/2 + 28, 1, -torsoH/2 + 36); ctx.stroke();
+      // small tip
+      ctx.fillStyle = '#f5f5f5';
+      ctx.beginPath(); ctx.arc(-1, -torsoH/2 + 34, 1.5, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(1, -torsoH/2 + 36, 1.5, 0, Math.PI * 2); ctx.fill();
+    }
+    // v3.0 — universal cloth wrinkles (subtle dark curves at waist + chest)
+    ctx.strokeStyle = 'rgba(0,0,0,0.32)';
+    ctx.lineWidth = 0.8;
+    ctx.beginPath();
+    ctx.moveTo(-topW * 0.5, torsoH * 0.18);
+    ctx.quadraticCurveTo(0, torsoH * 0.22, botW * 0.5, torsoH * 0.18);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(-topW * 0.35, -torsoH * 0.08);
+    ctx.quadraticCurveTo(0, -torsoH * 0.04, topW * 0.35, -torsoH * 0.08);
+    ctx.stroke();
+    // belt at hip level
+    if (def.id !== 'KAGE'){
+      ctx.fillStyle = '#1a0a0a';
+      ctx.fillRect(-botW + 1, torsoH/2 - 5, (botW * 2) - 2, 4);
+      // buckle
+      ctx.fillStyle = def.gold || '#d4af37';
+      ctx.fillRect(-3, torsoH/2 - 5, 6, 4);
+      ctx.fillStyle = '#0a0a0a';
+      ctx.fillRect(-2, torsoH/2 - 4, 4, 2);
+    } else {
+      // KAGE: black belt (martial-arts style)
+      ctx.fillStyle = '#000';
+      ctx.fillRect(-botW + 1, torsoH/2 - 6, (botW * 2) - 2, 6);
+      ctx.strokeStyle = 'rgba(80,8,8,0.55)'; ctx.lineWidth = 0.6;
+      ctx.strokeRect(-botW + 1, torsoH/2 - 6, (botW * 2) - 2, 6);
     }
   }
   ctx.restore();
@@ -3380,6 +3916,7 @@ function goIntro(){
   state.hitstop = 0;
   state.particles.length = 0;
   state.damageNums.length = 0;
+  state.projectiles.length = 0;
   state.blackFlashT = 0; state.whiteFlashT = 0;
   $('siNum').textContent = 'UNDERGROUND PIT · ' + (DIFFICULTY[state.difficulty].name);
   $('siName').textContent = state.fighters[0].def.name + ' VS ' + state.fighters[1].def.name;
@@ -3483,6 +4020,7 @@ function renderCharSelect(){
     '<div class="info-row"><span>BUILD</span><b>' + buildLabel(def) + '</b></div>' +
     '<div class="info-row"><span>REACH</span><b>' + def.reach + '</b></div>' +
     '<div class="info-row"><span>SUPER</span><b>' + def.specialName + ' · ' + def.specialDmg + '</b></div>' +
+    '<div class="info-row"><span>PROJECTILE</span><b>' + (def.projectileName || '—') + ' · ' + (def.projectileDmg || 0) + '</b></div>' +
     '<div class="info-desc">' + def.desc + '</div>';
 }
 function buildLabel(def){
@@ -3491,29 +4029,7 @@ function buildLabel(def){
   if (def.scale < 0.97) return '小 柄 · 敏 捷';
   return '標 準';
 }
-function drawPortrait(ctxP, def, cx, baseY, sc){
-  // small render of fighter
-  ctxP.save();
-  ctxP.translate(cx, baseY);
-  ctxP.scale(sc, sc);
-  // pose: idle
-  const fake = { stateData:null };
-  const pose = computePose(def, 'idle', 0, 0, 0, fake);
-  const oldCtx = ctx;
-  // temporarily switch context for drawFighterAtPose
-  // Easier: replicate the relevant code, but we'll just call drawFighterAtPose using main ctx? No — we want the small canvas's ctx.
-  // Trick: save the global ctx ref and override.
-  // (Sharing 'ctx' as outer let)
-  // simulate by directly calling — but our drawFighterAtPose uses `ctx` directly. Swap it temporarily.
-  ctxSwap(ctxP);
-  drawFighterAtPose(def, pose, 0, 0, 1, 1, null, 'idle');
-  ctxSwap(oldCtx);
-  ctxP.restore();
-}
-let _ctxStack = [];
-function ctxSwap(newCtx){ _ctxStack.push(ctx); ctx = newCtx; }
-function ctxRestore(){ ctx = _ctxStack.pop() || ctx; }
-// The above ctxSwap/ctxRestore won't actually swap since `ctx` is a const/let above; let's re-declare differently — see correction below.
+/* v3.0 — older buggy drawPortrait removed; see __streetClashDrawPortrait below. */
 
 /* ============================================================
    SHARE
@@ -3595,106 +4111,34 @@ init();
    ============================================================ */
 // Because `ctx` above is captured by closure, the previous ctxSwap/ctxRestore
 // won't reassign `ctx`. Override drawPortrait to use a separate small renderer.
+/* v3.0 — Portrait now reuses the real drawFighterAtPose so faces show in
+   the character-select screen. We temporarily reassign the module-level
+   `ctx` (declared `let` above) to the portrait canvas's 2D context, call
+   the main renderer, then restore. */
 window.__streetClashDrawPortrait = function(targetCtx, def){
-  const pose = computePose(def, 'idle', 0, 0, 0, { stateData: null });
-  // we re-implement minimal limb/torso/head using targetCtx
-  const baseScale = def.scale;
-  const baseWide = def.widthMul;
-  const torsoH = 64 * baseScale;
-  const torsoW = 30 * baseWide;
-  const headR = 13.5 * baseScale;
-  const armUpper = 22 * baseScale, armLower = 22 * baseScale;
-  const legUpper = 28 * baseScale, legLower = 28 * baseScale;
-  const tx = targetCtx;
-  tx.save();
-  tx.translate(60, 160);
-  tx.scale(1.2, 1.2);
-  // hip at 0,0
-  // back leg
-  drawLimbTo(tx, -8 * baseWide, 0, legUpper, legLower, pose.llU, pose.llL, def.pants, def.shoe);
-  drawLimbTo(tx, 8 * baseWide, 0, legUpper, legLower, pose.rlU, pose.rlL, def.pants, def.shoe);
-  // torso
-  tx.save();
-  tx.translate(0, -torsoH / 2);
-  tx.fillStyle = def.shirt;
-  const tW2 = torsoW / 2;
-  tx.beginPath();
-  tx.moveTo(-tW2 * 0.9, -torsoH/2); tx.lineTo(tW2 * 0.9, -torsoH/2);
-  tx.lineTo(tW2 * 1.05, torsoH/2); tx.lineTo(-tW2 * 1.05, torsoH/2);
-  tx.closePath(); tx.fill();
-  if (def.id === 'TATSUKI'){
-    tx.fillStyle = def.shirt2; tx.fillRect(-tW2 * 0.34, -torsoH/2 + 2, tW2 * 0.68, torsoH - 4);
-    tx.fillStyle = def.neck; tx.beginPath();
-    tx.moveTo(0, -torsoH/2); tx.lineTo(tW2 * 0.18, -torsoH/2 + 6);
-    tx.lineTo(0, torsoH/2 - 4); tx.lineTo(-tW2 * 0.18, -torsoH/2 + 6); tx.closePath(); tx.fill();
-  } else if (def.id === 'SAKURA'){
-    tx.fillStyle = 'rgba(0,0,0,0.18)'; tx.fillRect(-tW2 * 0.85, -torsoH/2 + 12, tW2 * 1.7, 4);
-  } else if (def.id === 'KAGE'){
-    tx.fillStyle = 'rgba(40,40,40,0.6)'; tx.fillRect(-tW2 * 0.2, -torsoH/2 + 4, tW2 * 0.4, torsoH - 8);
-  } else if (def.id === 'RYUJI'){
-    tx.fillStyle = 'rgba(0,0,0,0.18)';
-    tx.fillRect(-tW2 * 0.65, -torsoH/2, 3, torsoH); tx.fillRect(tW2 * 0.65 - 3, -torsoH/2, 3, torsoH);
-  }
-  tx.restore();
-  // arms
-  const shoulderY = -torsoH + 6 * baseScale;
-  drawLimbTo(tx, -tW2 + 1, shoulderY, armUpper, armLower, pose.laU, pose.laL, def.shirt, def.skin);
-  drawLimbTo(tx,  tW2 - 1, shoulderY, armUpper, armLower, pose.raU, pose.raL, def.shirt, def.skin);
-  // head
-  tx.save();
-  tx.translate(0, shoulderY - headR - 2 * baseScale);
-  if (def.id === 'KAGE'){
-    tx.fillStyle = def.accent;
-    tx.beginPath(); tx.arc(0, 0, headR, 0, Math.PI * 2); tx.fill();
-    tx.fillStyle = '#000';
-    tx.fillRect(-headR * 0.85, -headR * 0.15, headR * 1.7, headR * 0.35);
-  } else {
-    tx.fillStyle = def.skin;
-    tx.beginPath(); tx.arc(0, 0, headR, 0, Math.PI * 2); tx.fill();
-    tx.fillStyle = def.hair;
-    if (def.hairStyle === 'slick'){
-      tx.beginPath();
-      tx.arc(0, -headR * 0.18, headR * 1.05, Math.PI * 1.05, Math.PI * 1.95, false);
-      tx.lineTo(-headR * 0.32, -headR * 0.08);
-      tx.quadraticCurveTo(0, -headR * 0.4, headR * 0.32, -headR * 0.08);
-      tx.closePath(); tx.fill();
-    } else if (def.hairStyle === 'buzz'){
-      tx.beginPath();
-      tx.arc(0, -headR * 0.1, headR * 1.02, Math.PI, Math.PI * 2, false);
-      tx.fill();
-    } else if (def.hairStyle === 'ponytail'){
-      tx.beginPath();
-      tx.arc(0, -headR * 0.2, headR * 1.08, Math.PI, Math.PI * 2, false);
-      tx.fill();
-      tx.beginPath();
-      tx.moveTo(-headR * 0.6, 0);
-      tx.quadraticCurveTo(-headR * 1.2, headR * 0.6, -headR * 0.8, headR * 1.4);
-      tx.quadraticCurveTo(-headR * 0.5, headR * 1.0, -headR * 0.3, headR * 0.4);
-      tx.closePath();
-      tx.fill();
-    }
-    tx.fillStyle = '#0a0a0a';
-    tx.fillRect(-headR * 0.45, headR * 0.05, headR * 0.20, headR * 0.10);
-    tx.fillRect( headR * 0.25, headR * 0.05, headR * 0.20, headR * 0.10);
-  }
-  tx.restore();
-  tx.restore();
+  // Build a synthetic fighter object so the pose machinery has gestures etc.
+  const fakeFighter = {
+    def, stateData: null, vy: 0,
+    gestureKind: null, gestureProg: 0, gestureT: -99,
+    swayPhase: 0,
+  };
+  const pose = computePose(def, 'idle', 0, 0, 0, fakeFighter);
+  // Save current main ctx
+  const prevCtx = ctx;
+  ctx = targetCtx;
+  try {
+    ctx.save();
+    // Place feet at bottom-center of the 120x180 portrait canvas
+    // drawFighterAtPose uses (x, y) where y is at ground (foot level)
+    ctx.translate(60, 168);
+    ctx.scale(1.25, 1.25);
+    // facing=1 (right). alpha=1. tintShadow=null. state='idle'.
+    drawFighterAtPose(def, pose, 0, 0, 1, 1, null, 'idle');
+    ctx.restore();
+  } catch(e){ try { console.error('[street-clash] portrait error:', e); } catch(_){} }
+  ctx = prevCtx;
 };
-function drawLimbTo(tx, jx, jy, upperLen, lowerLen, upperAng, lowerAng, upperColor, lowerColor){
-  tx.save();
-  tx.translate(jx, jy);
-  tx.rotate(upperAng * Math.PI / 180);
-  tx.fillStyle = upperColor; tx.fillRect(-3.6, 0, 7.2, upperLen);
-  tx.beginPath(); tx.arc(0, upperLen, 4.2, 0, Math.PI * 2); tx.fill();
-  tx.translate(0, upperLen); tx.rotate(lowerAng * Math.PI / 180);
-  tx.fillStyle = lowerColor; tx.fillRect(-3.4, 0, 6.8, lowerLen);
-  tx.beginPath(); tx.arc(0, lowerLen, 4, 0, Math.PI * 2); tx.fill();
-  tx.restore();
-}
-// Override drawPortrait used in renderCharSelect to actually use the small canvas's ctx
 function drawPortrait(targetCtx, def){ window.__streetClashDrawPortrait(targetCtx, def); }
-// Re-render character select if it was rendered before this redefinition.
-// (Init renders title first, so no issue.)
 
 /* ============================================================
    TEST SURFACE
@@ -3721,6 +4165,21 @@ window.__streetClash = {
   setP1Super(){
     if (state.fighters) state.fighters[0].sg = SUPER_GAUGE_MAX;
   },
+  setP1SuperHalf(){
+    if (state.fighters) state.fighters[0].sg = PROJECTILE_COST;
+  },
+  fireProjectile(){
+    if (state.fighters) return tryStartProjectile(state.fighters[0], false);
+    return false;
+  },
+  fireSpecial(){
+    if (state.fighters) return tryStartSpecial(state.fighters[0]);
+    return false;
+  },
+  jump(){
+    if (state.fighters) return tryStartJump(state.fighters[0]);
+    return false;
+  },
   diag(){
     return {
       screen: state.screen,
@@ -3729,7 +4188,12 @@ window.__streetClash = {
       fighters: state.fighters ? state.fighters.map(f => ({
         id: f.def.id, side: f.side, isAI: !!f.isAI, x: Math.round(f.x), y: Math.round(f.y),
         hp: Math.round(f.hp), sg: Math.round(f.sg), state: f.state, facing: f.facing,
+        onGround: !!f.onGround, vy: Math.round(f.vy),
       })) : null,
+      projectiles: state.projectiles.map(p => ({
+        kind: p.kind, owner: p.owner, x: Math.round(p.x), y: Math.round(p.y),
+        vx: Math.round(p.vx), hits: p.hits, dmg: p.dmg, age: p.age.toFixed(2),
+      })),
       particles: state.particles.length,
       damageNums: state.damageNums.length,
       shake: state.shake,
@@ -3742,8 +4206,11 @@ window.__streetClash = {
       hasCharacters: CHAR_ORDER.length === 4 && CHAR_ORDER.every(id => CHARS[id] && CHARS[id].specialName),
       hasDifficulties: !!(DIFFICULTY.easy && DIFFICULTY.normal && DIFFICULTY.hard),
       hasSpecial: CHAR_ORDER.every(id => typeof CHARS[id].specialName === 'string' && CHARS[id].specialDmg > 0),
+      hasProjectiles: CHAR_ORDER.every(id => typeof CHARS[id].projectileName === 'string' && CHARS[id].projectileDmg > 0),
       hasShare: /^https:\/\/twitter\.com\/intent\/tweet\?text=/.test(buildShareUrl(true, 'TATSUKI', 'normal', 10000)),
       hasAudio: true,
+      hasAirAtkTbl: !!ATK_TIME.airAtk,
+      jumpVy: JUMP_VY,
       noExternal: !document.querySelector('script[src]') && !document.querySelector('link[href^="http"][rel="stylesheet"]'),
       framePumped: frameCount > 0,
     };
