@@ -357,11 +357,15 @@
     text-align:center;margin-top:2px;
   }
   .sel-portrait{
-    width:100%;height:96px;
-    display:flex;align-items:flex-end;justify-content:center;
+    /* v3.2 — height matches the new portrait canvas so the face isn't clipped.
+       Previously 96px clipped the upper ~84px of the 180-tall canvas. */
+    width:100%;height:144px;
+    display:flex;align-items:center;justify-content:center;
     position:relative;overflow:hidden;
+    border-radius:4px;
+    background:#0a0a0a;
   }
-  .sel-portrait canvas{display:block;}
+  .sel-portrait canvas{display:block;width:100%;height:100%;}
   .sel-info{
     width:100%;max-width:360px;
     padding:12px 14px;
@@ -622,7 +626,7 @@
 const $ = id => document.getElementById(id);
 
 /* ================================================================
-   STREET CLASH v3.0 — projectiles + air-attacks + face-bug fix
+   STREET CLASH v3.2 — dedicated portrait + CSS clip fix
    ================================================================ */
 
 /* ---------- CONSTANTS ---------- */
@@ -3997,7 +4001,7 @@ function renderCharSelect(){
     card.className = 'sel-card' + (state.selectedChar === id ? ' on' : '');
     card.setAttribute('data-id', id);
     card.innerHTML =
-      '<div class="sel-portrait"><canvas width="120" height="180" data-id="' + id + '"></canvas></div>' +
+      '<div class="sel-portrait"><canvas width="120" height="144" data-id="' + id + '"></canvas></div>' +
       '<div class="name">' + def.name + '</div>' +
       '<div class="sub">' + def.subtitle + '</div>';
     card.addEventListener('click', () => {
@@ -4006,10 +4010,10 @@ function renderCharSelect(){
       sfxClick();
     });
     stage.appendChild(card);
-    // draw portrait
+    // v3.2 — dedicated portrait function, draws inside (0,0,120,144) rect
     const cvP = card.querySelector('canvas');
     const ctx2 = cvP.getContext('2d');
-    drawPortrait(ctx2, def, 60, 160, 1.2);
+    drawCharacterPortrait(ctx2, def, 0, 0, 120, 144);
   });
   // info pane
   const info = $('selInfo');
@@ -4029,6 +4033,556 @@ function buildLabel(def){
   if (def.scale < 0.97) return '小 柄 · 敏 捷';
   return '標 準';
 }
+/* ============================================================
+   v3.2 — drawCharacterPortrait
+   Self-contained portrait drawer for the character-select cards.
+   Independent of the in-battle character renderer.
+   Renders inside the rect (x, y, w, h). Layout (for w=120, h=144):
+     face center  = (60, ~46)   ← upper portion (~32% from top)
+     face radius  = ~24 × ~30
+     eye Y        = ~50
+     mouth Y      = ~64
+     shoulder Y   = ~104
+   ============================================================ */
+function drawCharacterPortrait(ctx, def, x, y, w, h){
+  ctx.save();
+  // clip to rect so nothing escapes
+  ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
+
+  // === 1. Background — dark gradient + top spotlight + bottom shadow ===
+  const bg = ctx.createLinearGradient(x, y, x, y + h);
+  bg.addColorStop(0,    '#1a1a1a');
+  bg.addColorStop(0.55, '#0c0c0c');
+  bg.addColorStop(1,    '#040404');
+  ctx.fillStyle = bg;
+  ctx.fillRect(x, y, w, h);
+  const spot = ctx.createRadialGradient(x + w/2, y, 4, x + w/2, y + h * 0.20, h * 0.95);
+  spot.addColorStop(0,   'rgba(212,175,55,0.30)');
+  spot.addColorStop(0.5, 'rgba(212,175,55,0.06)');
+  spot.addColorStop(1,   'rgba(212,175,55,0)');
+  ctx.fillStyle = spot;
+  ctx.fillRect(x, y, w, h);
+  const vign = ctx.createLinearGradient(x, y + h * 0.6, x, y + h);
+  vign.addColorStop(0, 'rgba(0,0,0,0)');
+  vign.addColorStop(1, 'rgba(0,0,0,0.65)');
+  ctx.fillStyle = vign;
+  ctx.fillRect(x, y + h * 0.6, w, h * 0.4);
+
+  // === Layout constants ===
+  const cx       = x + w / 2;
+  const faceCY   = y + h * 0.34;
+  const faceRX   = w * 0.21;      // ~25
+  const faceRY   = h * 0.21;      // ~30
+  const eyeY     = faceCY - h * 0.03;
+  const eyeOffX  = faceRX * 0.46;
+  const noseY    = faceCY + h * 0.05;
+  const mouthY   = faceCY + h * 0.13;
+  const neckW    = faceRX * 0.55;
+  const neckTopY = faceCY + faceRY * 0.92;
+  const shoulderY = y + h * 0.72;
+  const shoulderW = w * 0.78;
+  const skin     = (def.id === 'KAGE') ? '#1a1a1a' : (def.skin || '#f4d4b0');
+
+  // === 2. Neck ===
+  ctx.fillStyle = skin;
+  ctx.beginPath();
+  ctx.moveTo(cx - neckW, neckTopY);
+  ctx.lineTo(cx - neckW + 2, shoulderY);
+  ctx.lineTo(cx + neckW - 2, shoulderY);
+  ctx.lineTo(cx + neckW, neckTopY);
+  ctx.closePath();
+  ctx.fill();
+  // neck side shadow (right side, light from upper-left)
+  ctx.fillStyle = 'rgba(0,0,0,0.32)';
+  ctx.beginPath();
+  ctx.moveTo(cx + neckW - 4, neckTopY);
+  ctx.lineTo(cx + neckW,     neckTopY);
+  ctx.lineTo(cx + neckW - 2, shoulderY);
+  ctx.lineTo(cx + neckW - 5, shoulderY);
+  ctx.closePath();
+  ctx.fill();
+  // neck shadow under jaw
+  ctx.fillStyle = 'rgba(0,0,0,0.40)';
+  ctx.beginPath();
+  ctx.ellipse(cx, neckTopY + 1, neckW * 0.95, 3, 0, 0, Math.PI);
+  ctx.fill();
+
+  // === 3-4. Shirt + shoulders (trapezoid that fills the bottom) ===
+  const shirt = def.shirt || '#1a1a1a';
+  ctx.fillStyle = shirt;
+  ctx.beginPath();
+  ctx.moveTo(cx - neckW, shoulderY - 2);
+  ctx.lineTo(cx - shoulderW * 0.5, shoulderY + 8);
+  ctx.lineTo(cx - shoulderW * 0.5 - 2, y + h);
+  ctx.lineTo(cx + shoulderW * 0.5 + 2, y + h);
+  ctx.lineTo(cx + shoulderW * 0.5, shoulderY + 8);
+  ctx.lineTo(cx + neckW, shoulderY - 2);
+  ctx.closePath();
+  ctx.fill();
+  // shirt side shadow (right)
+  ctx.fillStyle = 'rgba(0,0,0,0.30)';
+  ctx.beginPath();
+  ctx.moveTo(cx + shoulderW * 0.32, shoulderY + 6);
+  ctx.lineTo(cx + shoulderW * 0.5,  shoulderY + 8);
+  ctx.lineTo(cx + shoulderW * 0.5 + 2, y + h);
+  ctx.lineTo(cx + shoulderW * 0.32, y + h);
+  ctx.closePath();
+  ctx.fill();
+  // shirt outline
+  ctx.strokeStyle = 'rgba(0,0,0,0.50)'; ctx.lineWidth = 1.0;
+  ctx.beginPath();
+  ctx.moveTo(cx - neckW, shoulderY - 2);
+  ctx.lineTo(cx - shoulderW * 0.5, shoulderY + 8);
+  ctx.lineTo(cx - shoulderW * 0.5 - 2, y + h);
+  ctx.moveTo(cx + neckW, shoulderY - 2);
+  ctx.lineTo(cx + shoulderW * 0.5, shoulderY + 8);
+  ctx.lineTo(cx + shoulderW * 0.5 + 2, y + h);
+  ctx.stroke();
+
+  // === 5. Per-character clothing decorations ===
+  if (def.id === 'TATSUKI'){
+    // black jacket lapels
+    ctx.fillStyle = '#0a0a0a';
+    ctx.beginPath();
+    ctx.moveTo(cx - neckW + 2, shoulderY);
+    ctx.lineTo(cx - shoulderW * 0.5, shoulderY + 8);
+    ctx.lineTo(cx - shoulderW * 0.5 - 2, y + h);
+    ctx.lineTo(cx - 4, y + h);
+    ctx.lineTo(cx - 10, shoulderY + 10);
+    ctx.closePath();
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(cx + neckW - 2, shoulderY);
+    ctx.lineTo(cx + shoulderW * 0.5, shoulderY + 8);
+    ctx.lineTo(cx + shoulderW * 0.5 + 2, y + h);
+    ctx.lineTo(cx + 4, y + h);
+    ctx.lineTo(cx + 10, shoulderY + 10);
+    ctx.closePath();
+    ctx.fill();
+    // white shirt center
+    ctx.fillStyle = '#f5f5f5';
+    ctx.beginPath();
+    ctx.moveTo(cx - 8, shoulderY + 4);
+    ctx.lineTo(cx + 8, shoulderY + 4);
+    ctx.lineTo(cx + 5, y + h);
+    ctx.lineTo(cx - 5, y + h);
+    ctx.closePath();
+    ctx.fill();
+    // red tie
+    ctx.fillStyle = '#c11414';
+    ctx.beginPath();
+    ctx.moveTo(cx, shoulderY + 2);
+    ctx.lineTo(cx + 5, shoulderY + 9);
+    ctx.lineTo(cx + 3, y + h);
+    ctx.lineTo(cx - 3, y + h);
+    ctx.lineTo(cx - 5, shoulderY + 9);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = 'rgba(0,0,0,0.32)';
+    ctx.beginPath();
+    ctx.moveTo(cx + 2, shoulderY + 6);
+    ctx.lineTo(cx + 5, shoulderY + 9);
+    ctx.lineTo(cx + 3, y + h);
+    ctx.lineTo(cx, y + h);
+    ctx.closePath();
+    ctx.fill();
+  } else if (def.id === 'RYUJI'){
+    // tank-top rib lines
+    ctx.strokeStyle = 'rgba(0,0,0,0.22)'; ctx.lineWidth = 1;
+    for (let i = -16; i <= 16; i += 6){
+      ctx.beginPath();
+      ctx.moveTo(cx + i, shoulderY + 8); ctx.lineTo(cx + i, y + h);
+      ctx.stroke();
+    }
+    // thick gold chain around neck
+    ctx.strokeStyle = '#d4af37'; ctx.lineWidth = 2.4;
+    ctx.beginPath();
+    ctx.arc(cx, shoulderY + 4, 18, 0.30, Math.PI - 0.30, false);
+    ctx.stroke();
+    ctx.fillStyle = '#d4af37';
+    for (let i = 0; i < 9; i++){
+      const a = 0.35 + (i / 8) * (Math.PI - 0.70);
+      ctx.beginPath();
+      ctx.arc(cx + Math.cos(a) * 18, shoulderY + 4 + Math.sin(a) * 18, 1.4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    // chain pendant
+    ctx.fillStyle = '#d4af37';
+    ctx.beginPath();
+    ctx.moveTo(cx, shoulderY + 22);
+    ctx.lineTo(cx - 3, shoulderY + 26);
+    ctx.lineTo(cx,     shoulderY + 30);
+    ctx.lineTo(cx + 3, shoulderY + 26);
+    ctx.closePath();
+    ctx.fill();
+  } else if (def.id === 'KAGE'){
+    // overwrite shirt with deep black + add white bandage strip
+    ctx.fillStyle = '#040404';
+    ctx.beginPath();
+    ctx.moveTo(cx - neckW + 1, shoulderY - 1);
+    ctx.lineTo(cx - shoulderW * 0.5 + 1, shoulderY + 7);
+    ctx.lineTo(cx - shoulderW * 0.5 - 1, y + h);
+    ctx.lineTo(cx + shoulderW * 0.5 + 1, y + h);
+    ctx.lineTo(cx + shoulderW * 0.5 - 1, shoulderY + 7);
+    ctx.lineTo(cx + neckW - 1, shoulderY - 1);
+    ctx.closePath();
+    ctx.fill();
+    // white bandage at neck
+    ctx.fillStyle = '#f0f0f0';
+    ctx.fillRect(cx - 16, shoulderY + 1, 32, 7);
+    ctx.strokeStyle = 'rgba(0,0,0,0.4)'; ctx.lineWidth = 0.7;
+    ctx.beginPath();
+    ctx.moveTo(cx - 16, shoulderY + 4.5); ctx.lineTo(cx + 16, shoulderY + 4.5);
+    ctx.stroke();
+    // bandage outline
+    ctx.strokeStyle = 'rgba(0,0,0,0.55)'; ctx.lineWidth = 0.9;
+    ctx.strokeRect(cx - 16, shoulderY + 1, 32, 7);
+    // black belt at very bottom
+    ctx.fillStyle = '#000';
+    ctx.fillRect(cx - shoulderW * 0.5, y + h - 8, shoulderW, 8);
+  } else if (def.id === 'SAKURA'){
+    // hoodie hood drape
+    ctx.fillStyle = shirt;
+    ctx.beginPath();
+    ctx.moveTo(cx - 26, shoulderY - 2);
+    ctx.quadraticCurveTo(cx, shoulderY - 18, cx + 26, shoulderY - 2);
+    ctx.lineTo(cx + 18, shoulderY + 10);
+    ctx.lineTo(cx - 18, shoulderY + 10);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = '#9a3050'; ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(cx - 26, shoulderY - 2);
+    ctx.quadraticCurveTo(cx, shoulderY - 18, cx + 26, shoulderY - 2);
+    ctx.stroke();
+    // drawstrings
+    ctx.strokeStyle = '#f5f5f5'; ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.moveTo(cx - 3, shoulderY + 10); ctx.quadraticCurveTo(cx - 5, shoulderY + 22, cx - 1, shoulderY + 32); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx + 3, shoulderY + 10); ctx.quadraticCurveTo(cx + 5, shoulderY + 24, cx + 1, shoulderY + 34); ctx.stroke();
+    ctx.fillStyle = '#f5f5f5';
+    ctx.beginPath(); ctx.arc(cx - 1, shoulderY + 32, 1.6, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx + 1, shoulderY + 34, 1.6, 0, Math.PI * 2); ctx.fill();
+    // hoodie zipper line
+    ctx.strokeStyle = '#9a3050'; ctx.lineWidth = 0.8;
+    ctx.beginPath();
+    ctx.moveTo(cx, shoulderY + 10); ctx.lineTo(cx, y + h);
+    ctx.stroke();
+  }
+
+  // === 6. Face outline (drawn AFTER body so face overlaps shoulders) ===
+  ctx.fillStyle = skin;
+  ctx.beginPath();
+  ctx.ellipse(cx, faceCY, faceRX, faceRY, 0, 0, Math.PI * 2);
+  ctx.fill();
+  // face side shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.20)';
+  ctx.beginPath();
+  ctx.ellipse(cx + faceRX * 0.32, faceCY + 3, faceRX * 0.55, faceRY * 0.82, 0, 0, Math.PI * 2);
+  ctx.fill();
+  // face top-left highlight
+  ctx.fillStyle = 'rgba(255,255,255,0.18)';
+  ctx.beginPath();
+  ctx.ellipse(cx - faceRX * 0.36, faceCY - faceRY * 0.42, faceRX * 0.34, faceRY * 0.18, 0, 0, Math.PI * 2);
+  ctx.fill();
+  // face outline
+  ctx.strokeStyle = '#3a2a1a'; ctx.lineWidth = 1.8;
+  ctx.beginPath();
+  ctx.ellipse(cx, faceCY, faceRX, faceRY, 0, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // === 7. Hair ===
+  if (def.id === 'TATSUKI'){
+    // slick back
+    ctx.fillStyle = '#0a0a0a';
+    ctx.beginPath();
+    ctx.moveTo(cx - faceRX,        faceCY - faceRY * 0.05);
+    ctx.quadraticCurveTo(cx - faceRX * 1.06, faceCY - faceRY * 1.18, cx, faceCY - faceRY * 1.15);
+    ctx.quadraticCurveTo(cx + faceRX * 1.06, faceCY - faceRY * 1.18, cx + faceRX, faceCY - faceRY * 0.05);
+    ctx.lineTo(cx + faceRX * 0.44, faceCY - faceRY * 0.35);
+    ctx.quadraticCurveTo(cx, faceCY - faceRY * 0.05, cx - faceRX * 0.44, faceCY - faceRY * 0.35);
+    ctx.closePath();
+    ctx.fill();
+    // outline of hair
+    ctx.strokeStyle = 'rgba(0,0,0,0.45)'; ctx.lineWidth = 1.0;
+    ctx.stroke();
+    // shine
+    ctx.fillStyle = 'rgba(255,255,255,0.18)';
+    ctx.beginPath();
+    ctx.ellipse(cx - faceRX * 0.22, faceCY - faceRY * 0.84, faceRX * 0.50, faceRY * 0.10, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // 3 distinct tufts on the crown
+    ctx.fillStyle = '#0a0a0a';
+    [-0.55, 0, 0.55].forEach(off => {
+      const tx = cx + off * faceRX;
+      ctx.beginPath();
+      ctx.moveTo(tx - faceRX * 0.10, faceCY - faceRY * 0.95);
+      ctx.quadraticCurveTo(tx,        faceCY - faceRY * 1.20, tx + faceRX * 0.10, faceCY - faceRY * 0.95);
+      ctx.lineTo(tx + faceRX * 0.04,  faceCY - faceRY * 0.78);
+      ctx.lineTo(tx - faceRX * 0.04,  faceCY - faceRY * 0.78);
+      ctx.closePath();
+      ctx.fill();
+    });
+  } else if (def.id === 'RYUJI'){
+    // gold buzz cap
+    ctx.fillStyle = '#d4af37';
+    ctx.beginPath();
+    ctx.ellipse(cx, faceCY - faceRY * 0.50, faceRX * 0.95, faceRY * 0.50, 0, Math.PI, 0, true);
+    ctx.fill();
+    // jagged tips
+    for (let i = -3; i <= 3; i++){
+      const tx = cx + i * faceRX * 0.24;
+      ctx.beginPath();
+      ctx.moveTo(tx - 2,  faceCY - faceRY * 0.95);
+      ctx.lineTo(tx,      faceCY - faceRY * 1.10);
+      ctx.lineTo(tx + 2,  faceCY - faceRY * 0.95);
+      ctx.closePath();
+      ctx.fill();
+    }
+    // darker outline of buzz
+    ctx.strokeStyle = '#7a5810'; ctx.lineWidth = 1.0;
+    ctx.beginPath();
+    ctx.ellipse(cx, faceCY - faceRY * 0.50, faceRX * 0.95, faceRY * 0.50, 0, Math.PI, 0, true);
+    ctx.stroke();
+  } else if (def.id === 'SAKURA'){
+    // long pony crown
+    ctx.fillStyle = '#0a0a0a';
+    ctx.beginPath();
+    ctx.moveTo(cx - faceRX,        faceCY - faceRY * 0.05);
+    ctx.quadraticCurveTo(cx - faceRX * 1.08, faceCY - faceRY * 1.22, cx, faceCY - faceRY * 1.20);
+    ctx.quadraticCurveTo(cx + faceRX * 1.08, faceCY - faceRY * 1.22, cx + faceRX, faceCY - faceRY * 0.05);
+    ctx.lineTo(cx + faceRX * 0.55, faceCY - faceRY * 0.35);
+    ctx.quadraticCurveTo(cx, faceCY - faceRY * 0.12, cx - faceRX * 0.55, faceCY - faceRY * 0.35);
+    ctx.closePath();
+    ctx.fill();
+    // 3 front bangs
+    [-0.55, 0, 0.55].forEach(off => {
+      const tx = cx + off * faceRX;
+      ctx.beginPath();
+      ctx.moveTo(tx - faceRX * 0.18, faceCY - faceRY * 0.55);
+      ctx.quadraticCurveTo(tx, faceCY - faceRY * 0.10, tx + faceRX * 0.18, faceCY - faceRY * 0.55);
+      ctx.closePath();
+      ctx.fill();
+    });
+    // ponytail hanging behind left shoulder
+    ctx.beginPath();
+    ctx.moveTo(cx - faceRX * 0.70, faceCY - faceRY * 0.08);
+    ctx.quadraticCurveTo(cx - faceRX * 1.42, faceCY + faceRY * 0.60, cx - faceRX * 1.05, faceCY + faceRY * 1.70);
+    ctx.quadraticCurveTo(cx - faceRX * 0.55, faceCY + faceRY * 1.10, cx - faceRX * 0.30, faceCY + faceRY * 0.42);
+    ctx.closePath();
+    ctx.fill();
+    // red ribbon
+    ctx.fillStyle = '#c11414';
+    ctx.fillRect(cx - faceRX * 0.80, faceCY - faceRY * 0.06, faceRX * 0.22, faceRY * 0.14);
+    ctx.fillStyle = '#0a0a0a';
+    ctx.fillRect(cx - faceRX * 0.78, faceCY - faceRY * 0.02, faceRX * 0.18, faceRY * 0.05);
+  }
+
+  // === 8. Face features ===
+  if (def.id === 'KAGE'){
+    // === 9. Red mask covering upper half of face ===
+    ctx.fillStyle = '#c11414';
+    ctx.beginPath();
+    ctx.moveTo(cx - faceRX * 1.03, faceCY - faceRY * 0.02);
+    ctx.lineTo(cx - faceRX * 1.03, faceCY - faceRY * 0.95);
+    ctx.quadraticCurveTo(cx, faceCY - faceRY * 1.16, cx + faceRX * 1.03, faceCY - faceRY * 0.95);
+    ctx.lineTo(cx + faceRX * 1.03, faceCY - faceRY * 0.02);
+    ctx.quadraticCurveTo(cx, faceCY + faceRY * 0.10, cx - faceRX * 1.03, faceCY - faceRY * 0.02);
+    ctx.closePath();
+    ctx.fill();
+    // mask seam (stitching)
+    ctx.strokeStyle = 'rgba(60,4,4,0.85)'; ctx.lineWidth = 1.0;
+    ctx.beginPath();
+    ctx.moveTo(cx - faceRX * 0.92, faceCY - faceRY * 0.04);
+    ctx.quadraticCurveTo(cx, faceCY + faceRY * 0.07, cx + faceRX * 0.92, faceCY - faceRY * 0.04);
+    ctx.stroke();
+    // stitches along mask top
+    ctx.strokeStyle = 'rgba(0,0,0,0.55)'; ctx.lineWidth = 0.8;
+    ctx.setLineDash([2, 2]);
+    ctx.beginPath();
+    ctx.moveTo(cx - faceRX * 0.85, faceCY - faceRY * 0.05);
+    ctx.quadraticCurveTo(cx, faceCY + faceRY * 0.04, cx + faceRX * 0.85, faceCY - faceRY * 0.05);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    // shadow on right side of mask
+    ctx.fillStyle = 'rgba(0,0,0,0.30)';
+    ctx.beginPath();
+    ctx.moveTo(cx + faceRX * 0.30, faceCY - faceRY * 0.92);
+    ctx.lineTo(cx + faceRX * 1.03, faceCY - faceRY * 0.75);
+    ctx.lineTo(cx + faceRX * 1.03, faceCY - faceRY * 0.02);
+    ctx.lineTo(cx + faceRX * 0.30, faceCY - faceRY * 0.02);
+    ctx.closePath();
+    ctx.fill();
+    // mask outline
+    ctx.strokeStyle = '#5a0a0a'; ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.moveTo(cx - faceRX * 1.03, faceCY - faceRY * 0.02);
+    ctx.lineTo(cx - faceRX * 1.03, faceCY - faceRY * 0.95);
+    ctx.quadraticCurveTo(cx, faceCY - faceRY * 1.16, cx + faceRX * 1.03, faceCY - faceRY * 0.95);
+    ctx.lineTo(cx + faceRX * 1.03, faceCY - faceRY * 0.02);
+    ctx.stroke();
+    // === eye slits in mask: dark holes with red glowing eyes ===
+    // black socket
+    ctx.fillStyle = '#000';
+    ctx.beginPath();
+    ctx.ellipse(cx - eyeOffX, eyeY, 6.5, 3.6, 0, 0, Math.PI * 2);
+    ctx.ellipse(cx + eyeOffX, eyeY, 6.5, 3.6, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // red glints inside
+    ctx.fillStyle = '#ff5050';
+    ctx.beginPath();
+    ctx.ellipse(cx - eyeOffX, eyeY + 0.5, 4.0, 2.0, 0, 0, Math.PI * 2);
+    ctx.ellipse(cx + eyeOffX, eyeY + 0.5, 4.0, 2.0, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // pin-light pupils
+    ctx.fillStyle = '#ffe0e0';
+    ctx.beginPath();
+    ctx.arc(cx - eyeOffX + 1, eyeY - 0.4, 0.9, 0, Math.PI * 2);
+    ctx.arc(cx + eyeOffX + 1, eyeY - 0.4, 0.9, 0, Math.PI * 2);
+    ctx.fill();
+    // === mouth under mask (visible chin area) ===
+    ctx.strokeStyle = '#3a2a1a'; ctx.lineWidth = 1.6; ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(cx - 5, mouthY);
+    ctx.lineTo(cx + 5, mouthY);
+    ctx.stroke();
+  } else if (def.id === 'TATSUKI'){
+    // brows (angled)
+    ctx.strokeStyle = '#0a0a0a'; ctx.lineWidth = 2.8; ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(cx - eyeOffX - 6, eyeY - 9);
+    ctx.lineTo(cx - eyeOffX + 5, eyeY - 6);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(cx + eyeOffX + 6, eyeY - 9);
+    ctx.lineTo(cx + eyeOffX - 5, eyeY - 6);
+    ctx.stroke();
+    // almond eyes
+    ctx.fillStyle = '#f5f5f5';
+    ctx.beginPath();
+    ctx.ellipse(cx - eyeOffX, eyeY, 5.4, 2.6, 0, 0, Math.PI * 2);
+    ctx.ellipse(cx + eyeOffX, eyeY, 5.4, 2.6, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#0a0a0a';
+    ctx.beginPath();
+    ctx.ellipse(cx - eyeOffX, eyeY + 0.5, 2.6, 2.0, 0, 0, Math.PI * 2);
+    ctx.ellipse(cx + eyeOffX, eyeY + 0.5, 2.6, 2.0, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // eye highlight
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(cx - eyeOffX + 1, eyeY - 0.4, 0.6, 0, Math.PI * 2);
+    ctx.arc(cx + eyeOffX + 1, eyeY - 0.4, 0.6, 0, Math.PI * 2);
+    ctx.fill();
+    // nose
+    ctx.strokeStyle = '#a08060'; ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.moveTo(cx, noseY); ctx.lineTo(cx + 1, noseY + 5);
+    ctx.stroke();
+    // への字 mouth
+    ctx.strokeStyle = '#3a2a1a'; ctx.lineWidth = 1.8; ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(cx - 6, mouthY + 1);
+    ctx.quadraticCurveTo(cx, mouthY - 2, cx + 6, mouthY + 1);
+    ctx.stroke();
+  } else if (def.id === 'RYUJI'){
+    // V brows (steep)
+    ctx.fillStyle = '#0a0a0a';
+    ctx.save();
+    ctx.translate(cx - eyeOffX, eyeY - 7);
+    ctx.rotate(-26 * Math.PI / 180);
+    ctx.fillRect(-7, -2, 14, 4);
+    ctx.restore();
+    ctx.save();
+    ctx.translate(cx + eyeOffX, eyeY - 7);
+    ctx.rotate(26 * Math.PI / 180);
+    ctx.fillRect(-7, -2, 14, 4);
+    ctx.restore();
+    // big round eyes
+    ctx.fillStyle = '#f5f5f5';
+    ctx.beginPath();
+    ctx.arc(cx - eyeOffX, eyeY, 5.2, 0, Math.PI * 2);
+    ctx.arc(cx + eyeOffX, eyeY, 5.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#0a0a0a';
+    ctx.beginPath();
+    ctx.arc(cx - eyeOffX, eyeY + 0.6, 3.2, 0, Math.PI * 2);
+    ctx.arc(cx + eyeOffX, eyeY + 0.6, 3.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(cx - eyeOffX + 1.2, eyeY - 0.6, 1.0, 0, Math.PI * 2);
+    ctx.arc(cx + eyeOffX + 1.2, eyeY - 0.6, 1.0, 0, Math.PI * 2);
+    ctx.fill();
+    // nose
+    ctx.strokeStyle = '#a08060'; ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(cx - 1, noseY); ctx.lineTo(cx + 1, noseY + 5);
+    ctx.stroke();
+    // smirk + teeth
+    ctx.fillStyle = '#0a0a0a';
+    ctx.beginPath();
+    ctx.moveTo(cx - 8, mouthY);
+    ctx.lineTo(cx + 8, mouthY - 1);
+    ctx.lineTo(cx + 8, mouthY + 2);
+    ctx.lineTo(cx - 8, mouthY + 3);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#e4dac8';
+    ctx.fillRect(cx - 6, mouthY + 1, 12, 1.6);
+    // canine hints
+    ctx.fillStyle = '#0a0a0a';
+    ctx.fillRect(cx - 3, mouthY + 1, 1, 2);
+    ctx.fillRect(cx + 2, mouthY + 1, 1, 2);
+  } else if (def.id === 'SAKURA'){
+    // thin upward brows
+    ctx.fillStyle = '#0a0a0a';
+    ctx.save();
+    ctx.translate(cx - eyeOffX, eyeY - 8);
+    ctx.rotate(-5 * Math.PI / 180);
+    ctx.fillRect(-7, -1.5, 13, 2.6);
+    ctx.restore();
+    ctx.save();
+    ctx.translate(cx + eyeOffX, eyeY - 8);
+    ctx.rotate(5 * Math.PI / 180);
+    ctx.fillRect(-7, -1.5, 13, 2.6);
+    ctx.restore();
+    // big round eyes
+    ctx.fillStyle = '#f5f5f5';
+    ctx.beginPath();
+    ctx.arc(cx - eyeOffX, eyeY, 5.6, 0, Math.PI * 2);
+    ctx.arc(cx + eyeOffX, eyeY, 5.6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#0a0a0a';
+    ctx.beginPath();
+    ctx.arc(cx - eyeOffX, eyeY + 0.8, 3.8, 0, Math.PI * 2);
+    ctx.arc(cx + eyeOffX, eyeY + 0.8, 3.8, 0, Math.PI * 2);
+    ctx.fill();
+    // double sparkle
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(cx - eyeOffX - 1, eyeY - 1.2, 1.5, 0, Math.PI * 2);
+    ctx.arc(cx - eyeOffX + 1.6, eyeY + 1.2, 0.7, 0, Math.PI * 2);
+    ctx.arc(cx + eyeOffX - 1, eyeY - 1.2, 1.5, 0, Math.PI * 2);
+    ctx.arc(cx + eyeOffX + 1.6, eyeY + 1.2, 0.7, 0, Math.PI * 2);
+    ctx.fill();
+    // small nose
+    ctx.strokeStyle = '#a08060'; ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(cx, noseY); ctx.lineTo(cx + 0.5, noseY + 4);
+    ctx.stroke();
+    // small mouth
+    ctx.strokeStyle = '#3a2a1a'; ctx.lineWidth = 1.6; ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(cx - 4, mouthY); ctx.lineTo(cx + 4, mouthY);
+    ctx.stroke();
+  }
+
+  ctx.restore();
+  return {
+    cx, faceCY, faceRX, faceRY, eyeY, eyeOffX, noseY, mouthY,
+    shoulderY, shoulderW,
+  };
+}
+
 /* v3.0 — older buggy drawPortrait removed; see __streetClashDrawPortrait below. */
 
 /* ============================================================
@@ -4195,6 +4749,24 @@ window.__streetClash = {
   },
   setP1SuperHalf(){
     if (state.fighters) state.fighters[0].sg = PROJECTILE_COST;
+  },
+  drawCharacterPortrait, // v3.2 — exposed for verification
+  portraitGeom(charId){
+    // returns the layout coordinates that drawCharacterPortrait uses,
+    // so tests can verify face/eye/mouth positions are inside the rect.
+    const def = CHARS[charId];
+    if (!def) return null;
+    const x = 0, y = 0, w = 120, h = 144;
+    const faceCY = y + h * 0.34;
+    return {
+      rect: { x, y, w, h },
+      faceCenter: { x: x + w / 2, y: faceCY },
+      faceRadii:  { rx: w * 0.21, ry: h * 0.21 },
+      eye:        { y: faceCY - h * 0.03, offX: w * 0.21 * 0.46 },
+      nose:       { y: faceCY + h * 0.05 },
+      mouth:      { y: faceCY + h * 0.13 },
+      shoulder:   { y: y + h * 0.72, w: w * 0.78 },
+    };
   },
   fireProjectile(){
     if (state.fighters) return tryStartProjectile(state.fighters[0], false);
