@@ -4115,24 +4115,52 @@ init();
    the character-select screen. We temporarily reassign the module-level
    `ctx` (declared `let` above) to the portrait canvas's 2D context, call
    the main renderer, then restore. */
+/* v3.1 — Bust-shot portrait: head + shoulders only, large enough that the
+   face is clearly visible at the 120x180 card size. */
 window.__streetClashDrawPortrait = function(targetCtx, def){
-  // Build a synthetic fighter object so the pose machinery has gestures etc.
+  // === background pass on the portrait canvas (doesn't need main ctx) ===
+  targetCtx.save();
+  targetCtx.clearRect(0, 0, 120, 180);
+  // moody dark gradient
+  const bg = targetCtx.createLinearGradient(0, 0, 0, 180);
+  bg.addColorStop(0, '#1c1c1c');
+  bg.addColorStop(0.55, '#0c0c0c');
+  bg.addColorStop(1, '#040404');
+  targetCtx.fillStyle = bg;
+  targetCtx.fillRect(0, 0, 120, 180);
+  // soft top spotlight (matches game lighting)
+  const sg = targetCtx.createRadialGradient(60, 0, 4, 60, 30, 110);
+  sg.addColorStop(0, 'rgba(212,175,55,0.32)');
+  sg.addColorStop(0.6, 'rgba(212,175,55,0.06)');
+  sg.addColorStop(1, 'rgba(212,175,55,0)');
+  targetCtx.fillStyle = sg;
+  targetCtx.fillRect(0, 0, 120, 180);
+  // ground-shadow gradient at bottom
+  const fg = targetCtx.createLinearGradient(0, 140, 0, 180);
+  fg.addColorStop(0, 'rgba(0,0,0,0)');
+  fg.addColorStop(1, 'rgba(0,0,0,0.72)');
+  targetCtx.fillStyle = fg;
+  targetCtx.fillRect(0, 140, 120, 40);
+  targetCtx.restore();
+
+  // === bust shot via main drawFighterAtPose ===
   const fakeFighter = {
     def, stateData: null, vy: 0,
     gestureKind: null, gestureProg: 0, gestureT: -99,
     swayPhase: 0,
   };
   const pose = computePose(def, 'idle', 0, 0, 0, fakeFighter);
-  // Save current main ctx
   const prevCtx = ctx;
   ctx = targetCtx;
   try {
     ctx.save();
-    // Place feet at bottom-center of the 120x180 portrait canvas
-    // drawFighterAtPose uses (x, y) where y is at ground (foot level)
-    ctx.translate(60, 168);
-    ctx.scale(1.25, 1.25);
-    // facing=1 (right). alpha=1. tintShadow=null. state='idle'.
+    // Scale so the head fills roughly the upper half of the 120x180 portrait.
+    // baseScale of 14.5px head radius * 2.4x scale ≈ 35px — face features visible.
+    const PORTRAIT_SCALE = 2.55;
+    // translate to (60, 260): hip far below canvas, head ends up around y=55,
+    // showing only head + shoulders + upper chest (bust shot).
+    ctx.translate(60, 260);
+    ctx.scale(PORTRAIT_SCALE, PORTRAIT_SCALE);
     drawFighterAtPose(def, pose, 0, 0, 1, 1, null, 'idle');
     ctx.restore();
   } catch(e){ try { console.error('[street-clash] portrait error:', e); } catch(_){} }
