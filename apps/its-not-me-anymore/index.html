@@ -1,0 +1,659 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no,maximum-scale=1" />
+<meta name="theme-color" content="#0a0a0a" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="description" content="本来の自分は、まだそこにいる。" />
+<meta property="og:title" content="IT'S NOT ME ANYMORE" />
+<meta property="og:description" content="本来の自分は、まだそこにいる。7つの問いで、あなたの現在地を測る。" />
+<title>IT'S NOT ME ANYMORE — 本来の自分は、まだそこにいる。</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;600;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0a0a;
+    --ink:#e8e8e8;
+    --sub:#888;
+    --mute:#555;
+    --line:rgba(232,232,232,.14);
+    --line-2:rgba(232,232,232,.32);
+    --accent:#6a8caf;
+    --accent-dim:rgba(106,140,175,.42);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;}
+  html,body{margin:0;padding:0;height:100%;background:var(--bg);color:var(--ink);}
+  body{
+    font-family:"Noto Serif JP","YuMincho","Yu Mincho","Hiragino Mincho ProN",serif;
+    font-weight:400;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+    min-height:100vh;
+    min-height:100dvh;
+    padding:max(20px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
+    display:flex;flex-direction:column;
+  }
+
+  /* ============ Screens ============ */
+  .screen{
+    display:none;
+    flex:1 1 auto;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    max-width:520px;
+    width:100%;
+    margin:0 auto;
+    animation:fadeIn .6s ease both;
+  }
+  .screen.on{display:flex;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+  @keyframes fadeOut{from{opacity:1;}to{opacity:0;}}
+
+  /* ============ Title ============ */
+  .t-tag{
+    font-size:10px;letter-spacing:.60em;font-weight:400;color:var(--sub);
+    text-transform:uppercase;margin-bottom:26px;
+  }
+  .t-title{
+    font-family:"Noto Serif JP",serif;
+    font-weight:900;
+    font-size:clamp(30px,10vmin,54px);
+    letter-spacing:.02em;line-height:1.05;
+    text-align:center;color:var(--ink);
+    margin:0;
+    text-shadow:0 0 22px rgba(0,0,0,.7);
+  }
+  .t-title .amp{color:var(--accent);font-weight:600;}
+  .t-sub{
+    margin-top:32px;
+    font-size:14px;letter-spacing:.28em;color:var(--sub);
+    text-align:center;font-weight:400;line-height:1.9;
+  }
+  .t-rule{
+    width:60px;height:1px;background:var(--line-2);
+    margin:34px auto 0;
+  }
+  .t-actions{
+    margin-top:44px;
+    display:flex;flex-direction:column;gap:16px;
+    align-items:center;width:100%;max-width:280px;
+  }
+  .t-notice{
+    margin-top:32px;
+    font-size:10px;line-height:1.7;color:var(--mute);
+    text-align:center;letter-spacing:.10em;font-weight:400;
+    max-width:280px;
+  }
+
+  /* ============ Buttons ============ */
+  .btn{
+    -webkit-appearance:none;appearance:none;cursor:pointer;
+    background:transparent;color:var(--ink);
+    font-family:inherit;font-size:12px;font-weight:400;letter-spacing:.36em;
+    padding:16px 32px;
+    border:1px solid var(--line-2);
+    border-radius:0;
+    transition:background .32s ease, color .32s ease, border-color .32s ease, transform .08s ease;
+    width:100%;text-align:center;
+    text-decoration:none;display:inline-block;
+  }
+  .btn:hover{background:var(--ink);color:var(--bg);border-color:var(--ink);}
+  .btn:active{transform:translateY(1px);}
+  .btn.accent{
+    color:var(--accent);border-color:var(--accent-dim);
+    letter-spacing:.42em;
+  }
+  .btn.accent:hover{background:var(--accent);color:var(--bg);border-color:var(--accent);}
+  .btn.ghost{
+    border-color:var(--line);color:var(--sub);
+    letter-spacing:.28em;font-size:11px;padding:12px 24px;
+  }
+  .btn.ghost:hover{color:var(--ink);border-color:var(--line-2);background:transparent;}
+
+  /* ============ Quiz ============ */
+  .q-head{
+    width:100%;max-width:420px;
+    margin-bottom:36px;
+  }
+  .q-nums{
+    display:flex;justify-content:space-between;align-items:baseline;
+    margin-bottom:14px;
+  }
+  .q-num{
+    font-family:"Courier New","SFMono-Regular",monospace;
+    font-size:11px;letter-spacing:.20em;color:var(--sub);
+  }
+  .q-num b{color:var(--ink);font-weight:400;}
+  .q-prog{
+    width:100%;height:1px;background:var(--line);
+    position:relative;overflow:hidden;
+  }
+  .q-prog-fill{
+    height:100%;width:0%;
+    background:var(--accent);
+    transition:width .5s cubic-bezier(.4,0,.2,1);
+  }
+  .q-text{
+    font-size:clamp(19px,5.4vmin,26px);
+    line-height:1.7;letter-spacing:.06em;
+    color:var(--ink);
+    text-align:center;
+    margin:0 0 44px;
+    font-weight:400;
+    max-width:440px;
+    min-height:calc(1.7em * 2);
+  }
+  .q-choices{
+    display:flex;flex-direction:column;gap:12px;
+    width:100%;max-width:420px;
+  }
+  .choice{
+    -webkit-appearance:none;appearance:none;cursor:pointer;
+    background:transparent;color:var(--ink);
+    font-family:inherit;font-weight:400;
+    font-size:15px;letter-spacing:.10em;
+    padding:18px 22px;
+    border:1px solid var(--line);
+    border-radius:0;text-align:left;
+    line-height:1.5;
+    transition:background .28s ease, color .28s ease, border-color .28s ease, padding-left .18s ease;
+  }
+  .choice:hover{
+    background:rgba(232,232,232,.04);
+    border-color:var(--line-2);
+    padding-left:26px;
+  }
+  .choice:active{background:rgba(232,232,232,.08);}
+  .choice .num{
+    color:var(--accent);
+    font-family:"Courier New",monospace;
+    font-size:11px;letter-spacing:.10em;
+    margin-right:14px;
+    display:inline-block;
+    width:14px;
+  }
+
+  /* ============ Result ============ */
+  .r-card{
+    width:100%;max-width:400px;
+    padding:44px 24px 36px;
+    display:flex;flex-direction:column;align-items:center;
+    text-align:center;
+  }
+  .r-eyebrow{
+    font-size:10px;letter-spacing:.50em;color:var(--sub);
+    text-transform:uppercase;margin-bottom:18px;font-weight:400;
+  }
+  .r-score-wrap{
+    display:flex;align-items:baseline;justify-content:center;
+    margin-bottom:28px;
+  }
+  .r-score{
+    font-family:"Courier New","SFMono-Regular",monospace;
+    font-size:clamp(94px,26vmin,148px);
+    font-weight:400;
+    color:var(--ink);
+    line-height:.95;letter-spacing:-.03em;
+    font-feature-settings:"tnum";
+  }
+  .r-pct{
+    font-family:"Courier New",monospace;
+    font-size:clamp(28px,7vmin,42px);
+    color:var(--accent);margin-left:6px;
+    font-weight:400;
+  }
+  .r-bar-wrap{
+    width:100%;max-width:280px;margin:0 auto 8px;
+    position:relative;
+  }
+  .r-bar{
+    height:2px;background:var(--line);
+    position:relative;overflow:visible;
+  }
+  .r-bar-fill{
+    height:100%;background:var(--accent);
+    width:0%;
+    transition:width 1.4s cubic-bezier(.4,0,.2,1);
+    position:relative;
+  }
+  .r-bar-fill::after{
+    content:"";
+    position:absolute;right:-3px;top:-3px;
+    width:6px;height:8px;background:var(--accent);
+  }
+  .r-bar-scale{
+    display:flex;justify-content:space-between;
+    margin-top:8px;
+    font-family:"Courier New",monospace;
+    font-size:9px;letter-spacing:.10em;color:var(--mute);
+  }
+  .r-rule{
+    width:40px;height:1px;background:var(--line-2);
+    margin:36px auto 22px;
+  }
+  .r-heading{
+    font-size:10px;letter-spacing:.50em;color:var(--sub);
+    text-transform:uppercase;margin-bottom:18px;font-weight:400;
+  }
+  .r-lost{
+    list-style:none;padding:0;margin:0 0 32px;
+    display:flex;flex-direction:column;gap:14px;
+    width:100%;max-width:280px;
+  }
+  .r-lost li{
+    font-size:17px;letter-spacing:.12em;color:var(--ink);
+    text-align:center;
+    padding-bottom:12px;
+    border-bottom:1px dotted var(--line);
+    line-height:1.5;
+    font-weight:400;
+  }
+  .r-lost li:last-child{border-bottom:none;}
+  .r-lost li::before{
+    content:"—— ";
+    color:var(--accent);
+    margin-right:6px;
+    letter-spacing:0;
+  }
+  .r-poem{
+    font-size:14px;line-height:2;letter-spacing:.18em;
+    color:var(--sub);
+    margin:20px 0 34px;
+    max-width:320px;
+    font-style:normal;
+    font-weight:400;
+  }
+  .r-sig{
+    font-size:9px;letter-spacing:.50em;color:var(--mute);
+    text-transform:uppercase;font-weight:400;
+    padding-top:22px;
+    border-top:1px solid var(--line);
+    width:100%;max-width:300px;text-align:center;
+    margin-bottom:34px;
+  }
+  .r-sig .amp{color:var(--accent);font-weight:400;}
+  .r-actions{
+    display:flex;flex-direction:column;gap:10px;
+    width:100%;max-width:280px;
+  }
+
+  /* ============ Fade transition helper ============ */
+  .fade-out{animation:fadeOut .3s ease both;}
+
+  @media (max-height:640px){
+    body{padding:14px 16px;}
+    .t-actions{margin-top:32px;}
+    .r-card{padding:22px 20px 18px;}
+    .q-head{margin-bottom:24px;}
+    .q-text{margin-bottom:26px;}
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ Screen 1: Title ============ -->
+<section class="screen on" id="titleScreen">
+  <div class="t-tag">A QUIET SELF-DIAGNOSTIC</div>
+  <h1 class="t-title">IT'S NOT ME<br/><span class="amp">&</span> ANYMORE</h1>
+  <p class="t-sub">本 来 の 自 分 は、<br/>ま だ そ こ に い る。</p>
+  <div class="t-rule"></div>
+  <div class="t-actions">
+    <button class="btn accent" id="btnStart" type="button">START</button>
+  </div>
+  <p class="t-notice">これは診断遊びです。<br/>深刻な悩みは専門家にご相談ください。</p>
+</section>
+
+<!-- ============ Screen 2: Quiz ============ -->
+<section class="screen" id="quizScreen">
+  <div class="q-head">
+    <div class="q-nums">
+      <span class="q-num">Q<b id="qCurNum">1</b><span> / 7</span></span>
+      <span class="q-num" id="qLabel">QUESTION</span>
+    </div>
+    <div class="q-prog"><div class="q-prog-fill" id="qProgFill"></div></div>
+  </div>
+  <h2 class="q-text" id="qText">—</h2>
+  <div class="q-choices" id="qChoices"></div>
+</section>
+
+<!-- ============ Screen 3: Result ============ -->
+<section class="screen" id="resultScreen">
+  <div class="r-card">
+    <p class="r-eyebrow">本 来 の 自 分 と の 一 致 度</p>
+    <div class="r-score-wrap">
+      <span class="r-score" id="rScore">—</span>
+      <span class="r-pct">%</span>
+    </div>
+    <div class="r-bar-wrap">
+      <div class="r-bar"><div class="r-bar-fill" id="rBarFill"></div></div>
+      <div class="r-bar-scale"><span>15</span><span>95</span></div>
+    </div>
+    <div class="r-rule"></div>
+    <p class="r-heading">失 わ れ た も の</p>
+    <ul class="r-lost" id="rLost"></ul>
+    <p class="r-poem" id="rPoem">—</p>
+    <p class="r-sig">── IT'S NOT ME <span class="amp">&</span> ANYMORE</p>
+    <div class="r-actions">
+      <a class="btn accent" id="rShare" target="_blank" rel="noopener noreferrer">X で シ ェ ア</a>
+      <button class="btn" id="rReplay" type="button">も う 一 度 診 断 す る</button>
+      <button class="btn ghost" id="rRepattern" type="button">同 じ 回 答 で 別 パ タ ー ン</button>
+    </div>
+  </div>
+</section>
+
+<script>
+(() => {
+'use strict';
+const $ = id => document.getElementById(id);
+
+/* ==================================================
+   IT'S NOT ME ANYMORE v1.0 — single-file diagnostic
+   ================================================== */
+
+// === Questions (7 fixed) ===
+const QUESTIONS = [
+  {
+    q: '最後に本気で笑ったのは、いつ？',
+    choices: [
+      { text: '今日',           s: {} },
+      { text: '数日以内',       s: { B:2, E:2 } },
+      { text: '覚えていない',   s: { B:5, E:4 } },
+      { text: 'わからない',     s: { B:7, E:5 } },
+    ],
+  },
+  {
+    q: '鏡を見たとき、何を思う？',
+    choices: [
+      { text: '何も思わない',   s: { B:3 } },
+      { text: '疲れた顔だな',   s: { E:5 } },
+      { text: '誰？',           s: { D:7, B:5 } },
+      { text: '見たくない',     s: { A:5, E:5 } },
+    ],
+  },
+  {
+    q: '昔、夢中だったものは？',
+    choices: [
+      { text: '今も好き',           s: {} },
+      { text: '時々思い出す',       s: { D:3 } },
+      { text: 'もう興味がない',     s: { D:7, B:4 } },
+      { text: '思い出せない',       s: { D:8, B:5 } },
+    ],
+  },
+  {
+    q: '自分の意見を、言えている？',
+    choices: [
+      { text: '言えている',                 s: {} },
+      { text: '場面による',                 s: { A:3 } },
+      { text: '飲み込むことが多い',         s: { A:7, C:5 } },
+      { text: '意見自体がわからない',       s: { A:8, D:3 } },
+    ],
+  },
+  {
+    q: '休みの日、何をしている？',
+    choices: [
+      { text: 'やりたいことをしている',     s: {} },
+      { text: 'だらけている',               s: { E:3 } },
+      { text: '疲れて動けない',             s: { E:6, B:3 } },
+      { text: '罪悪感で何もできない',       s: { C:5, E:6, A:3 } },
+    ],
+  },
+  {
+    q: '「素の自分」を、誰かに見せている？',
+    choices: [
+      { text: '家族・友人・恋人に',         s: {} },
+      { text: 'たまに',                     s: { E:3, C:2 } },
+      { text: '見せる相手がいない',         s: { C:5, E:4 } },
+      { text: '素の自分がわからない',       s: { A:5, D:5, E:5 } },
+    ],
+  },
+  {
+    q: '1年前の自分を思い出せる？',
+    choices: [
+      { text: 'はっきり思い出せる',         s: {} },
+      { text: 'ぼんやり',                   s: { D:3 } },
+      { text: '別人のよう',                 s: { D:6 } },
+      { text: '思い出したくない',           s: { D:7, E:4 } },
+    ],
+  },
+];
+
+// === Axis metadata + lost-things pool ===
+const AXES = ['A','B','C','D','E'];
+const AXIS_LABEL = {
+  A:'自己抑圧', B:'感情喪失', C:'他者依存', D:'過去との断絶', E:'演技疲労',
+};
+const LOST_THINGS = {
+  A: ['自分の意見','本音','言葉','「NO」と言う力','拒否する権利'],
+  B: ['感情の起伏','涙','怒り','心の震え','誰かへの想い'],
+  C: ['自分の選択','自由','時間','一人でいる勇気','自分だけの空間'],
+  D: ['好きだったもの','夢','あの日の情熱','幼い頃の自分','純粋さ'],
+  E: ['素の表情','本物の笑い','休息','何もしない時間','自分でいる時間'],
+};
+
+// === Closing poems by score band × 3 patterns ===
+const POEMS = {
+  high:     [ 'まだ、あなたはあなただ。',
+              '大丈夫。まだ間に合う場所にいる。',
+              'その姿を、忘れないで。' ],
+  mid_high: [ '少しだけ、ズレている。でも、戻れる場所にいる。',
+              '本来のあなたは、まだそこにいる。',
+              '疲れているだけ。あなたは変わっていない。' ],
+  mid_low:  [ '深く沈んでいる。それでも、光はある。',
+              '取り戻せる。時間はかかるかもしれない。',
+              'まだ、間に合う。まだ、あなたは残っている。' ],
+  low:      [ 'これはもう、あなたじゃない。取り戻せ。',
+              '消えかけている。だから、今、思い出してほしい。',
+              '本来のあなたは、この結果に驚いているはずだ。' ],
+};
+
+// === State ===
+const state = {
+  screen: 'title',
+  currentQ: 0,
+  answers: [],                    // list of { qi, ci }
+  scores: { A:0, B:0, C:0, D:0, E:0 },
+  patternOffset: 0,               // increments on "別パターン"
+};
+
+function resetForNewQuiz(){
+  state.currentQ = 0;
+  state.answers.length = 0;
+  state.scores = { A:0, B:0, C:0, D:0, E:0 };
+  state.patternOffset = 0;
+}
+
+/* -------- Screen switching (fade) -------- */
+function showScreen(id){
+  const targets = ['titleScreen','quizScreen','resultScreen'];
+  const cur = targets.find(t => $(t).classList.contains('on') && !$(t).classList.contains('fade-out'));
+  const next = $(id);
+  if (cur && cur !== id){
+    const curEl = $(cur);
+    curEl.classList.add('fade-out');
+    setTimeout(() => {
+      curEl.classList.remove('on');
+      curEl.classList.remove('fade-out');
+      next.classList.add('on');
+      state.screen = id === 'titleScreen' ? 'title' : (id === 'quizScreen' ? 'quiz' : 'result');
+      window.scrollTo(0, 0);
+    }, 280);
+  } else {
+    for (const t of targets) $(t).classList.remove('on');
+    next.classList.add('on');
+    state.screen = id === 'titleScreen' ? 'title' : (id === 'quizScreen' ? 'quiz' : 'result');
+    window.scrollTo(0, 0);
+  }
+}
+
+/* -------- Quiz rendering -------- */
+function renderQuestion(){
+  const qi = state.currentQ;
+  const Q = QUESTIONS[qi];
+  $('qCurNum').textContent = String(qi + 1);
+  $('qLabel').textContent = 'Q ' + String(qi + 1).padStart(2, '0');
+  $('qProgFill').style.width = ((qi) / QUESTIONS.length * 100).toFixed(1) + '%';
+  $('qText').textContent = Q.q;
+  const container = $('qChoices');
+  container.innerHTML = '';
+  Q.choices.forEach((c, ci) => {
+    const btn = document.createElement('button');
+    btn.className = 'choice';
+    btn.type = 'button';
+    btn.innerHTML = '<span class="num">' + String.fromCharCode(97 + ci) + '</span>' + escapeHtml(c.text);
+    btn.addEventListener('click', () => onChoice(qi, ci));
+    container.appendChild(btn);
+  });
+  // fade-in the choices by re-adding animation
+  container.animate ? container.animate([{opacity:0}, {opacity:1}], { duration: 340, easing: 'ease' }) : null;
+}
+function onChoice(qi, ci){
+  const Q = QUESTIONS[qi];
+  const scores = Q.choices[ci].s || {};
+  for (const k in scores){ state.scores[k] = (state.scores[k] | 0) + scores[k]; }
+  state.answers.push({ qi, ci });
+  // update fill immediately for feedback
+  $('qProgFill').style.width = ((qi + 1) / QUESTIONS.length * 100).toFixed(1) + '%';
+  state.currentQ++;
+  if (state.currentQ >= QUESTIONS.length){
+    // short delay so the fill animation is visible before transition
+    setTimeout(() => showResult(), 300);
+  } else {
+    // brief pause then next question
+    setTimeout(() => renderQuestion(), 260);
+  }
+}
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+}
+
+/* -------- Result computation -------- */
+function computeMatch(scores){
+  const total = scores.A + scores.B + scores.C + scores.D + scores.E;
+  return Math.max(15, Math.min(95, 100 - total));
+}
+function bandFor(match){
+  if (match >= 80) return 'high';
+  if (match >= 60) return 'mid_high';
+  if (match >= 40) return 'mid_low';
+  return 'low';
+}
+function topAxes(scores){
+  // sort axes by score desc, tiebreak by axis index (A > B > C > D > E)
+  return AXES.slice().sort((a, b) => {
+    const sa = scores[a] | 0, sb = scores[b] | 0;
+    if (sb !== sa) return sb - sa;
+    return AXES.indexOf(a) - AXES.indexOf(b);
+  });
+}
+function lostThingFor(axis, axisScore, patternOffset){
+  // deterministic: index depends on axisScore + patternOffset (mod 5)
+  // multiplier keeps distribution varied across the 5-item pool.
+  const idx = ((axisScore * 3) + (patternOffset * 7)) % 5;
+  return LOST_THINGS[axis][((idx % 5) + 5) % 5];
+}
+function poemFor(band, patternOffset){
+  const pool = POEMS[band];
+  return pool[((patternOffset % pool.length) + pool.length) % pool.length];
+}
+
+/* -------- Result rendering -------- */
+function showResult(){
+  showScreen('resultScreen');
+  const match = computeMatch(state.scores);
+  const band = bandFor(match);
+  const sorted = topAxes(state.scores);
+  // if all-zero scores (all-a case), keep top 3 axes as A,B,C for a stable ordering
+  const picked = sorted.slice(0, 3);
+  const lostItems = picked.map(ax => lostThingFor(ax, state.scores[ax] | 0, state.patternOffset));
+  const poem = poemFor(band, state.patternOffset);
+  // render
+  $('rScore').textContent = String(match);
+  const barFill = $('rBarFill');
+  const barPct = ((match - 15) / (95 - 15) * 100).toFixed(1);
+  // trigger transition after paint
+  barFill.style.width = '0%';
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => { barFill.style.width = barPct + '%'; });
+  });
+  const ul = $('rLost'); ul.innerHTML = '';
+  for (const item of lostItems){
+    const li = document.createElement('li');
+    li.textContent = item;
+    ul.appendChild(li);
+  }
+  $('rPoem').textContent = poem;
+  // share URL
+  $('rShare').setAttribute('href', buildShareUrl(match, lostItems, poem));
+}
+
+/* -------- X share -------- */
+const APP_URL = 'https://zhihongsishan-debug.github.io/x-mini-apps/apps/its-not-me-anymore/';
+function buildShareUrl(match, lostItems, poem){
+  const text =
+    '本来の自分との一致度\n\n' +
+    match + '%\n\n' +
+    '失われたもの：\n' +
+    lostItems.map(x => '・' + x).join('\n') + '\n\n' +
+    poem + '\n\n' +
+    'IT\'S NOT ME ANYMORE\n' +
+    APP_URL + '\n' +
+    '#ItsNotMeAnymore';
+  return 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(text);
+}
+
+/* -------- Buttons -------- */
+$('btnStart').addEventListener('click', () => {
+  resetForNewQuiz();
+  showScreen('quizScreen');
+  setTimeout(() => renderQuestion(), 260);
+});
+$('rReplay').addEventListener('click', () => {
+  resetForNewQuiz();
+  showScreen('titleScreen');
+});
+$('rRepattern').addEventListener('click', () => {
+  state.patternOffset += 1;
+  showResult();
+});
+
+/* -------- Test surface (for automated verification) -------- */
+window.__notMe = {
+  QUESTIONS, POEMS, LOST_THINGS, AXES, AXIS_LABEL,
+  state,
+  computeMatch, bandFor, topAxes, lostThingFor, poemFor, buildShareUrl,
+  // simulate a full answer set by choice index (0..3) per question
+  simulate(indices){
+    resetForNewQuiz();
+    for (let i = 0; i < QUESTIONS.length; i++){
+      const ci = indices[i] | 0;
+      const sc = QUESTIONS[i].choices[ci].s || {};
+      for (const k in sc) state.scores[k] = (state.scores[k] | 0) + sc[k];
+      state.answers.push({ qi: i, ci });
+    }
+    const match = computeMatch(state.scores);
+    const band = bandFor(match);
+    const sorted = topAxes(state.scores);
+    const picked = sorted.slice(0, 3);
+    const lost = picked.map(ax => lostThingFor(ax, state.scores[ax] | 0, state.patternOffset));
+    return { scores: {...state.scores}, match, band, picked, lost, poem: poemFor(band, state.patternOffset) };
+  },
+  audit(){
+    return {
+      questions: QUESTIONS.length === 7,
+      choicesEach: QUESTIONS.every(q => q.choices.length === 4),
+      axes: AXES.length === 5,
+      poemBands: Object.keys(POEMS).length === 4 && Object.values(POEMS).every(a => a.length === 3),
+      lostPools: AXES.every(a => LOST_THINGS[a].length === 5),
+      shareIntent: /^https:\/\/twitter\.com\/intent\/tweet\?text=/.test(buildShareUrl(50, ['x','y','z'], 'p')),
+      noExternalScripts: !document.querySelector('script[src]'),
+    };
+  },
+};
+})();
+</script>
+</body>
+</html>
