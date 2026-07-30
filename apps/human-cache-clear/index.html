@@ -347,6 +347,24 @@
   .btn-restart:hover{background:rgba(108,245,255,.18);border-color:var(--cyan);box-shadow:0 0 20px rgba(108,245,255,.4);}
   .btn-restart:active{transform:translateY(1px);}
 
+  /* share button — same pattern as ONE LINE LIFE, in this app's cyan */
+  .share-btn{
+    display:block;
+    max-width:280px;padding:13px 26px;
+    text-align:center;text-decoration:none;
+    border:1px solid var(--cyan);border-radius:999px;
+    background:rgba(0,0,0,.45);color:var(--cyan);
+    font:inherit;font-size:12px;letter-spacing:.4em;
+    text-shadow:0 0 10px rgba(108,245,255,.55);
+    cursor:pointer;transition:all .15s ease;
+    margin-top:2px;
+  }
+  .share-btn:hover{
+    background:var(--cyan);color:#04121a;
+    text-shadow:none;box-shadow:0 0 22px rgba(108,245,255,.55);
+  }
+  .share-btn:active{transform:translateY(1px);}
+
   @media (max-width:380px){
     h1{font-size:22px;}
     .silence-msg{font-size:16px;}
@@ -393,6 +411,7 @@
       <div class="silence-meta">SYS ・ CACHE_CLEARED</div>
       <p class="silence-msg" id="silenceMsg"></p>
       <div class="silence-tag" id="silenceTag"></div>
+      <a class="share-btn" id="shareBtn" target="_blank" rel="noopener noreferrer">X で シ ェ ア</a>
       <button id="restartBtn" class="btn-restart" type="button">もう一度</button>
     </div>
   </div>
@@ -457,6 +476,49 @@
     ],
   };
   const PARTICLE_GLYPHS = ['💠','✨','🫧','◇','✦','・'];
+
+  // Share lines — a before/after contrast per category. Kept separate from
+  // MESSAGES so the shared line reads as a statement, not a consolation.
+  const SHARE_LINES = {
+    anger:   ['もう反応しなくていいと決めた',
+              '火を消して帰る日もある',
+              '怒る体力を、返してもらった'],
+    anxiety: ['まだ起きてないことを、閉じた',
+              '未来の通知をミュートした',
+              '先の心配を、今日は置いていく'],
+    fatigue: ['がんばりの残骸を、捨てた',
+              '電池を使い切る前に止まれた',
+              '休むほうを選べた日'],
+    vanity:  ['よく見せるための自分を、閉じた',
+              '誰か用の顔を、削除した',
+              'そのままのほうが軽いと気づいた'],
+    other:   ['持たなくていいものを、置いてきた',
+              '抱えてた重さの正体が消えた',
+              '頭の中に、空きができた'],
+  };
+  const APP_URL = 'https://zhihongsishan-debug.github.io/x-mini-apps/apps/human-cache-clear/';
+  // Cleared count = the fragments the user actually dumped + the 3 cache files
+  // the UI shows being deleted. Derived from real input, so it varies per run.
+  function countCleared(text, cat){
+    const parts = String(text).split(/[、。,.\n\r\s・！!？?]+/).filter(s => s.length > 0);
+    const files = (FILE_NAMES[cat] || FILE_NAMES.other).length;
+    return Math.max(1, parts.length) + files;
+  }
+  function buildShareLine(text, cat){
+    const n = countCleared(text, cat);
+    const pool = SHARE_LINES[cat] || SHARE_LINES.other;
+    return '頭の中から ' + n + '件 消えた ／ ' + pool[n % pool.length];
+  }
+  function buildShareText(text, cat){
+    return buildShareLine(text, cat) + '\n' +
+      '── HUMAN CACHE CLEAR\n' +
+      APP_URL + '\n' +
+      '#HumanCacheClear\n' +
+      'by @prop_life_fx';
+  }
+  function buildShareUrl(text, cat){
+    return 'https://x.com/intent/post?text=' + encodeURIComponent(buildShareText(text, cat));
+  }
 
   let busy = false;
   let category = 'other';
@@ -551,6 +613,7 @@
     // Phase 5: SILENCE
     silenceMsg.textContent = pick(MESSAGES[cat] || MESSAGES.other);
     silenceTag.textContent = '— ' + CATEGORY_LABEL[cat] + ' deleted —';
+    $('shareBtn').setAttribute('href', buildShareUrl(text, cat));
     stage.classList.add('silencing');
     // restart available; clearBtn stays disabled until restart fires
   }
@@ -582,6 +645,7 @@
     runClear: (text, cat) => { if (cat) setCategory(cat); return runClear(text == null ? null : String(text)); },
     setCategory,
     restart,
+    buildShareText, buildShareUrl, buildShareLine, countCleared,
     state: () => ({
       busy,
       category,

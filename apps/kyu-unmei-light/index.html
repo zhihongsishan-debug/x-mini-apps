@@ -259,6 +259,19 @@
   }
   .reset-btn:hover{color:var(--ink);border-color:var(--gold);}
 
+  /* share button — same pattern as ONE LINE LIFE, in this app's gold */
+  .share-btn{
+    display:block;margin:18px auto 0;
+    max-width:280px;padding:14px 20px;
+    text-align:center;text-decoration:none;
+    border:1px solid var(--gold);border-radius:999px;
+    background:transparent;color:var(--gold);
+    font:inherit;font-size:12px;letter-spacing:.32em;
+    cursor:pointer;transition:all .2s ease;
+  }
+  .share-btn:hover{background:var(--gold);color:var(--bg-0);border-color:var(--gold);}
+  .share-btn:active{transform:translateY(1px);}
+
   /* ========== CTA ========== */
   .cta{
     margin-top:28px;
@@ -346,6 +359,7 @@
       <div class="bar"><i id="scoreBar"></i></div>
       <p class="message" id="message">—</p>
     </div>
+    <a class="share-btn" id="shareBtn" target="_blank" rel="noopener noreferrer">X で シ ェ ア</a>
     <button type="button" class="reset-btn" id="resetBtn">もう一度</button>
   </section>
 
@@ -386,6 +400,55 @@
     { kanji:'再', read:'さい',   score:60, msg:'組み直す時間。新しい形が用意されている流れ。' },
     { kanji:'静', read:'せい',   score:75, msg:'静かに見届ける時間。次の波がもう近くまで来ている。' },
   ];
+
+  // Share lines — one declarative sentence per type (3 variants each).
+  // Deliberately NOT the phase message: a share needs a line that names the
+  // person, not an explanation of their fortune.
+  const TYPE_LINES = {
+    1: ['あなたは、誰も歩いていない道を選ぶ型',
+        'あなたは、前例がないほど燃える型',
+        'あなたは、一番目に立つのを怖がらない型'],
+    2: ['あなたは、人と人の間に立つと本気を出す型',
+        'あなたは、場の空気を無意識に背負う型',
+        'あなたは、誰かのためになら強くなれる型'],
+    3: ['あなたは、感じたことを形にしないと苦しい型',
+        'あなたは、言葉を選びすぎて黙る型',
+        'あなたは、平凡を何より恐れる型'],
+    4: ['あなたは、地味な積み重ねで人を裏切らない型',
+        'あなたは、任された分だけ強くなる型',
+        'あなたは、崩れない土台をつくる型'],
+    5: ['あなたは、動いてから考える型',
+        'あなたは、同じ場所に長くいられない型',
+        'あなたは、退屈が一番の敵になる型'],
+    6: ['あなたは、自分より先に誰かを守る型',
+        'あなたは、頼られると断れない型',
+        'あなたは、気づけば居場所を整えている型'],
+    7: ['あなたは、言わないだけで全部見えている型',
+        'あなたは、浅い会話に疲れる型',
+        'あなたは、静かに核心を突く型'],
+    8: ['あなたは、終わらせるまで手を離さない型',
+        'あなたは、結果でしか自分を許さない型',
+        'あなたは、やると決めたら仕上げる型'],
+    9: ['あなたは、最後まで見届けてしまう型',
+        'あなたは、去り際を知っている型',
+        'あなたは、区切りをつけるのが役目の型'],
+  };
+
+  const APP_URL = 'https://zhihongsishan-debug.github.io/x-mini-apps/apps/kyu-unmei-light/';
+  function buildShareLine(type, phaseIdx){
+    const lines = TYPE_LINES[type] || TYPE_LINES[1];
+    return lines[phaseIdx % lines.length];
+  }
+  function buildShareText(type, phaseIdx){
+    return buildShareLine(type, phaseIdx) + '\n' +
+      '── 九運命術ライト\n' +
+      APP_URL + '\n' +
+      '#九運命術\n' +
+      'by @prop_life_fx';
+  }
+  function buildShareUrl(type, phaseIdx){
+    return 'https://x.com/intent/post?text=' + encodeURIComponent(buildShareText(type, phaseIdx));
+  }
 
   // Digital root — normalize 0 → 9 so result is always 1..9
   function digitalRoot(n){
@@ -448,6 +511,7 @@
     $('phaseName').textContent   = r.phase.kanji;
     $('phaseReading').textContent= r.phase.read;
     $('message').textContent     = r.phase.msg;
+    $('shareBtn').setAttribute('href', buildShareUrl(r.type, r.phaseIdx));
 
     $('scoreNum').textContent = '0';
     $('devNum').textContent   = '0';
