@@ -1,0 +1,759 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no,maximum-scale=1" />
+<meta name="theme-color" content="#07090E" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="description" content="続けた年数を入れると、その年数が何を言っているかを一行で返します。" />
+<title>YEARS ─ その年数が、何を言っているか。</title>
+
+<!-- OGP -->
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="YEARS" />
+<meta property="og:title" content="YEARS ─ その年数が、何を言っているか。" />
+<meta property="og:description" content="続けた年数を入れると、その年数が何を言っているかを一行で返します。" />
+<meta property="og:url" content="https://zhihongsishan-debug.github.io/x-mini-apps/apps/years/" />
+<meta property="og:image" content="https://zhihongsishan-debug.github.io/x-mini-apps/apps/years/ogp.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="YEARS ─ その年数が、何を言っているか。" />
+<meta name="twitter:description" content="続けた年数を入れると、その年数が何を言っているかを一行で返します。" />
+<meta name="twitter:image" content="https://zhihongsishan-debug.github.io/x-mini-apps/apps/years/ogp.png" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;500&family=Inter:wght@200;300;400;600&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg:#07090E;
+    --ink:#EDEAE3;
+    --sub:#8B8778;
+    --mute:#5A5750;
+    --gold-1:#C9A24B;
+    --gold-2:#F0D48A;
+    --cyan:#00E5FF;
+    --hair:rgba(255,255,255,.09);
+    --hair-2:rgba(255,255,255,.16);
+    --serif:"Noto Serif JP","Hiragino Mincho ProN","Yu Mincho",serif;
+    --sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Sans","Noto Sans JP",sans-serif;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;min-height:100%;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--sans);
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+    min-height:100dvh;
+    position:relative;
+  }
+  /* centre spotlight */
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+    background:
+      radial-gradient(58% 42% at 50% 34%, rgba(201,162,75,.10), transparent 72%),
+      radial-gradient(90% 60% at 50% 50%, rgba(255,255,255,.022), transparent 78%);
+  }
+  /* rising particles */
+  .dust{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;}
+  .dust i{
+    position:absolute;bottom:-8px;
+    width:2px;height:2px;border-radius:50%;
+    background:rgba(240,212,138,.5);
+    animation:rise linear infinite;
+  }
+  @keyframes rise{
+    0%{transform:translateY(0);opacity:0;}
+    12%{opacity:.55;}
+    88%{opacity:.35;}
+    100%{transform:translateY(-104vh);opacity:0;}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .dust{display:none;}
+    *{animation-duration:.01ms !important;animation-iteration-count:1 !important;}
+  }
+
+  .wrap{
+    position:relative;z-index:1;
+    min-height:100dvh;
+    display:flex;flex-direction:column;
+    max-width:520px;margin:0 auto;
+    padding:max(18px,env(safe-area-inset-top)) 20px max(24px,env(safe-area-inset-bottom));
+  }
+
+  /* ===== progress ===== */
+  .prog{
+    flex:0 0 auto;
+    display:none;
+    align-items:center;gap:12px;
+    margin-bottom:34px;
+  }
+  .prog.on{display:flex;}
+  .prog-track{
+    flex:1 1 auto;height:1px;background:var(--hair);position:relative;overflow:hidden;
+  }
+  .prog-fill{
+    position:absolute;inset:0 auto 0 0;width:33.33%;
+    background:linear-gradient(90deg,var(--gold-1),var(--gold-2));
+    transition:width .55s cubic-bezier(.16,1,.3,1);
+  }
+  .prog-num{
+    font-family:var(--sans);font-weight:300;
+    font-size:10px;letter-spacing:.28em;color:var(--sub);
+    font-feature-settings:"tnum";white-space:nowrap;
+  }
+
+  /* ===== screens ===== */
+  .screen{
+    display:none;
+    flex:1 1 auto;
+    flex-direction:column;justify-content:center;
+  }
+  .screen.on{display:flex;animation:fadeUp .55s cubic-bezier(.16,1,.3,1) both;}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
+
+  /* ===== title ===== */
+  .t-mark{
+    font-family:var(--sans);font-weight:200;
+    font-size:11px;letter-spacing:.62em;color:var(--sub);
+    text-align:center;margin-bottom:26px;text-transform:uppercase;
+  }
+  .t-title{
+    margin:0;text-align:center;
+    font-family:var(--sans);font-weight:200;
+    font-size:clamp(56px,19vmin,96px);
+    letter-spacing:.16em;line-height:1;
+    background:linear-gradient(160deg,var(--gold-2) 0%,var(--gold-1) 52%,#8C6F2E 100%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .t-sub{
+    margin:30px 0 0;text-align:center;
+    font-family:var(--serif);font-weight:300;
+    font-size:14px;letter-spacing:.24em;line-height:2;color:var(--sub);
+  }
+  .t-rule{
+    width:44px;height:1px;margin:36px auto 0;
+    background:linear-gradient(90deg,transparent,var(--gold-1),transparent);
+  }
+  .t-note{
+    margin:30px auto 0;max-width:300px;text-align:center;
+    font-family:var(--serif);font-weight:300;
+    font-size:10px;line-height:1.9;letter-spacing:.10em;color:var(--mute);
+  }
+
+  /* ===== question heading ===== */
+  .q-idx{
+    font-family:var(--sans);font-weight:300;
+    font-size:10px;letter-spacing:.44em;color:var(--gold-1);
+    margin-bottom:16px;text-transform:uppercase;
+  }
+  .q-ask{
+    margin:0 0 30px;
+    font-family:var(--serif);font-weight:400;
+    font-size:clamp(19px,5.6vmin,25px);
+    letter-spacing:.06em;line-height:1.75;color:var(--ink);
+  }
+
+  /* ===== text input ===== */
+  .field{position:relative;}
+  .field input{
+    width:100%;
+    padding:16px 2px;
+    background:transparent;color:var(--ink);
+    border:0;border-bottom:1px solid var(--hair-2);
+    font-family:var(--serif);font-weight:400;
+    font-size:20px;letter-spacing:.08em;
+    outline:none;border-radius:0;
+    transition:border-color .3s ease;
+    caret-color:var(--cyan);
+  }
+  .field input::placeholder{color:var(--mute);font-size:15px;letter-spacing:.06em;}
+  .field input:focus{border-bottom-color:var(--gold-1);}
+  .field-count{
+    position:absolute;right:0;bottom:-20px;
+    font-size:10px;letter-spacing:.16em;color:var(--mute);
+    font-feature-settings:"tnum";
+  }
+
+  /* ===== pills ===== */
+  .pills{display:grid;gap:9px;}
+  .pills.cols3{grid-template-columns:repeat(3,1fr);}
+  .pills.col1{grid-template-columns:1fr;}
+  .pill{
+    -webkit-appearance:none;appearance:none;cursor:pointer;
+    min-height:46px;padding:13px 10px;
+    background:rgba(255,255,255,.022);
+    border:1px solid var(--hair);
+    border-radius:22px;
+    color:var(--ink);
+    font-family:var(--serif);font-weight:400;
+    font-size:14px;letter-spacing:.06em;
+    text-align:center;line-height:1.4;
+    transition:border-color .22s ease,background .22s ease,color .22s ease,transform .1s ease;
+  }
+  .pills.col1 .pill{text-align:left;padding-left:22px;font-size:15px;}
+  .pill:hover{border-color:var(--hair-2);}
+  .pill:active{transform:scale(.97);}
+  .pill.sel{
+    border-color:var(--gold-1);
+    background:rgba(201,162,75,.07);
+    color:var(--gold-2);
+  }
+
+  /* ===== buttons ===== */
+  .cta{
+    -webkit-appearance:none;appearance:none;cursor:pointer;
+    display:block;width:100%;
+    min-height:50px;margin-top:30px;padding:15px 20px;
+    background:transparent;
+    border:1px solid var(--gold-1);border-radius:25px;
+    color:var(--gold-2);
+    font-family:var(--sans);font-weight:400;
+    font-size:12px;letter-spacing:.42em;
+    text-align:center;
+    transition:background .28s ease,color .28s ease,transform .1s ease,opacity .28s ease;
+  }
+  .cta:active{transform:scale(.97);}
+  .cta:disabled{opacity:.28;cursor:default;border-color:var(--hair);color:var(--mute);}
+  .cta:not(:disabled):hover{background:rgba(201,162,75,.10);}
+
+  .ghost{
+    -webkit-appearance:none;appearance:none;cursor:pointer;
+    display:block;width:100%;
+    min-height:46px;padding:13px 18px;
+    background:transparent;border:1px solid var(--hair);border-radius:23px;
+    color:var(--sub);
+    font-family:var(--sans);font-weight:300;
+    font-size:11px;letter-spacing:.30em;text-align:center;
+    text-decoration:none;
+    transition:border-color .25s ease,color .25s ease,transform .1s ease;
+  }
+  .ghost:hover{border-color:var(--hair-2);color:var(--ink);}
+  .ghost:active{transform:scale(.97);}
+
+  /* ===== RESULT CARD — the artefact ===== */
+  #screenResult{justify-content:center;}
+  .card{
+    position:relative;
+    border:1px solid var(--hair);
+    border-radius:22px;
+    padding:44px 26px 22px;
+    background:
+      radial-gradient(72% 46% at 50% 8%, rgba(201,162,75,.075), transparent 76%),
+      linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.008));
+    backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+    box-shadow:0 34px 90px rgba(0,0,0,.62), inset 0 1px 0 rgba(255,255,255,.05);
+    overflow:hidden;
+    text-align:center;
+  }
+  .card-subject{
+    font-family:var(--serif);font-weight:300;
+    font-size:12px;letter-spacing:.34em;color:var(--sub);
+    margin-bottom:14px;
+    word-break:break-word;
+  }
+  .card-num{
+    font-family:var(--sans);font-weight:200;
+    font-size:clamp(104px,34vmin,152px);
+    line-height:.86;letter-spacing:.01em;
+    background:linear-gradient(168deg,#FBEFC9 0%,var(--gold-2) 36%,var(--gold-1) 70%,#7E6229 100%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    font-feature-settings:"tnum";
+    margin:0;
+  }
+  .card-unit{
+    font-family:var(--sans);font-weight:300;
+    font-size:11px;letter-spacing:.60em;color:var(--gold-1);
+    margin-top:10px;text-transform:uppercase;
+  }
+  .card-qual{
+    font-family:var(--serif);font-weight:300;
+    font-size:10px;letter-spacing:.28em;color:var(--mute);
+    margin-top:7px;min-height:0;
+  }
+  .card-rule{
+    width:100%;max-width:200px;height:1px;margin:26px auto 0;
+    background:linear-gradient(90deg,transparent,var(--gold-1) 22%,var(--gold-2) 50%,var(--gold-1) 78%,transparent);
+    transform:scaleX(0);transform-origin:center;
+    transition:transform .8s cubic-bezier(.16,1,.3,1);
+  }
+  .card-rule.grow{transform:scaleX(1);}
+  .card-line{
+    margin:26px 0 0;
+    font-family:var(--serif);font-weight:400;
+    font-size:clamp(16px,4.6vmin,19px);
+    line-height:2.05;letter-spacing:.055em;
+    color:var(--ink);
+    text-align:left;
+    opacity:0;transform:translateY(6px);
+    transition:opacity .85s ease,transform .85s cubic-bezier(.16,1,.3,1);
+  }
+  .card-line.show{opacity:1;transform:none;}
+  .card-sig{
+    margin-top:30px;text-align:right;
+    font-family:var(--sans);font-weight:300;
+    font-size:9px;letter-spacing:.46em;color:var(--mute);
+    text-transform:uppercase;
+  }
+
+  /* share — gold, appears after a beat */
+  .share{
+    -webkit-appearance:none;appearance:none;cursor:pointer;
+    display:block;width:92%;max-width:340px;
+    min-height:52px;margin:22px auto 0;padding:16px 20px;
+    border:0;border-radius:26px;
+    background:linear-gradient(135deg,var(--gold-2) 0%,var(--gold-1) 58%,#B08C36 100%);
+    color:#0A0A0A;
+    font-family:var(--sans);font-weight:600;
+    font-size:13px;letter-spacing:.30em;
+    text-align:center;text-decoration:none;
+    box-shadow:0 12px 34px rgba(201,162,75,.26);
+    opacity:0;transform:translateY(8px);pointer-events:none;
+    transition:opacity .7s ease,transform .7s cubic-bezier(.16,1,.3,1),filter .2s ease;
+  }
+  .share.show{opacity:1;transform:none;pointer-events:auto;}
+  .share:hover{filter:brightness(1.06);}
+  .share:active{transform:scale(.97);}
+
+  .again{
+    display:flex;flex-direction:column;gap:9px;
+    margin-top:11px;
+  }
+
+  @media (max-width:390px){
+    .wrap{padding-left:16px;padding-right:16px;}
+    .card{padding:36px 20px 20px;}
+    .pill{font-size:13px;letter-spacing:.03em;}
+    .pills.col1 .pill{font-size:14px;}
+    .cta{letter-spacing:.32em;}
+  }
+  @media (max-height:680px){
+    .prog{margin-bottom:22px;}
+    .q-ask{margin-bottom:22px;}
+    .card{padding:30px 20px 18px;}
+    .card-line{line-height:1.9;}
+  }
+</style>
+</head>
+<body>
+
+<div class="dust" id="dust" aria-hidden="true"></div>
+
+<main class="wrap">
+
+  <div class="prog" id="prog">
+    <span class="prog-num" id="progNum">1 / 3</span>
+    <span class="prog-track"><span class="prog-fill" id="progFill"></span></span>
+  </div>
+
+  <!-- ================= TITLE ================= -->
+  <section class="screen on" id="screenTitle">
+    <div class="t-mark">a quiet reckoning</div>
+    <h1 class="t-title">YEARS</h1>
+    <p class="t-sub">そ の 年 数 が、<br/>何 を 言 っ て い る か。</p>
+    <div class="t-rule"></div>
+    <button class="cta" id="btnStart" type="button" style="max-width:300px;margin-left:auto;margin-right:auto;">は じ め る</button>
+    <p class="t-note">これは診断遊びです。<br/>深刻な悩みは専門家にご相談ください。</p>
+  </section>
+
+  <!-- ================= STEP 1 ================= -->
+  <section class="screen" id="screen1">
+    <div class="q-idx">step 01</div>
+    <h2 class="q-ask">何を、続けてきましたか。</h2>
+    <div class="field">
+      <input type="text" id="subject" maxlength="20" autocomplete="off"
+             placeholder="例）相場、育児、この仕事、筋トレ" />
+      <span class="field-count" id="subjCount">0 / 20</span>
+    </div>
+    <button class="cta" id="btn1Next" type="button" disabled>次 へ</button>
+  </section>
+
+  <!-- ================= STEP 2 ================= -->
+  <section class="screen" id="screen2">
+    <div class="q-idx">step 02</div>
+    <h2 class="q-ask">何年、続けましたか。</h2>
+    <div class="pills cols3" id="yearPills"></div>
+  </section>
+
+  <!-- ================= STEP 3 ================= -->
+  <section class="screen" id="screen3">
+    <div class="q-idx">step 03</div>
+    <h2 class="q-ask">いま、それをどう感じていますか。</h2>
+    <div class="pills col1" id="feelPills"></div>
+    <button class="cta" id="btn3Go" type="button" disabled>診 断 す る</button>
+  </section>
+
+  <!-- ================= RESULT ================= -->
+  <section class="screen" id="screenResult">
+    <div class="card">
+      <div class="card-subject" id="rSubject">—</div>
+      <p class="card-num" id="rNum">00</p>
+      <div class="card-unit">years</div>
+      <div class="card-qual" id="rQual"></div>
+      <div class="card-rule" id="rRule"></div>
+      <p class="card-line" id="rLine">—</p>
+      <div class="card-sig">years</div>
+    </div>
+    <a class="share" id="btnShare" target="_blank" rel="noopener noreferrer">X で シ ェ ア</a>
+    <div class="again">
+      <button class="ghost" id="btnAgain" type="button">別 の こ と で 測 る</button>
+    </div>
+  </section>
+
+</main>
+
+<script>
+(() => {
+'use strict';
+const $ = id => document.getElementById(id);
+
+/* ==========================================================
+   YEARS v1.0 — the years you kept at it, said back to you
+   ========================================================== */
+
+/* ---------- options ---------- */
+// n = the "Nth year" used inside the sentences.
+//     '1年未満' is still your 1st year; '10年以上' reads as 10.
+const YEAR_OPTIONS = [
+  { label:'1年未満',  n:1,  qual:'1年未満' },
+  { label:'1年',      n:1,  qual:'' },
+  { label:'2年',      n:2,  qual:'' },
+  { label:'3年',      n:3,  qual:'' },
+  { label:'4年',      n:4,  qual:'' },
+  { label:'5年',      n:5,  qual:'' },
+  { label:'6年',      n:6,  qual:'' },
+  { label:'7年',      n:7,  qual:'' },
+  { label:'8年',      n:8,  qual:'' },
+  { label:'9年',      n:9,  qual:'' },
+  { label:'10年',     n:10, qual:'' },
+  { label:'10年以上', n:10, qual:'10年以上' },
+];
+
+const FEELINGS = [
+  { key:'A', label:'まだ足りない' },
+  { key:'B', label:'惰性かもしれない' },
+  { key:'C', label:'これしかない' },
+  { key:'D', label:'辞めどきを探している' },
+];
+
+/* ---------- bands ----------
+   I   名乗れない        : 1年未満〜1年   — まだ自分のものになっていない
+   II  疑う              : 2〜3年        — 初めて本気で向いてないかもと思う
+   III 言葉にならない     : 4〜9年        — 続いているが説明できない
+   IV  別の意味を持つ     : 10年以上      — 続けたこと自体が事実として重い     */
+function bandFor(n){
+  if (n <= 1) return 'I';
+  if (n <= 3) return 'II';
+  if (n <= 9) return 'III';
+  return 'IV';
+}
+
+/* ---------- 48 lines : 4 bands × 4 feelings × 3 ---------- */
+const LINES = {
+  I: {
+    A: [
+      '「まだ足りない」は{N}年目の正しい感覚だ。足りていたら、それは何かを見落としている。',
+      '始めて{N}年目で足りていたら、続ける理由がなくなる。足りなさが燃料になっている。',
+      'まだ名乗れないのは当然だ。名乗る資格を考えている時点で、もう始まっている。',
+    ],
+    B: [
+      '{N}年目で惰性を疑えるなら、期待の方が先に走っていたということだ。',
+      'まだ習慣にもなっていないものを、惰性とは呼べない。冷めたのは熱で、意志ではない。',
+      '始めたばかりの停滞は、飽きではなく、慣れの手前だ。',
+    ],
+    C: [
+      '「これしかない」と言える{N}年目は強い。まだ他を知らないという強さだ。',
+      '退路を断ったつもりでも、断ったのは選択肢ではなく迷いの方だ。',
+      '始めたばかりの断言は、経験ではなく覚悟から出ている。それでいい。',
+    ],
+    D: [
+      '{N}年目で辞めどきを探すのは、向いていないからではなく、想像と違ったからだ。',
+      '辞める理由を探しているうちは、まだ辞めていない。探すこと自体に時間を使っている。',
+      '始めてすぐの違和感は、たいてい正しい。ただ、正しいことと重要なことは違う。',
+    ],
+  },
+  II: {
+    A: [
+      '{N}年目の足りなさは、量ではなく質の話に変わっている。だから苦しい。',
+      '上手くならない時期に入ったのではない。伸びが見えにくい高さまで来ただけだ。',
+      '{N}年で足りないと言えるのは、足りている状態が見えたということだ。',
+    ],
+    B: [
+      '惰性を疑うのは、{N}年目で初めて「作業」になったからだ。作業になったものは残る。',
+      '熱がなくなったのではなく、熱を使わなくても回るようになった。それを惰性と呼んでいる。',
+      '{N}年目に手応えが消えるのは普通だ。手応えは上達の副産物で、上達そのものではない。',
+    ],
+    C: [
+      '{N}年目の「これしかない」は、選んだのではなく、絞られた末に出た言葉だ。それでも言葉は言葉だ。',
+      '他が見えなくなったのではない。見る必要がなくなった。{N}年目はその境目にいる。',
+      '逃げ場がないと感じるとき、人はいちばん深くまで潜れる。',
+    ],
+    D: [
+      '{N}年目に辞めたくなるのは、初めて全体像が見えたからだ。',
+      '辞めどきを探している時点で、まだ探すだけの理由が残っている。',
+      '向いてないと思う瞬間は、下手な時ではなく、上手くならない時に来る。',
+    ],
+  },
+  III: {
+    A: [
+      '「まだ人に言えるほどじゃない」と思い続けたまま、{N}年経っている。',
+      '{N}年で足りないなら、たぶん何年でも足りない。基準の方が伸び続けている。',
+      '上手くなったかは分からない。ただ、辞めなかった{N}年分は誰にも消せない。',
+    ],
+    B: [
+      '惰性で{N}年続くものは、そもそも惰性ではない。',
+      '情熱が切れても手が動くようになったなら、それは劣化ではなく定着だ。',
+      '{N}年目に飽きるのは、覚えることが減ったからだ。減った先にしか無い景色がある。',
+    ],
+    C: [
+      '{N}年やって「これしかない」と言えるなら、それは信仰ではなく実感だ。',
+      '他の道が消えたのではない。{N}年で自分の形がここに合っただけだ。',
+      '{N}年分の時間が、選択を確信に変えている。理由は後から付いてきた。',
+    ],
+    D: [
+      '{N}年続けたものの辞めどきは、探して見つかるものではない。来る時は勝手に来る。',
+      '辞めたいのではない。{N}年分の重さを、一度下ろしたいだけだ。',
+      '{N}年目に出口を探すのは、入口を忘れたからだ。始めた理由は、まだどこかにある。',
+    ],
+  },
+  IV: {
+    A: [
+      '{N}年やって足りないと言うなら、目指している場所が最初より遠くなっている。',
+      '{N}年分の足りなさは、初心者の足りなさとは別物だ。見えている分だけ足りない。',
+      'ここまで来て満足していないのは、腕ではなく基準が伸びた証拠だ。',
+    ],
+    B: [
+      '10年続けたものを惰性と呼べるのは、続けた人だけだ。',
+      '熱がないのではない。熱がなくても動く形にまで落とし込んだということだ。',
+      '10年目の退屈は、才能の証明ではなく、設計の証明だ。',
+    ],
+    C: [
+      '{N}年続けた「これしかない」は、選択の話ではなく、事実の話になっている。',
+      'もう理由はいらない。{N}年分の時間が理由の代わりになっている。',
+      '他にできることがない訳ではない。他をやる自分が想像できないだけだ。',
+    ],
+    D: [
+      '{N}年やったものは、辞めても消えない。だから辞めどきを慎重に探している。',
+      '辞めるかどうかで悩めるのは、{N}年分を積んだ人の特権だ。',
+      '{N}年目の迷いは、終わりの合図とは限らない。形を変える前に来ることもある。',
+    ],
+  },
+};
+
+/* ---------- deterministic pick ----------
+   lineIndex = (years + feelingIndex + subjectLength) % 3
+   Same input always yields the same line.                     */
+function pickLineIndex(n, feelIdx, subject){
+  const len = Array.from(String(subject)).length;
+  return ((n + feelIdx + len) % 3 + 3) % 3;
+}
+function buildLine(n, feelIdx, subject){
+  const band = bandFor(n);
+  const key = FEELINGS[feelIdx].key;
+  const pool = LINES[band][key];
+  const idx = pickLineIndex(n, feelIdx, subject);
+  return pool[idx].replace(/\{N\}/g, String(n));
+}
+
+/* ---------- share ---------- */
+const APP_URL = 'https://zhihongsishan-debug.github.io/x-mini-apps/apps/years/';
+function buildShareText(line){
+  // The subject the user typed is intentionally NOT included — privacy,
+  // and the line lands harder on its own.
+  return line + '\n' +
+    '── YEARS\n' +
+    APP_URL + '\n' +
+    '#何年目\n' +
+    'by @prop_life_fx';
+}
+function buildShareUrl(line){
+  return 'https://x.com/intent/post?text=' + encodeURIComponent(buildShareText(line));
+}
+
+/* ---------- state ---------- */
+const state = { subject:'', yearIdx:-1, feelIdx:-1, line:'' };
+
+/* ---------- screens ---------- */
+const SCREENS = ['screenTitle','screen1','screen2','screen3','screenResult'];
+let shareTimer = null, lineTimer = null;
+function show(id){
+  for (const s of SCREENS){
+    const el = $(s);
+    if (s === id) el.classList.add('on'); else el.classList.remove('on');
+  }
+  const step = { screen1:1, screen2:2, screen3:3 }[id];
+  if (step){
+    $('prog').classList.add('on');
+    $('progNum').textContent = step + ' / 3';
+    $('progFill').style.width = (step / 3 * 100).toFixed(2) + '%';
+  } else {
+    $('prog').classList.remove('on');
+  }
+  window.scrollTo(0, 0);
+}
+
+/* ---------- step 1 ---------- */
+const subjEl = $('subject');
+subjEl.addEventListener('input', () => {
+  const len = Array.from(subjEl.value).length;
+  $('subjCount').textContent = len + ' / 20';
+  $('btn1Next').disabled = subjEl.value.trim().length === 0;
+});
+subjEl.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !$('btn1Next').disabled){ e.preventDefault(); goStep2(); }
+});
+function goStep2(){
+  state.subject = subjEl.value.trim();
+  show('screen2');
+}
+$('btn1Next').addEventListener('click', goStep2);
+
+/* ---------- step 2 : year pills ---------- */
+const yearBox = $('yearPills');
+YEAR_OPTIONS.forEach((o, i) => {
+  const b = document.createElement('button');
+  b.className = 'pill'; b.type = 'button'; b.textContent = o.label;
+  b.addEventListener('click', () => {
+    state.yearIdx = i;
+    yearBox.querySelectorAll('.pill').forEach(p => p.classList.remove('sel'));
+    b.classList.add('sel');
+    // let the gold border register, then advance
+    setTimeout(() => show('screen3'), 230);
+  });
+  yearBox.appendChild(b);
+});
+
+/* ---------- step 3 : feeling pills ---------- */
+const feelBox = $('feelPills');
+FEELINGS.forEach((f, i) => {
+  const b = document.createElement('button');
+  b.className = 'pill'; b.type = 'button'; b.textContent = f.label;
+  b.addEventListener('click', () => {
+    state.feelIdx = i;
+    feelBox.querySelectorAll('.pill').forEach(p => p.classList.remove('sel'));
+    b.classList.add('sel');
+    $('btn3Go').disabled = false;
+  });
+  feelBox.appendChild(b);
+});
+
+/* ---------- count-up ---------- */
+function countUp(el, to, dur){
+  const t0 = performance.now();
+  const ease = k => { // cubic-bezier(.16,1,.3,1)-ish
+    return 1 - Math.pow(1 - k, 4);
+  };
+  function step(t){
+    const k = Math.min(1, (t - t0) / dur);
+    const v = Math.round(to * ease(k));
+    el.textContent = String(v).padStart(2, '0');
+    if (k < 1) requestAnimationFrame(step);
+    else el.textContent = String(to).padStart(2, '0');
+  }
+  requestAnimationFrame(step);
+  // rAF pauses in hidden tabs — guarantee the final value regardless.
+  setTimeout(() => { el.textContent = String(to).padStart(2, '0'); }, dur + 120);
+}
+
+/* ---------- result ---------- */
+function showResult(){
+  const opt = YEAR_OPTIONS[state.yearIdx];
+  const line = buildLine(opt.n, state.feelIdx, state.subject);
+  state.line = line;
+
+  $('rSubject').textContent = state.subject;
+  $('rQual').textContent = opt.qual;
+  $('rLine').textContent = line;
+  $('btnShare').setAttribute('href', buildShareUrl(line));
+
+  // reset animations
+  const numEl = $('rNum'), ruleEl = $('rRule'), lineEl = $('rLine'), shareEl = $('btnShare');
+  numEl.textContent = '00';
+  ruleEl.classList.remove('grow');
+  lineEl.classList.remove('show');
+  shareEl.classList.remove('show');
+  if (shareTimer) clearTimeout(shareTimer);
+  if (lineTimer) clearTimeout(lineTimer);
+
+  show('screenResult');
+
+  // quietly, in order: number → rule → line → share
+  // (timers scheduled directly, NOT inside rAF — rAF never fires in a
+  //  hidden tab, which would leave the card stuck at 00 with no line)
+  countUp(numEl, opt.n, 1200);
+  setTimeout(() => ruleEl.classList.add('grow'), 620);
+  lineTimer = setTimeout(() => lineEl.classList.add('show'), 1800);
+  shareTimer = setTimeout(() => shareEl.classList.add('show'), 2800);
+}
+$('btn3Go').addEventListener('click', () => {
+  if (state.feelIdx < 0 || state.yearIdx < 0) return;
+  showResult();
+});
+
+/* ---------- restart ---------- */
+$('btnStart').addEventListener('click', () => show('screen1'));
+$('btnAgain').addEventListener('click', () => {
+  state.subject = ''; state.yearIdx = -1; state.feelIdx = -1; state.line = '';
+  subjEl.value = '';
+  $('subjCount').textContent = '0 / 20';
+  $('btn1Next').disabled = true;
+  $('btn3Go').disabled = true;
+  yearBox.querySelectorAll('.pill').forEach(p => p.classList.remove('sel'));
+  feelBox.querySelectorAll('.pill').forEach(p => p.classList.remove('sel'));
+  show('screen1');
+  setTimeout(() => { try { subjEl.focus({ preventScroll:true }); } catch(_){} }, 340);
+});
+
+/* ---------- dust ---------- */
+(function dust(){
+  const box = $('dust');
+  const frag = document.createDocumentFragment();
+  for (let i = 0; i < 16; i++){
+    const e = document.createElement('i');
+    e.style.left = ((i * 6.3 + (i % 5) * 3.1) % 100).toFixed(1) + '%';
+    e.style.animationDuration = (17 + (i % 7) * 3.5).toFixed(1) + 's';
+    e.style.animationDelay = (-(i * 1.9)).toFixed(1) + 's';
+    e.style.opacity = (0.25 + (i % 4) * 0.12).toFixed(2);
+    frag.appendChild(e);
+  }
+  box.appendChild(frag);
+})();
+
+/* ---------- test surface ---------- */
+window.__years = {
+  YEAR_OPTIONS, FEELINGS, LINES,
+  bandFor, pickLineIndex, buildLine, buildShareText, buildShareUrl,
+  state,
+  run(subject, yearLabel, feelKey){
+    state.subject = subject;
+    state.yearIdx = YEAR_OPTIONS.findIndex(o => o.label === yearLabel);
+    state.feelIdx = FEELINGS.findIndex(f => f.key === feelKey);
+    showResult();
+    return { line: state.line, href: $('btnShare').getAttribute('href') };
+  },
+  audit(){
+    const bands = ['I','II','III','IV'], keys = ['A','B','C','D'];
+    const all = [];
+    for (const b of bands) for (const k of keys) all.push(...LINES[b][k]);
+    return {
+      bands: bands.length === 4,
+      feelings: FEELINGS.length === 4,
+      yearOptions: YEAR_OPTIONS.length === 12,
+      totalLines: all.length,
+      uniqueLines: new Set(all).size,
+      allGroupsHaveThree: bands.every(b => keys.every(k => LINES[b][k].length === 3)),
+      shareIntent: /^https:\/\/x\.com\/intent\/post\?text=/.test(buildShareUrl('x')),
+      noVia: !/[?&]via=/.test(buildShareUrl('x')),
+      noExternalScripts: !document.querySelector('script[src]'),
+    };
+  },
+};
+})();
+</script>
+</body>
+</html>
