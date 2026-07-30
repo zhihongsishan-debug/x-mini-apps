@@ -4842,7 +4842,8 @@ function buildShareUrl(isWin, charId, diff, score){
     (isWin ? CHARS[charId].name + ' で勝利' : CHARS[charId].name + ' で敗北') + '\n' +
     '難易度：' + dName + '\n' +
     'スコア：' + score.toLocaleString() + '\n\n' +
-    '裏路地に、王はいない。\n' + APP_URL + '\n#StreetClash';
+    '裏路地に、王はいない。\n' + APP_URL + '\n#StreetClash' +
+    '\nby @prop_life_fx';
   return 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(text);
 }
 

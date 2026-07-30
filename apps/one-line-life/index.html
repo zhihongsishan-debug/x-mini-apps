@@ -524,7 +524,8 @@
   }
   function buildShareText(line){
     const url = 'https://zhihongsishan-debug.github.io/x-mini-apps/apps/one-line-life/';
-    return 'あなたの人生は、\n\n「' + line + '」\n\n── ONE LINE LIFE\n' + url + '\n#OneLineLife';
+    return 'あなたの人生は、\n\n「' + line + '」\n\n── ONE LINE LIFE\n' + url + '\n#OneLineLife' +
+      '\nby @prop_life_fx';
   }
   function buildShareUrl(line){
     return 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(buildShareText(line));

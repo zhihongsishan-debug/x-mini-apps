@@ -2698,7 +2698,8 @@ function buildShareUrlAllClear(score, rank){
     'スコア ' + score.toLocaleString() + '\n' +
     'ランク ' + rank + '\n' +
     'ALL CLEAR\n\n' +
-    '2段ジャンプとダッシュで意識を跳ね飛ばせ。\n' + APP_URL + '\n#MegaTripHopper';
+    '2段ジャンプとダッシュで意識を跳ね飛ばせ。\n' + APP_URL + '\n#MegaTripHopper' +
+    '\nby @prop_life_fx';
   return 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(text);
 }
 function buildShareUrlGameOver(reachedStage, score){
@@ -2706,7 +2707,8 @@ function buildShareUrlGameOver(reachedStage, score){
     'MEGA TRIP HOPPER\n\n' +
     '到達 STAGE ' + reachedStage + '\n' +
     'スコア ' + score.toLocaleString() + '\n\n' +
-    '跳ね損ねた。\n' + APP_URL + '\n#MegaTripHopper';
+    '跳ね損ねた。\n' + APP_URL + '\n#MegaTripHopper' +
+    '\nby @prop_life_fx';
   return 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(text);
 }
 
