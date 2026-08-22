@@ -1,0 +1,552 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no,maximum-scale=1" />
+<meta name="theme-color" content="#f5f5f5" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="description" content="その言葉、本当の意味を、翻訳します。" />
+<meta property="og:title" content="BOSS PHRASE" />
+<meta property="og:description" content="その言葉、本当の意味を、翻訳します。上司・部下・クライアント・同僚の60フレーズ。" />
+<title>BOSS PHRASE — その言葉、本当の意味を、翻訳します。</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f5f5f5;
+    --white:#ffffff;
+    --ink:#0a0a0a;
+    --sub:#666666;
+    --mute:#9a9a9a;
+    --line:#0a0a0a;
+    --line-soft:#d8d8d8;
+    --red:#c11414;
+    --d5:#c11414;
+    --d4:#a01414;
+    --d3:#d47800;
+    --d2:#c4a000;
+    --d1:#888888;
+    --sans:"Noto Sans JP",-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Sans","Yu Gothic UI",sans-serif;
+    --mono:"SFMono-Regular","Menlo","Consolas","Courier New",monospace;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;min-height:100%;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--sans);
+    font-weight:400;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+    min-height:100dvh;
+    /* faint paper grain — document feel, nothing flashy */
+    background-image:
+      linear-gradient(0deg, rgba(0,0,0,.018) 1px, transparent 1px);
+    background-size:100% 28px;
+  }
+
+  .wrap{
+    max-width:520px;margin:0 auto;
+    min-height:100dvh;
+    display:flex;flex-direction:column;
+    padding:max(18px,env(safe-area-inset-top)) 18px max(24px,env(safe-area-inset-bottom));
+  }
+
+  /* ===== screens ===== */
+  .screen{display:none;flex:1 1 auto;flex-direction:column;animation:fade .28s ease both;}
+  .screen.on{display:flex;}
+  @keyframes fade{from{opacity:0;}to{opacity:1;}}
+
+  /* ===== doc header strip (shared) ===== */
+  .doc-head{
+    display:flex;justify-content:space-between;align-items:baseline;
+    font-family:var(--mono);font-size:10px;letter-spacing:.16em;color:var(--sub);
+    border-bottom:1px solid var(--line);padding-bottom:8px;margin-bottom:22px;
+  }
+  .doc-head b{color:var(--ink);font-weight:700;}
+
+  /* ===== title ===== */
+  #screenTitle{justify-content:center;}
+  .t-stamp{
+    font-family:var(--mono);font-size:10px;letter-spacing:.32em;color:var(--sub);
+    text-align:center;margin-bottom:22px;
+  }
+  .t-title{
+    margin:0;text-align:center;
+    font-size:clamp(38px,12vmin,58px);font-weight:900;letter-spacing:.04em;line-height:1.05;
+    color:var(--ink);
+  }
+  .t-title span{display:block;color:var(--red);}
+  .t-rule{height:3px;background:var(--ink);margin:22px auto 0;width:64px;}
+  .t-sub{
+    margin:22px 0 0;text-align:center;
+    font-size:14px;font-weight:500;letter-spacing:.12em;line-height:1.9;color:var(--sub);
+  }
+  .t-note{
+    margin:28px auto 0;max-width:320px;text-align:center;
+    font-size:10px;line-height:1.8;letter-spacing:.04em;color:var(--mute);
+  }
+
+  /* ===== buttons ===== */
+  .btn{
+    -webkit-appearance:none;appearance:none;cursor:pointer;
+    display:block;width:100%;
+    min-height:50px;padding:14px 18px;
+    background:var(--white);color:var(--ink);
+    border:1.5px solid var(--ink);border-radius:4px;
+    font-family:var(--sans);font-size:14px;font-weight:700;letter-spacing:.14em;
+    text-align:center;text-decoration:none;
+    transition:background .18s ease,color .18s ease,transform .08s ease;
+  }
+  .btn:hover{background:var(--ink);color:var(--white);}
+  .btn:active{transform:scale(.985);}
+  .btn.primary{background:var(--ink);color:var(--white);}
+  .btn.primary:hover{background:var(--red);border-color:var(--red);}
+  .btn.ghost{
+    border-color:var(--line-soft);color:var(--sub);font-weight:500;min-height:44px;padding:12px 16px;
+  }
+  .btn.ghost:hover{background:transparent;border-color:var(--ink);color:var(--ink);}
+  .stack{display:flex;flex-direction:column;gap:10px;}
+  .stack + .stack{margin-top:10px;}
+  .mt{margin-top:24px;}
+
+  /* ===== category buttons ===== */
+  .cat{
+    -webkit-appearance:none;appearance:none;cursor:pointer;
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    width:100%;min-height:64px;padding:16px 18px;
+    background:var(--white);color:var(--ink);
+    border:1.5px solid #444;border-radius:4px;
+    font-family:var(--sans);font-size:16px;font-weight:700;letter-spacing:.06em;
+    text-align:left;
+    transition:background .18s ease,color .18s ease,border-color .18s ease,transform .08s ease;
+  }
+  .cat .code{font-family:var(--mono);font-size:11px;letter-spacing:.18em;color:var(--sub);font-weight:400;}
+  .cat:hover{background:var(--ink);color:var(--white);border-color:var(--ink);}
+  .cat:hover .code{color:#bbb;}
+  .cat:active{transform:scale(.985);}
+
+  .sec-label{
+    font-size:11px;font-weight:700;letter-spacing:.28em;color:var(--sub);
+    margin:0 0 12px;
+  }
+  .sec-label.mt{margin-top:26px;}
+
+  /* ===== history ===== */
+  .hist{display:flex;flex-direction:column;gap:6px;}
+  .hist button{
+    -webkit-appearance:none;appearance:none;cursor:pointer;
+    display:flex;align-items:center;gap:10px;
+    width:100%;min-height:44px;padding:10px 12px;
+    background:transparent;color:var(--ink);
+    border:1px solid var(--line-soft);border-radius:4px;
+    font-family:var(--sans);font-size:13px;font-weight:500;text-align:left;
+    transition:border-color .18s ease;
+  }
+  .hist button:hover{border-color:var(--ink);}
+  .hist .tag{
+    flex:0 0 auto;font-family:var(--mono);font-size:10px;letter-spacing:.1em;
+    color:var(--sub);border:1px solid var(--line-soft);padding:2px 6px;border-radius:2px;
+  }
+  .hist .txt{flex:1 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .hist-empty{font-size:12px;color:var(--mute);letter-spacing:.04em;}
+
+  /* ===== phrase list ===== */
+  .plist{display:flex;flex-direction:column;gap:7px;}
+  .prow{
+    -webkit-appearance:none;appearance:none;cursor:pointer;
+    display:flex;align-items:center;gap:14px;
+    width:100%;min-height:52px;padding:13px 14px;
+    background:var(--white);color:var(--ink);
+    border:1px solid var(--line-soft);border-radius:4px;
+    font-family:var(--sans);font-size:15px;font-weight:500;letter-spacing:.02em;
+    text-align:left;line-height:1.4;
+    transition:border-color .18s ease,background .18s ease,transform .08s ease;
+  }
+  .prow .num{flex:0 0 auto;font-family:var(--mono);font-size:11px;color:var(--sub);letter-spacing:.1em;width:22px;}
+  .prow:hover{border-color:var(--ink);}
+  .prow:active{transform:scale(.99);background:#fafafa;}
+
+  /* ===== RESULT — the document ===== */
+  #screenResult{justify-content:flex-start;}
+  .card{
+    background:var(--white);
+    border:1.5px solid var(--ink);
+    border-radius:4px;
+    padding:0 0 18px;
+    position:relative;
+  }
+  .card-rule{height:4px;background:var(--ink);}
+  .card-rule.thin{height:1px;background:var(--line-soft);margin:0 22px;}
+  .card-rule.bottom{margin-top:18px;}
+  .card-top{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:12px 22px 0;
+    font-family:var(--mono);font-size:10px;letter-spacing:.18em;color:var(--sub);
+  }
+  .card-head{
+    text-align:center;padding:12px 22px 16px;
+    font-size:12px;font-weight:900;letter-spacing:.34em;color:var(--ink);
+  }
+  .card-phrase{
+    margin:0;padding:18px 22px 20px;
+    font-size:clamp(19px,5.6vmin,24px);font-weight:900;letter-spacing:.03em;line-height:1.55;
+    color:var(--ink);text-align:center;
+  }
+  .card-phrase .q{color:var(--sub);font-weight:400;}
+  .row{
+    display:grid;grid-template-columns:64px 1fr;gap:10px;
+    padding:9px 22px;
+    font-size:14px;line-height:1.65;
+  }
+  .row .k{font-weight:900;letter-spacing:.04em;color:var(--ink);white-space:nowrap;}
+  .row .v{color:var(--ink);font-weight:500;word-break:break-word;}
+  .row.honne{
+    margin:2px 22px;padding:9px 14px;
+    border-left:3px solid var(--red);
+    background:#fbf4f4;
+    border-radius:0 3px 3px 0;
+  }
+  .row.honne .v{font-weight:700;}
+  .danger .v{font-family:var(--mono);font-size:18px;letter-spacing:.16em;font-weight:700;line-height:1.2;}
+  .danger .v small{
+    display:inline-block;margin-left:10px;
+    font-family:var(--sans);font-size:10px;letter-spacing:.12em;font-weight:700;
+    vertical-align:middle;
+  }
+  .blk{padding:8px 22px 2px;}
+  .blk .k{font-size:11px;font-weight:900;letter-spacing:.22em;color:var(--ink);margin-bottom:4px;}
+  .blk .v{font-size:14px;line-height:1.7;font-weight:500;color:var(--ink);}
+  .blk.risk .k{color:var(--red);}
+  .card-sig{
+    text-align:center;padding:14px 22px 0;
+    font-size:10px;font-weight:900;letter-spacing:.36em;color:var(--ink);
+  }
+  .gap{height:10px;}
+
+  .actions{margin-top:16px;}
+
+  @media (max-width:390px){
+    .wrap{padding-left:14px;padding-right:14px;}
+    .card-top,.card-head,.card-phrase,.row,.blk,.card-sig{padding-left:16px;padding-right:16px;}
+    .row.honne{margin-left:16px;margin-right:16px;}
+    .card-rule.thin{margin-left:16px;margin-right:16px;}
+    .row{grid-template-columns:58px 1fr;font-size:13.5px;}
+    .cat{font-size:15px;}
+  }
+</style>
+</head>
+<body>
+<main class="wrap">
+
+  <!-- ================= 1. TITLE ================= -->
+  <section class="screen on" id="screenTitle">
+    <div class="t-stamp">TRANSLATION REPORT ・ FORM 60</div>
+    <h1 class="t-title">BOSS<span>PHRASE</span></h1>
+    <div class="t-rule"></div>
+    <p class="t-sub">その言葉、本当の意味を、<br/>翻訳します。</p>
+    <div class="stack mt" style="max-width:320px;margin-left:auto;margin-right:auto;width:100%;">
+      <button class="btn primary" id="btnStart" type="button">翻 訳 す る</button>
+    </div>
+    <p class="t-note">これは診断遊びです。実在の上司・部下・同僚を特定・中傷する目的ではありません。</p>
+  </section>
+
+  <!-- ================= 2. CATEGORY ================= -->
+  <section class="screen" id="screenCat">
+    <div class="doc-head"><b>BOSS PHRASE</b><span>STEP 1 / 2</span></div>
+    <p class="sec-label">翻訳したい相手を選ぶ</p>
+    <div class="stack" id="catList"></div>
+    <p class="sec-label mt">最近の翻訳</p>
+    <div class="hist" id="histList"></div>
+    <div class="stack mt">
+      <button class="btn ghost" id="btnCatBack" type="button">戻 る</button>
+    </div>
+  </section>
+
+  <!-- ================= 3. PHRASE ================= -->
+  <section class="screen" id="screenPhrase">
+    <div class="doc-head"><b id="phCatName">—</b><span>STEP 2 / 2</span></div>
+    <p class="sec-label" id="phLabel">— のフレーズ</p>
+    <div class="plist" id="phraseList"></div>
+    <div class="stack mt">
+      <button class="btn ghost" id="btnPhraseBack" type="button">戻 る</button>
+    </div>
+  </section>
+
+  <!-- ================= 4. RESULT ================= -->
+  <section class="screen" id="screenResult">
+    <div class="card" id="card">
+      <div class="card-rule"></div>
+      <div class="card-top"><span id="rNo">No. 00-00</span><span id="rCat">—</span></div>
+      <div class="card-head">BOSS PHRASE 翻訳</div>
+      <div class="card-rule thin"></div>
+      <p class="card-phrase"><span class="q">「</span><span id="rPhrase">—</span><span class="q">」</span></p>
+      <div class="card-rule thin"></div>
+      <div class="gap"></div>
+      <div class="row"><span class="k">【表面】</span><span class="v" id="rSurface">—</span></div>
+      <div class="row honne"><span class="k">【本音】</span><span class="v" id="rHonne">—</span></div>
+      <div class="row danger"><span class="k">【危険度】</span><span class="v" id="rDanger">—</span></div>
+      <div class="gap"></div>
+      <div class="card-rule thin"></div>
+      <div class="gap"></div>
+      <div class="blk"><div class="k">【推奨対応】</div><div class="v" id="rAction">—</div></div>
+      <div class="blk risk"><div class="k">【放置した場合】</div><div class="v" id="rRisk">—</div></div>
+      <div class="gap"></div>
+      <div class="card-rule thin"></div>
+      <div class="card-sig">BOSS PHRASE</div>
+      <div class="card-rule bottom"></div>
+    </div>
+    <div class="stack actions">
+      <a class="btn primary" id="btnShare" target="_blank" rel="noopener noreferrer">X で シ ェ ア</a>
+      <button class="btn" id="btnOther" type="button">別 の フ レ ー ズ を 翻 訳</button>
+      <button class="btn ghost" id="btnChangeCat" type="button">カ テ ゴ リ を 変 え る</button>
+    </div>
+  </section>
+
+</main>
+
+<script>
+(() => {
+'use strict';
+const $ = id => document.getElementById(id);
+
+/* ==========================================================
+   BOSS PHRASE v1.0 — 60-pattern office phrase translator
+   ========================================================== */
+
+const CATEGORIES = [
+  { id:'boss',   code:'01', label:'上司から言われた',         short:'上司' },
+  { id:'sub',    code:'02', label:'部下から言われた',         short:'部下' },
+  { id:'client', code:'03', label:'クライアントから言われた', short:'クライアント' },
+  { id:'peer',   code:'04', label:'同僚から言われた',         short:'同僚' },
+];
+
+/* 60 patterns — fixed content, do not edit.
+   p = phrase (without 「」), s = surface, h = honne, d = danger 1..5,
+   a = recommended action, r = risk if ignored */
+const PHRASES = {
+  boss: [
+    { p:'ちょっとやり方考えてみて',       s:'提案を求めている',     h:'自分で考えたくない',           d:3, a:'3案出して選ばせろ',           r:'丸投げされ続ける' },
+    { p:'いつでも相談してね',             s:'親しみやすさアピール', h:'具体的な話は困る',             d:2, a:'アポを取ってから相談',       r:'相談しても薄い反応' },
+    { p:'まずは自分で考えてから',         s:'成長を促している',     h:'答えを教えたくない',           d:4, a:'仮説を持って再訪',           r:'永遠に答えは出ない' },
+    { p:'もう少し工夫できない？',         s:'改善提案',             h:'何が悪いか説明できない',       d:4, a:'具体的な改善点を質問',       r:'永遠のリテイク地獄' },
+    { p:'頑張ってくれてるのは分かる',     s:'労い',                 h:'結果は認めていない',           d:5, a:'次に何が必要か明確化',       r:'評価に反映されない' },
+    { p:'経営目線で考えて',               s:'視座アップの促し',     h:'具体案は自分で考えろ',         d:3, a:'経営数値を確認して提案',     r:'曖昧な要求が続く' },
+    { p:'これ、任せていい？',             s:'信頼',                 h:'自分がやりたくない',           d:4, a:'権限と期限を確認',           r:'丸投げ責任' },
+    { p:'柔軟に対応して',                 s:'自由裁量',             h:'決めたくない',                 d:4, a:'判断基準を確認',             r:'判断ミスの責任' },
+    { p:'特に急がないから',               s:'余裕アピール',         h:'いつまでか自分も分からない',   d:3, a:'期限を確認',                 r:'ある日突然「まだ？」' },
+    { p:'一応、確認しとくね',             s:'丁寧な対応',           h:'自分の責任にしたくない',       d:3, a:'記録を残す',                 r:'確認漏れの責任転嫁' },
+    { p:'昨日の件、どうだった？',         s:'進捗確認',             h:'自分は忘れていた',             d:2, a:'即座に状況共有',             r:'報告不足扱い' },
+    { p:'まぁ、慣れだよね',               s:'励まし',               h:'具体的な指導はしない',         d:3, a:'ロールモデルを探す',         r:'成長機会喪失' },
+    { p:'若手だから伸びしろあるね',       s:'期待',                 h:'今は評価しない',               d:4, a:'具体的な成長指標を確認',     r:'評価が上がらない' },
+    { p:'これでいったん',                 s:'暫定OK',               h:'永久にこれで固定',             d:4, a:'次のマイルストーンを確認',   r:'暫定が本番になる' },
+    { p:'あとでフィードバックする',       s:'丁寧な指導',           h:'9割やらない',                  d:3, a:'期日を切って催促',           r:'永遠にフィードバックなし' },
+  ],
+  sub: [
+    { p:'大丈夫です！',                   s:'了承・自信',           h:'助けてほしい',                         d:5, a:'即座に確認しろ',               r:'2週間以内に退職相談' },
+    { p:'あ、それやっときました',         s:'自主性アピール',       h:'評価されたい',                         d:2, a:'具体的に褒める',               r:'モチベーション低下' },
+    { p:'今日、ちょっと体調が…',          s:'体調不良',             h:'環境から離れたい',                     d:4, a:'1on1で状況確認',               r:'休職リスク' },
+    { p:'勉強になります',                 s:'感謝',                 h:'もう話を終わらせたい',                 d:3, a:'相手の理解度を確認',           r:'伝わっていない' },
+    { p:'すぐやります',                   s:'即対応',               h:'優先順位が分からない',                 d:3, a:'期限を明示',                   r:'結局後回し' },
+    { p:'わかりました',                   s:'理解',                 h:'理解していない',                       d:4, a:'要点を復唱してもらう',         r:'齟齬が発覚するのは納期直前' },
+    { p:'一応やってみます',               s:'前向き',               h:'期待しないでほしい',                   d:3, a:'懸念点を確認',                 r:'未達を「一応」で正当化' },
+    { p:'ちょっと確認します',             s:'丁寧な対応',           h:'答えを知らない',                       d:2, a:'確認先を共有',                 r:'確認が完了しない' },
+    { p:'お疲れさまです',                 s:'挨拶',                 h:'特に意味なし or 距離を保ちたい',       d:1, a:'そのまま挨拶を返す',           r:'特になし' },
+    { p:'明日休みたいです',               s:'休暇申請',             h:'限界が近い or 転職活動',               d:4, a:'理由は詮索せず承認',           r:'退職の予兆' },
+    { p:'私はどっちでも',                 s:'柔軟性',               h:'決めたくない・関与したくない',         d:3, a:'判断を促す or 決めてあげる',   r:'主体性が育たない' },
+    { p:'なるほど',                       s:'納得',                 h:'反論しない・とりあえず流す',           d:3, a:'感想や意見を追加で聞く',       r:'本音が見えない' },
+    { p:'ちょっと相談があります',         s:'相談',                 h:'退職・異動・重大トラブル',             d:5, a:'即座に時間を作る',             r:'機会損失・信頼喪失' },
+    { p:'特に問題ないです',               s:'順調',                 h:'報告する気がない or 隠している',       d:4, a:'具体的な進捗を確認',           r:'爆弾が育つ' },
+    { p:'時間があれば',                   s:'遠慮',                 h:'やる気なし or 優先度低い',             d:3, a:'優先度を明示',                 r:'絶対にやらない' },
+  ],
+  client: [
+    { p:'前向きに検討します',             s:'検討中',               h:'断る予定',                             d:4, a:'期限を切って再アプローチ',     r:'そのまま音信不通' },
+    { p:'一度、社内で確認します',         s:'社内調整',             h:'判断を先延ばし',                       d:3, a:'1週間後にフォロー',            r:'自然消滅' },
+    { p:'予算感を教えてください',         s:'検討開始',             h:'高いなら断りたい',                     d:2, a:'幅を持たせて回答',             r:'高額提示で終了' },
+    { p:'他社さんも見てみたい',           s:'比較検討',             h:'乗り換え検討中',                       d:4, a:'差別化ポイントを再提示',       r:'失注' },
+    { p:'もう少し安くならない？',         s:'価格交渉',             h:'既に競合と話が進んでいる',             d:4, a:'値引き条件を明示',             r:'競合に取られる' },
+    { p:'担当が変わりまして',             s:'組織変更',             h:'プロジェクト見直しの可能性',           d:4, a:'新担当と早急に面談',           r:'方針転換' },
+    { p:'持ち帰って検討します',           s:'丁寧な対応',           h:'判断保留 or 断る前フェーズ',           d:3, a:'次回アクションを明確化',       r:'音沙汰なし' },
+    { p:'なるほど、参考になります',       s:'感謝',                 h:'情報だけ取って終わり',                 d:3, a:'次のステップを提案',           r:'情報だけ持って離脱' },
+    { p:'〇〇さんに相談してみます',       s:'社内連携',             h:'決裁権が別にある',                     d:4, a:'決裁者にアプローチ',           r:'決裁で頓挫' },
+    { p:'タイミングが合えば',             s:'前向き',               h:'今は無理',                             d:3, a:'タイミングを具体化',           r:'永遠に来ない' },
+    { p:'予算が確定したら連絡します',     s:'次回アクション',       h:'次年度以降 or 未定',                   d:4, a:'いつ確定か確認',               r:'1年以上音沙汰なし' },
+    { p:'またお願いします',               s:'継続関係',             h:'社交辞令',                             d:3, a:'具体的な次回話題を提示',       r:'再依頼なし' },
+    { p:'思ってたのと違う',               s:'不満',                 h:'キャンセルしたい',                     d:5, a:'即座に修正案を提示',           r:'途中解約' },
+    { p:'勉強になりました',               s:'感謝',                 h:'情報だけ欲しかった',                   d:3, a:'次のアクションを提示',         r:'提案が受注に繋がらない' },
+    { p:'一旦保留で',                     s:'検討中',               h:'断る前段階',                           d:4, a:'保留理由を確認',               r:'断り連絡が来る' },
+  ],
+  peer: [
+    { p:'後で見ておくね',                 s:'協力',                 h:'見ない',                               d:3, a:'具体的な期限を確認',           r:'永遠にレビューされない' },
+    { p:'大変そうだね',                   s:'共感',                 h:'巻き込まれたくない',                   d:2, a:'具体的な依頼はしない',         r:'表面的な関係のまま' },
+    { p:'手伝おうか？',                   s:'協力申し出',           h:'社交辞令',                             d:2, a:'小さいタスクで打診',           r:'機会喪失' },
+    { p:'今度飲みに行こう',               s:'親睦',                 h:'特に予定はない',                       d:2, a:'具体的な日程を提示',           r:'実現しない' },
+    { p:'気にしないで',                   s:'寛容',                 h:'気にしている',                         d:3, a:'後日フォロー',                 r:'関係悪化' },
+    { p:'私は聞いてないんだけど',         s:'情報確認',             h:'不満・怒り',                           d:4, a:'即座に情報共有',               r:'陰口・派閥形成' },
+    { p:'大丈夫、なんとかなるよ',         s:'励まし',               h:'無責任',                               d:3, a:'具体的な対策を自分で考える',   r:'何とかならない' },
+    { p:'〇〇さんに聞いてみたら？',       s:'アドバイス',           h:'自分は関わりたくない',                 d:3, a:'提案者に紹介を依頼',           r:'たらい回し' },
+    { p:'別にいいけど',                   s:'了承',                 h:'不満あり',                             d:4, a:'懸念を聞き出す',               r:'陰で不満が拡大' },
+    { p:'暇そうでいいね',                 s:'冗談',                 h:'嫉妬 or マウント',                     d:3, a:'笑って流す',                   r:'評価に響く' },
+    { p:'あとでランチ行かない？',         s:'誘い',                 h:'相談したい話がある',                   d:3, a:'時間を作る',                   r:'関係の芽が消える' },
+    { p:'参考までに教えてほしい',         s:'情報共有',             h:'自分の判断材料に使いたい',             d:2, a:'必要な範囲で共有',             r:'情報を持っていかれる' },
+    { p:'同じチームでよかった',           s:'感謝',                 h:'社交辞令 or 本音',                     d:1, a:'素直に受け取る',               r:'特になし' },
+    { p:'ちょっと相談いい？',             s:'相談',                 h:'愚痴 or 退職相談',                     d:4, a:'場所を変えてじっくり',         r:'チーム全体の士気低下' },
+    { p:'〇〇さん、最近どう？',           s:'情報収集',             h:'その人の評判を探っている',             d:3, a:'客観情報のみ提供',             r:'噂の火種になる' },
+  ],
+};
+
+const DANGER_COLOR = { 5:'#c11414', 4:'#a01414', 3:'#d47800', 2:'#c4a000', 1:'#888888' };
+const DANGER_LABEL = { 5:'極めて高い', 4:'高い', 3:'中', 2:'低い', 1:'ほぼなし' };
+function stars(d){ return '★'.repeat(d) + '☆'.repeat(5 - d); }
+
+/* ---------- share ---------- */
+const APP_URL = 'https://zhihongsishan-debug.github.io/x-mini-apps/apps/boss-phrase/';
+function buildShareText(entry){
+  return 'BOSS PHRASE 翻訳結果\n\n' +
+    '「' + entry.p + '」\n\n' +
+    '【表面】' + entry.s + '\n' +
+    '【本音】' + entry.h + '\n' +
+    '【危険度】' + stars(entry.d) + '\n\n' +
+    'BOSS PHRASE\n' +
+    APP_URL + '\n' +
+    '#BossPhrase\n' +
+    'by @prop_life_fx';
+}
+function buildShareUrl(entry){
+  return 'https://x.com/intent/post?text=' + encodeURIComponent(buildShareText(entry));
+}
+
+/* ---------- history (last 5) ---------- */
+const HIST_KEY = 'boss_phrase_history';
+function loadHistory(){
+  try {
+    const raw = localStorage.getItem(HIST_KEY);
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr.filter(x => x && PHRASES[x.cat] && PHRASES[x.cat][x.idx]) : [];
+  } catch(_){ return []; }
+}
+function pushHistory(cat, idx){
+  try {
+    let arr = loadHistory().filter(x => !(x.cat === cat && x.idx === idx));
+    arr.unshift({ cat, idx, t: Date.now() });
+    arr = arr.slice(0, 5);
+    localStorage.setItem(HIST_KEY, JSON.stringify(arr));
+  } catch(_){}
+}
+function renderHistory(){
+  const box = $('histList'); box.innerHTML = '';
+  const arr = loadHistory();
+  if (!arr.length){
+    const p = document.createElement('p'); p.className = 'hist-empty';
+    p.textContent = 'まだありません';
+    box.appendChild(p); return;
+  }
+  for (const h of arr){
+    const cat = CATEGORIES.find(c => c.id === h.cat);
+    const e = PHRASES[h.cat][h.idx];
+    const b = document.createElement('button'); b.type = 'button';
+    b.innerHTML = '<span class="tag"></span><span class="txt"></span>';
+    b.querySelector('.tag').textContent = cat.short;
+    b.querySelector('.txt').textContent = '「' + e.p + '」';
+    b.addEventListener('click', () => showResult(h.cat, h.idx));
+    box.appendChild(b);
+  }
+}
+
+/* ---------- state / screens ---------- */
+const state = { cat:null, idx:-1 };
+const SCREENS = ['screenTitle','screenCat','screenPhrase','screenResult'];
+function show(id){
+  for (const s of SCREENS) $(s).classList.toggle('on', s === id);
+  window.scrollTo(0, 0);
+}
+
+/* ---------- category list ---------- */
+const catBox = $('catList');
+for (const c of CATEGORIES){
+  const b = document.createElement('button'); b.className = 'cat'; b.type = 'button';
+  b.innerHTML = '<span></span><span class="code"></span>';
+  b.firstChild.textContent = c.label;
+  b.lastChild.textContent = 'CAT. ' + c.code;
+  b.addEventListener('click', () => showPhrases(c.id));
+  catBox.appendChild(b);
+}
+
+/* ---------- phrase list ---------- */
+function showPhrases(catId){
+  state.cat = catId;
+  const cat = CATEGORIES.find(c => c.id === catId);
+  $('phCatName').textContent = 'CAT. ' + cat.code + ' ・ ' + cat.short;
+  $('phLabel').textContent = cat.label + ' のフレーズ';
+  const box = $('phraseList'); box.innerHTML = '';
+  PHRASES[catId].forEach((e, i) => {
+    const b = document.createElement('button'); b.className = 'prow'; b.type = 'button';
+    b.innerHTML = '<span class="num"></span><span class="txt"></span>';
+    b.querySelector('.num').textContent = String(i + 1).padStart(2, '0');
+    b.querySelector('.txt').textContent = '「' + e.p + '」';
+    b.addEventListener('click', () => showResult(catId, i));
+    box.appendChild(b);
+  });
+  show('screenPhrase');
+}
+
+/* ---------- result ---------- */
+function showResult(catId, idx){
+  const cat = CATEGORIES.find(c => c.id === catId);
+  const e = PHRASES[catId][idx];
+  if (!cat || !e) return;
+  state.cat = catId; state.idx = idx;
+
+  $('rNo').textContent = 'No. ' + cat.code + '-' + String(idx + 1).padStart(2, '0');
+  $('rCat').textContent = cat.label;
+  $('rPhrase').textContent = e.p;
+  $('rSurface').textContent = e.s;
+  $('rHonne').textContent = e.h;
+  const dEl = $('rDanger');
+  dEl.textContent = stars(e.d);
+  const sm = document.createElement('small'); sm.textContent = DANGER_LABEL[e.d];
+  dEl.appendChild(sm);
+  dEl.style.color = DANGER_COLOR[e.d];
+  $('rAction').textContent = e.a;
+  $('rRisk').textContent = e.r;
+  $('btnShare').setAttribute('href', buildShareUrl(e));
+
+  pushHistory(catId, idx);
+  show('screenResult');
+}
+
+/* ---------- wiring ---------- */
+$('btnStart').addEventListener('click', () => { renderHistory(); show('screenCat'); });
+$('btnCatBack').addEventListener('click', () => show('screenTitle'));
+$('btnPhraseBack').addEventListener('click', () => { renderHistory(); show('screenCat'); });
+$('btnOther').addEventListener('click', () => showPhrases(state.cat));
+$('btnChangeCat').addEventListener('click', () => { renderHistory(); show('screenCat'); });
+
+/* ---------- test surface ---------- */
+window.__boss = {
+  CATEGORIES, PHRASES, stars, buildShareText, buildShareUrl,
+  loadHistory, showResult, showPhrases, show,
+  state,
+  audit(){
+    const cats = Object.keys(PHRASES);
+    const all = cats.flatMap(c => PHRASES[c]);
+    const fieldsOk = all.every(e => e.p && e.s && e.h && e.a && e.r && e.d >= 1 && e.d <= 5);
+    return {
+      categories: cats.length,
+      perCategory: Object.fromEntries(cats.map(c => [c, PHRASES[c].length])),
+      total: all.length,
+      uniquePhrases: new Set(all.map(e => e.p)).size,
+      fieldsComplete: fieldsOk,
+      dangerRange: all.every(e => Number.isInteger(e.d) && e.d >= 1 && e.d <= 5),
+      shareIntent: /^https:\/\/x\.com\/intent\/post\?text=/.test(buildShareUrl(all[0])),
+      noVia: !/[?&]via=/.test(buildShareUrl(all[0])),
+      noExternalScripts: !document.querySelector('script[src]'),
+    };
+  },
+};
+})();
+</script>
+</body>
+</html>
