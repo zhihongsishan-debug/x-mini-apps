@@ -3787,7 +3787,8 @@
     const tier = addictionFor(score);
     const rank = rankFor(score);
     const sub  = rankSubFor(score);
-    const url = location.href;
+    // canonical app URL — location.href would leak query/hash and breaks on file://
+    const url = 'https://zhihongsishan-debug.github.io/x-mini-apps/apps/chain-fever/';
     return 'CHAIN FEVER: TOXIC' +
       '\nRANK: ' + rank +
       '\nSCORE: ' + score +
@@ -3806,18 +3807,20 @@
     fb.classList.add('on');
     setTimeout(() => fb.classList.remove('on'), 2200);
   }
-  async function shareScore(){
+  function buildShareUrl(){
+    return 'https://x.com/intent/post?text=' + encodeURIComponent(buildShareText());
+  }
+  function shareScore(){
     const text = buildShareText();
-    const url  = location.href;
-    // 1) Web Share API
-    if (navigator.share){
-      try {
-        await navigator.share({ text, url });
-        showShareFeedback('共有しました');
-        return;
-      } catch(_) { /* user cancelled or unsupported — fall through */ }
-    }
-    // 2) Clipboard fallback
+    // 1) Open X's post composer directly. Called synchronously from the click
+    //    handler so the user-gesture is still valid and popup blockers allow it.
+    let win = null;
+    try { win = window.open(buildShareUrl(), '_blank', 'noopener,noreferrer'); } catch(_){}
+    if (win){ showShareFeedback('Xを開きました'); return; }
+    // 2) Clipboard fallback (only if the window was blocked)
+    copyFallback(text);
+  }
+  async function copyFallback(text){
     let copied = false;
     if (navigator.clipboard && navigator.clipboard.writeText){
       try { await navigator.clipboard.writeText(text); copied = true; } catch(_){}

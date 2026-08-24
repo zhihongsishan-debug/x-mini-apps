@@ -298,6 +298,18 @@
     box-shadow:0 10px 30px rgba(176,124,255,.5),inset 0 1px 0 rgba(255,255,255,.5);
   }
   .result .restart:active{transform:translateY(1px);}
+  .result .share{
+    display:block;margin:12px auto 0;
+    text-decoration:none;text-align:center;
+    padding:13px 28px;border-radius:999px;min-height:46px;
+    font:inherit;font-weight:800;font-size:12px;letter-spacing:.30em;
+    color:var(--cyan);
+    border:1px solid rgba(61,240,255,.55);
+    background:rgba(61,240,255,.10);
+    transition:background .15s ease,transform .08s ease;
+  }
+  .result .share:hover{background:rgba(61,240,255,.20);}
+  .result .share:active{transform:scale(.97);}
 
   .footer{margin-top:8px;text-align:center;font-size:9px;letter-spacing:.25em;color:var(--sub);opacity:.5;}
 
@@ -347,6 +359,7 @@
     <h2 class="result-text" id="resultText">YOU WIN</h2>
     <p class="result-score" id="resultScore">● 0  ・  ○ 0</p>
     <button class="restart" id="resultRestart" type="button">もう一度</button>
+    <a class="share" id="resultShare" target="_blank" rel="noopener noreferrer">X で シ ェ ア</a>
   </div>
 </div>
 
@@ -382,6 +395,8 @@
     soundOn: true,
     vibOn: true,
     gameOver: false,
+    bestFlip: 0,      // most pieces the human turned in a single move
+    totalFlips: 0,    // pieces the human turned across the whole game
   };
   function makeInitialBoard(){
     const b = Array.from({length:8}, () => Array(8).fill(0));
@@ -643,6 +658,12 @@
       updateHUD();
     }
 
+    // track the human's flip stats — this is what the share line is built from
+    if (p === 1){
+      state.bestFlip = Math.max(state.bestFlip, flips.length);
+      state.totalFlips += flips.length;
+    }
+
     // combo + accent
     if (flips.length > 1) showCombo(flips.length);
     if (flips.length >= 8){
@@ -697,6 +718,30 @@
     await makeMove(pick[0], pick[1], -1);
   }
 
+  /* ---------- share ----------
+     The line describes the board, not the verdict — a win/lose label is not
+     what gets shared; "一手で N枚 返した" is. */
+  const APP_URL = 'https://zhihongsishan-debug.github.io/x-mini-apps/apps/neon-reversi/';
+  function buildShareLine(){
+    const n = state.bestFlip;
+    if (n >= 10) return '一手で ' + n + '枚 返した盤面。';
+    if (n >= 5)  return '最大 ' + n + '枚 を一度に返した。';
+    if (n >= 1)  return '最大 ' + n + '枚 ずつ、静かに削った。';
+    return '一枚も返せないまま終わった。';
+  }
+  function buildShareText(){
+    const { b, w } = counts(state.board);
+    return 'NEON REVERSI\n\n' +
+      buildShareLine() + '\n' +
+      '最終盤面 ● ' + b + ' ・ ○ ' + w + '\n\n' +
+      APP_URL + '\n' +
+      '#NeonReversi\n' +
+      'by @prop_life_fx';
+  }
+  function buildShareUrl(){
+    return 'https://x.com/intent/post?text=' + encodeURIComponent(buildShareText());
+  }
+
   function endGame(){
     state.gameOver = true;
     updateHUD();
@@ -708,6 +753,8 @@
     else text = 'DRAW';
     resultText.textContent = text;
     resultScore.innerHTML = '● <b>' + b + '</b> ・ ○ <b>' + w + '</b>';
+    const sh = $('resultShare');
+    if (sh) sh.setAttribute('href', buildShareUrl());
     setTimeout(() => {
       resultEl.classList.add('on');
       resultEl.setAttribute('aria-hidden', 'false');
@@ -721,6 +768,8 @@
     state.currentPlayer = 1;
     state.flipping = false;
     state.gameOver = false;
+    state.bestFlip = 0;
+    state.totalFlips = 0;
     resultEl.classList.remove('on');
     resultEl.setAttribute('aria-hidden', 'true');
     skipToast.classList.remove('on');
@@ -786,6 +835,7 @@
   /* ========== TEST SURFACE ========== */
   window.__neon = {
     state, DIRS,
+    buildShareLine, buildShareText, buildShareUrl,
     flipsForMove, getLegalMoves, counts, cpuPick,
     makeMove,
     reset,

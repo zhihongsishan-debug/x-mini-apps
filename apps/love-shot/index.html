@@ -93,6 +93,18 @@
     cursor:pointer;
   }
   .overlay button:active{transform:translateY(1px);}
+  .overlay .share-btn{
+    display:none;margin-top:10px;
+    text-decoration:none;text-align:center;
+    padding:13px 26px;border-radius:999px;min-height:46px;
+    font-size:13px;font-weight:800;letter-spacing:.24em;color:#3a2233;
+    background:linear-gradient(135deg,#ffd9e6,#ffe9d6 55%,#dbeeff);
+    border:1px solid rgba(255,140,180,.55);
+    box-shadow:0 8px 20px rgba(255,140,180,.28);
+    cursor:pointer;
+  }
+  .overlay .share-btn.on{display:inline-block;}
+  .overlay .share-btn:active{transform:scale(.97);}
   .controls{
     display:grid;grid-template-columns:1fr 1.4fr 1fr;gap:10px;margin-top:4px;
   }
@@ -141,6 +153,7 @@
       <p id="resultMsg">怒りやモヤモヤを、ハートで愛に変えていこう。<br><span class="small">30秒、深呼吸して。</span></p>
       <div class="score-big" id="resultScore" style="display:none;"></div>
       <button id="startBtn">START</button>
+      <a class="share-btn" id="shareBtn" target="_blank" rel="noopener noreferrer">X で シ ェ ア</a>
     </div>
   </div>
 
@@ -189,6 +202,7 @@
     score: 0,
     combo: 0,
     maxCombo: 0,
+    transformed: 0,   // how many 怒り were turned into 愛 — the shareable number
     timeLeft: 30,
     elapsed: 0,
     spawnTimer: 0,
@@ -210,6 +224,7 @@
     state.score = 0;
     state.combo = 0;
     state.maxCombo = 0;
+    state.transformed = 0;
     state.timeLeft = 30;
     state.elapsed = 0;
     state.spawnTimer = 0;
@@ -218,6 +233,7 @@
     state.player.x = W/2;
     overlay.classList.add('hide');
     resultScore.style.display = 'none';
+    document.getElementById('shareBtn').classList.remove('on');
     updateHUD();
   }
 
@@ -306,7 +322,26 @@
     resultScore.style.display = 'block';
     resultScore.textContent = state.score + ' pts';
     startBtn.textContent = 'もう一度';
+    const sb = document.getElementById('shareBtn');
+    sb.setAttribute('href', buildShareUrl());
+    sb.classList.add('on');
     overlay.classList.remove('hide');
+  }
+
+  /* ---------- share ----------
+     The shareable number is how many 怒り were converted, not the raw score. */
+  const APP_URL = 'https://zhihongsishan-debug.github.io/x-mini-apps/apps/love-shot/';
+  function buildShareText(){
+    return 'LOVE SHOT\n\n' +
+      '怒り ' + state.transformed + '個を、愛に変えた。\n' +
+      '（最大 ' + state.maxCombo + '連続）\n\n' +
+      '30秒、怒りを愛に変えるだけ。\n' +
+      APP_URL + '\n' +
+      '#LoveShot\n' +
+      'by @prop_life_fx';
+  }
+  function buildShareUrl(){
+    return 'https://x.com/intent/post?text=' + encodeURIComponent(buildShareText());
   }
 
   function update(dt){
@@ -362,6 +397,7 @@
           b.dead = true;
           state.combo += 1;
           state.score += 10 + (state.combo - 1) * 2;
+          state.transformed += 1;
           state.maxCombo = Math.max(state.maxCombo, state.combo);
           spawnHitParticles(e.x, e.y);
           if (state.combo >= 3) showComboPop(state.combo);
@@ -504,7 +540,9 @@
   // expose a tiny test surface (used only for self-tests; harmless)
   window.__loveshot = {
     state,
+    buildShareText, buildShareUrl,
     resetGame,
+    endGame,
     shoot,
     spawnEnemyAt(x, y){
       state.enemies.push({x,y,vy:0,type:'💢',alive:true,transform:0});

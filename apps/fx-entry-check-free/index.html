@@ -157,6 +157,18 @@
   }
   .cta-btn:active{transform:translateY(1px);}
 
+  .share-btn{
+    display:none;text-align:center;text-decoration:none;
+    padding:14px 18px;border-radius:10px;min-height:48px;
+    border:1px solid rgba(94,179,255,.5);
+    background:linear-gradient(180deg,rgba(94,179,255,.14),rgba(94,179,255,.05));
+    color:var(--accent);font:inherit;font-size:12px;font-weight:800;letter-spacing:.28em;
+    transition:background .15s ease,border-color .15s ease,transform .08s ease;
+  }
+  .share-btn.on{display:block;}
+  .share-btn:hover{background:rgba(94,179,255,.22);border-color:var(--accent);}
+  .share-btn:active{transform:scale(.97);}
+
   .reset{
     appearance:none;border:1px solid var(--line);
     background:rgba(255,255,255,.03);
@@ -191,6 +203,8 @@
     <span class="counter-label">CHECKED</span>
     <span class="counter-val"><span id="cntVal">0</span><span class="denom">/ 7</span></span>
   </section>
+
+  <a class="share-btn" id="shareBtn" target="_blank" rel="noopener noreferrer">X で シ ェ ア</a>
 
   <button class="reset" id="resetBtn" type="button">RESET</button>
 
@@ -252,9 +266,32 @@
       list.appendChild(row);
     });
   }
+  /* ---------- share ----------
+     Deliberately contains NO trade outcome: no amounts, no rates, no win-rate,
+     no lot/position size, and none of 買い/売り/入る/利確. Only the checklist
+     progress ("7条件中 N条件クリア"), which is the app's own neutral metric. */
+  const APP_URL = 'https://zhihongsishan-debug.github.io/x-mini-apps/apps/fx-entry-check-free/';
+  function buildShareText(){
+    const n = state.filter(Boolean).length;
+    return 'FX エントリー前チェック\n\n' +
+      '7条件中 ' + n + '条件クリア\n\n' +
+      '取引の前に、7つ確認する。\n' +
+      '※投資助言ではありません\n\n' +
+      APP_URL + '\n' +
+      '#FXエントリーチェック\n' +
+      'by @prop_life_fx';
+  }
+  function buildShareUrl(){
+    return 'https://x.com/intent/post?text=' + encodeURIComponent(buildShareText());
+  }
+
   function update(){
     const n = state.filter(Boolean).length;
     cntVal.textContent = n;
+    // the result is "confirmed" once at least one condition has been evaluated
+    const sb = document.getElementById('shareBtn');
+    sb.classList.toggle('on', n > 0);
+    sb.setAttribute('href', buildShareUrl());
   }
   document.getElementById('resetBtn').addEventListener('click', () => {
     for (let i = 0; i < state.length; i++) state[i] = false;
@@ -264,6 +301,7 @@
   // Test surface
   window.__fxFree = {
     state, ITEMS,
+    buildShareText, buildShareUrl,
     toggle(i){ state[i] = !state[i]; render(); update(); },
     setAll(v){ for(let i=0;i<state.length;i++) state[i] = !!v; render(); update(); },
     countYes(){ return state.filter(Boolean).length; },

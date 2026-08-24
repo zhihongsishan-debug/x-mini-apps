@@ -1212,7 +1212,8 @@
   function buildShareText(){
     const score = currentDoomScore();
     const title = doomTitleFor(score);
-    const url = location.href;
+    // canonical app URL — location.href would leak query/hash and breaks on file://
+    const url = 'https://zhihongsishan-debug.github.io/x-mini-apps/apps/doom-stack-free/';
     return 'DOOM STACK' +
       '\nDOOM SCORE: ' + score +
       '\nTASKS: ' + state.tasks.length +
@@ -1227,12 +1228,20 @@
     fb.classList.remove('on'); void fb.offsetWidth; fb.classList.add('on');
     setTimeout(() => fb.classList.remove('on'), 2200);
   }
-  async function shareResult(){
+  function buildShareUrl(){
+    return 'https://x.com/intent/post?text=' + encodeURIComponent(buildShareText());
+  }
+  function shareResult(){
     const text = buildShareText();
-    const url  = location.href;
-    if (navigator.share){
-      try { await navigator.share({ text, url }); showShareFeedback('共有しました'); return; } catch(_){}
-    }
+    // 1) Open X's post composer directly. Synchronous inside the click handler
+    //    so the user-gesture stays valid and popup blockers allow it.
+    let win = null;
+    try { win = window.open(buildShareUrl(), '_blank', 'noopener,noreferrer'); } catch(_){}
+    if (win){ showShareFeedback('Xを開きました'); return; }
+    // 2) Clipboard fallback (only if the window was blocked)
+    copyFallback(text);
+  }
+  async function copyFallback(text){
     let copied = false;
     if (navigator.clipboard && navigator.clipboard.writeText){
       try { await navigator.clipboard.writeText(text); copied = true; } catch(_){}

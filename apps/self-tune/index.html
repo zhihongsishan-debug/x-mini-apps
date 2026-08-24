@@ -167,6 +167,18 @@
   }
   .end .restartBtn:hover{background:rgba(255,210,138,.16);border-color:var(--gold);}
   .end .restartBtn:active{transform:translateY(1px);}
+  .end .shareBtn{
+    display:inline-block;margin-top:14px;
+    text-decoration:none;text-align:center;
+    appearance:none;border:1px solid rgba(255,210,138,.55);
+    background:linear-gradient(135deg,rgba(255,232,192,.16),rgba(255,210,138,.10));
+    color:var(--gold);font:inherit;
+    font-size:12px;letter-spacing:.36em;
+    padding:14px 30px;border-radius:999px;min-height:46px;
+    cursor:pointer;transition:all .15s ease;
+  }
+  .end .shareBtn:hover{background:rgba(255,210,138,.22);border-color:var(--gold);}
+  .end .shareBtn:active{transform:scale(.97);}
   .end .note{
     margin-top:38px;color:var(--sub);opacity:.7;
     font-size:11px;letter-spacing:.22em;line-height:1.7;
@@ -212,6 +224,7 @@
   <section class="screen end" id="endScreen">
     <h2>STABLE</h2>
     <p class="stable-msg">そのままでいい</p>
+    <a class="shareBtn" id="shareBtn" target="_blank" rel="noopener noreferrer">X で シ ェ ア</a>
     <button class="restartBtn" id="restartBtn" type="button">もう一度</button>
     <p class="note">戻ったら、そこから始めればいい。</p>
   </section>
@@ -560,11 +573,37 @@
     state.raf = requestAnimationFrame(tick);
   }
 
+  /* ---------- share ---------- */
+  const APP_URL = 'https://zhihongsishan-debug.github.io/x-mini-apps/apps/self-tune/';
+  // A line about the session that just happened — no medical or efficacy claim.
+  function buildShareLine(){
+    const sec = Math.min(TOTAL, Math.max(0, Math.round(state.elapsed)));
+    const reachedLock = sec >= TOTAL - 1;
+    if (reachedLock) return '90秒、ただ戻るだけの時間をとった。';
+    if (sec >= 45)   return sec + '秒、いったん止まった。';
+    return sec + '秒だけ、静かにしてみた。';
+  }
+  function buildShareText(){
+    return 'SELF TUNE\n\n' +
+      buildShareLine() + '\n' +
+      'そのままでいい。\n\n' +
+      APP_URL + '\n' +
+      '#SelfTune\n' +
+      'by @prop_life_fx';
+  }
+  function buildShareUrl(){
+    return 'https://x.com/intent/post?text=' + encodeURIComponent(buildShareText());
+  }
+
   function endSession(toEndScreen = true){
     state.running = false;
     cancelAnimationFrame(state.raf);
     masterFadeOut(2);
-    if (toEndScreen) showScreen('end');
+    if (toEndScreen){
+      const sb = $('shareBtn');
+      if (sb) sb.setAttribute('href', buildShareUrl());
+      showScreen('end');
+    }
   }
 
   function tick(now){
@@ -660,6 +699,7 @@
   window.__selftune = {
     PHASES, TOTAL,
     state,
+    buildShareLine, buildShareText, buildShareUrl,
     audioReady: () => !!audioCtx,
     audioContextState: () => audioCtx ? audioCtx.state : null,
     soundEnabled: () => soundEnabled,
